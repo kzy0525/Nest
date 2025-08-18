@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Users, Calendar, MapPin, Mail, Phone, Globe, Instagram, Linkedin, Twitter, Facebook, Clock } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Heart, Star, Instagram, Globe, Linkedin, Users, TrendingUp } from 'lucide-react';
 import axios from 'axios';
-import Header from './Header';
 
 const ClubDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [club, setClub] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewForm, setReviewForm] = useState({
-    student_name: '',
-    rating: 5,
-    review_text: ''
-  });
 
   useEffect(() => {
     fetchClubDetails();
@@ -42,258 +35,269 @@ const ClubDetail = () => {
     }
   };
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post(`/api/clubs/${id}/reviews`, reviewForm);
-      setReviewForm({ student_name: '', rating: 5, review_text: '' });
-      setShowReviewForm(false);
-      fetchClubDetails();
-      fetchClubReviews();
-    } catch (error) {
-      console.error('Error submitting review:', error);
-    }
+  const handleFavorite = () => {
+    setIsFavorite(!isFavorite);
   };
 
   const renderStars = (rating) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <Star
-          key={i}
-          size={20}
-          fill={i <= rating ? 'currentColor' : 'none'}
-          color={i <= rating ? '#fbbf24' : '#d1d5db'}
-        />
-      );
-    }
-    return stars;
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        size={20}
+        className={`${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+      />
+    ));
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'TBD';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+  const getRatingDistribution = () => {
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach(review => {
+      if (distribution[review.rating] !== undefined) {
+        distribution[review.rating]++;
+      }
     });
+    return distribution;
+  };
+
+  const getMaxRating = () => {
+    const distribution = getRatingDistribution();
+    return Math.max(...Object.values(distribution));
   };
 
   if (loading) {
     return (
-      <div className="flex-1 overflow-auto bg-gray-50">
-        <Header />
-        <div className="p-8 text-center">
-          <h2 className="text-2xl font-semibold text-gray-600">Loading club details...</h2>
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
       </div>
     );
   }
 
   if (!club) {
     return (
-      <div className="flex-1 overflow-auto bg-gray-50">
-        <Header />
-        <div className="p-8">
-          <h2 className="text-2xl font-semibold">Club not found</h2>
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-xl text-red-600">Club not found</div>
       </div>
     );
   }
 
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    : 0;
+
+  const ratingDistribution = getRatingDistribution();
+  const maxRating = getMaxRating();
+
   return (
-    <div className="flex-1 overflow-auto bg-gray-50">
-      <Header />
-      
-      <div className="p-8">
-        <button 
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-lg mb-8 transition-colors hover:bg-gray-700"
-          onClick={() => navigate('/')}
-        >
-          <ArrowLeft size={16} />
-          Back to Clubs
-        </button>
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-8 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Club Profile</h1>
+          
+          <div className="flex items-center space-x-4">
+            {/* Notifications */}
+            <div className="relative">
+              <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              </div>
+            </div>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
-          <div className="bg-gradient-to-br from-blue-600 to-purple-700 text-white p-12">
-            <h1 className="text-5xl font-bold mb-4">{club.name}</h1>
-            <span className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-lg font-medium inline-block mb-4">{club.category}</span>
-            <p className="text-xl leading-relaxed opacity-90">{club.description}</p>
+            {/* User Profile */}
+            <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
+              <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+              <div className="hidden md:block">
+                <div className="text-sm font-medium text-gray-900">William Smith</div>
+                <div className="text-xs text-gray-500">williamsmith@gmail.com</div>
+              </div>
+              <div className="w-4 h-4 bg-gray-400 rounded"></div>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              <div className="space-y-4">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-4">Meeting Information</h3>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Clock size={20} className="text-blue-600" />
-                  <span>{club.meeting_time}</span>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto bg-gray-50 p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column - Main Club Information */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Club Header Card */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="relative">
+                {/* Blue Header Section */}
+                <div className="bg-blue-600 h-32 relative">
+                  <button
+                    onClick={handleFavorite}
+                    className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all"
+                  >
+                    <Heart 
+                      size={20} 
+                      className={`${isFavorite ? 'text-red-500 fill-current' : 'text-white'}`} 
+                    />
+                  </button>
                 </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <MapPin size={20} className="text-blue-600" />
-                  <span>{club.meeting_location}</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-4">Contact Information</h3>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Mail size={20} className="text-blue-600" />
-                  <span>{club.contact_email}</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Phone size={20} className="text-blue-600" />
-                  <span>{club.contact_phone}</span>
-                </div>
-                {club.website && (
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <Globe size={20} className="text-blue-600" />
-                    <a href={club.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 underline">
-                      Visit Website
-                    </a>
+                
+                {/* Club Avatar and Info */}
+                <div className="px-6 pb-6">
+                  <div className="flex items-center space-x-4 -mt-16">
+                    <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                      {club.name.split(' ').map(word => word[0]).join('').substring(0, 4)}
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-gray-900">{club.name}</h2>
+                      <p className="text-gray-600 mt-1">Canada's premier undergraduate product development club</p>
+                    </div>
                   </div>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-4">Application Timeline</h3>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Calendar size={20} className="text-blue-600" />
-                  <span>Deadline: {formatDate(club.application_deadline)}</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Calendar size={20} className="text-blue-600" />
-                  <span>Interviews: {formatDate(club.interview_start_date)} - {formatDate(club.interview_end_date)}</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-4">Club Statistics</h3>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Star size={20} className="text-blue-600" />
-                  <span>{club.rating.toFixed(1)} rating ({club.review_count} reviews)</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Users size={20} className="text-blue-600" />
-                  <span>{club.member_count} members</span>
                 </div>
               </div>
             </div>
 
-            {/* Social Media Links */}
-            {(club.instagram || club.linkedin || club.twitter || club.facebook) && (
-              <div className="mb-8">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-4">Social Media</h3>
-                <div className="flex gap-4 flex-wrap">
-                  {club.instagram && (
-                    <a href={`https://instagram.com/${club.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg transition-colors hover:bg-gray-200">
-                      <Instagram size={16} />
-                      Instagram
-                    </a>
-                  )}
-                  {club.linkedin && (
-                    <a href={`https://linkedin.com/company/${club.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg transition-colors hover:bg-gray-200">
-                      <Linkedin size={16} />
-                      LinkedIn
-                    </a>
-                  )}
-                  {club.twitter && (
-                    <a href={`https://twitter.com/${club.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg transition-colors hover:bg-gray-200">
-                      <Twitter size={16} />
-                      Twitter
-                    </a>
-                  )}
-                  {club.facebook && (
-                    <a href={`https://facebook.com/${club.facebook}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg transition-colors hover:bg-gray-200">
-                      <Facebook size={16} />
-                      Facebook
-                    </a>
-                  )}
+            {/* Overview Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Overview</h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <Users size={20} className="text-gray-500" />
+                  <span className="text-gray-700">Active Members: <span className="font-bold">52</span></span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <TrendingUp size={20} className="text-gray-500" />
+                  <span className="text-gray-700">Acceptance Rate: <span className="font-bold">15%</span></span>
                 </div>
               </div>
-            )}
+              <p className="text-gray-700 leading-relaxed">
+                {club.description || "The Queen's Technology and Media Association (QTMA) is the flagship product development launchpad and incubation platform for student technology products. Founded in 2014 to bridge the gap between the increasingly convergent worlds of business and technology, QTMA is pillared on technological education, cultivating a strong network of alumni professionals across an array of technological fields, and the deliverance of novel technological products that solve problems facing the modern student."}
+              </p>
+            </div>
 
-            {/* Reviews Section */}
-            <div className="border-t border-gray-200 pt-8">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-semibold text-gray-800">Reviews & Ratings</h3>
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                  onClick={() => setShowReviewForm(!showReviewForm)}
-                >
-                  {showReviewForm ? 'Cancel' : 'Write a Review'}
-                </button>
+            {/* Reviews and Ratings Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Reviews and Ratings</h3>
+              
+              {/* Overall Rating */}
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="text-4xl font-bold text-gray-900">{averageRating}</div>
+                <div className="flex space-x-1">
+                  {renderStars(Math.round(averageRating))}
+                </div>
+                <div className="text-gray-600">{reviews.length} Reviews</div>
               </div>
 
-              {showReviewForm && (
-                <form className="bg-gray-50 p-6 rounded-lg mb-8" onSubmit={handleReviewSubmit}>
-                  <div className="mb-4">
-                    <label htmlFor="student_name" className="block mb-2 font-medium text-gray-700">Your Name</label>
-                    <input
-                      type="text"
-                      id="student_name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={reviewForm.student_name}
-                      onChange={(e) => setReviewForm({ ...reviewForm, student_name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label htmlFor="rating" className="block mb-2 font-medium text-gray-700">Rating</label>
-                    <select
-                      id="rating"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={reviewForm.rating}
-                      onChange={(e) => setReviewForm({ ...reviewForm, rating: parseInt(e.target.value) })}
-                    >
-                      <option value={5}>5 stars - Excellent</option>
-                      <option value={4}>4 stars - Very Good</option>
-                      <option value={3}>3 stars - Good</option>
-                      <option value={2}>2 stars - Fair</option>
-                      <option value={1}>1 star - Poor</option>
-                    </select>
-                  </div>
-                  <div className="mb-4">
-                    <label htmlFor="review_text" className="block mb-2 font-medium text-gray-700">Review</label>
-                    <textarea
-                      id="review_text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] resize-y"
-                      value={reviewForm.review_text}
-                      onChange={(e) => setReviewForm({ ...reviewForm, review_text: e.target.value })}
-                      placeholder="Share your experience with this club..."
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                    Submit Review
-                  </button>
-                </form>
-              )}
-
-              {reviews.length > 0 ? (
-                <div className="space-y-4">
-                  {reviews.map(review => (
-                    <div key={review.id} className="bg-gray-50 p-6 rounded-lg border-l-4 border-blue-600">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="font-semibold text-gray-800">{review.student_name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-yellow-400">
-                            {renderStars(review.rating)}
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            {new Date(review.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
+              {/* Rating Distribution */}
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Rating Distribution</h4>
+                <div className="space-y-2">
+                  {[5, 4, 3, 2, 1].map(rating => (
+                    <div key={rating} className="flex items-center space-x-3">
+                      <span className="text-sm text-gray-600 w-4">{rating}</span>
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full"
+                          style={{ 
+                            width: `${maxRating > 0 ? (ratingDistribution[rating] / maxRating) * 100 : 0}%` 
+                          }}
+                        ></div>
                       </div>
-                      <p className="text-gray-600 leading-relaxed">{review.review_text}</p>
+                      <span className="text-sm text-gray-600 w-8">{ratingDistribution[rating]}</span>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-center py-8 text-gray-500">
-                  No reviews yet. Be the first to share your experience!
-                </p>
-              )}
+              </div>
+
+              {/* Individual Reviews */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-700">Recent Reviews</h4>
+                {reviews.slice(0, 2).map((review, index) => (
+                  <div key={review.id} className="border-t border-gray-100 pt-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="font-medium text-gray-900">{review.student_name}</div>
+                        <div className="text-sm text-gray-500">Business Analyst '27</div>
+                      </div>
+                      <div className="flex space-x-1">
+                        {renderStars(review.rating)}
+                      </div>
+                    </div>
+                    <p className="text-gray-700 text-sm leading-relaxed">{review.review_text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Additional Information */}
+          <div className="space-y-6">
+            
+            {/* Social Media Links */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Connect With Us</h3>
+              <div className="space-y-3">
+                {club.instagram && (
+                  <div className="flex items-center space-x-3">
+                    <Instagram size={20} className="text-pink-500" />
+                    <span className="text-gray-700">@{club.instagram.replace('@', '')}</span>
+                  </div>
+                )}
+                {club.website && (
+                  <div className="flex items-center space-x-3">
+                    <Globe size={20} className="text-blue-500" />
+                    <span className="text-gray-700">{club.website}</span>
+                  </div>
+                )}
+                {club.linkedin && (
+                  <div className="flex items-center space-x-3">
+                    <Linkedin size={20} className="text-blue-600" />
+                    <span className="text-gray-700">linkedin.com/company/{club.linkedin}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recruitment Information */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recruitment Information</h3>
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700">Open Positions</h4>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li>• Business Analyst x3</li>
+                  <li>• UI/UX Designer x2</li>
+                  <li>• Software Developer x4</li>
+                  <li>• Project Manager x1</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Hiring Timeline */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Hiring Timeline</h3>
+              <div className="relative">
+                <div className="space-y-4">
+                  {[
+                    { date: 'February 26', event: 'Applications Open' },
+                    { date: 'March 5', event: 'Applications Close' },
+                    { date: 'March 12', event: 'First Round Interviews' },
+                    { date: 'March 15', event: 'Second Round Interviews' },
+                    { date: 'March 18', event: 'Results' }
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="relative">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        {index < 4 && (
+                          <div className="absolute top-3 left-1.5 w-px h-8 bg-gray-300"></div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">{item.date}</div>
+                        <div className="text-sm text-gray-600">{item.event}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 text-center">
+                  <div className="w-4 h-4 bg-gray-400 rounded-full mx-auto"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
