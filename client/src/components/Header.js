@@ -1,7 +1,15 @@
 import React from 'react';
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // TODO: Implement actual logout logic (clear tokens, etc.)
+    navigate('/login');
+  };
+
   return (
     <div className="bg-white border-b border-gray-200 px-8 py-4">
       <div className="flex items-center justify-between">
@@ -24,6 +32,15 @@ const Header = () => {
             <Bell size={20} className="text-gray-600 cursor-pointer hover:text-gray-800" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
           </div>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+          >
+            <LogOut size={16} />
+            <span className="hidden md:block text-sm">Logout</span>
+          </button>
 
           {/* User Profile */}
           <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">

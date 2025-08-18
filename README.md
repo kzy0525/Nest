@@ -1,102 +1,55 @@
-# Nest - Club Discovery Platform
+# Nest - Campus Club Discovery Platform
 
-A personalized student club discovery platform that streamlines the process of finding, comparing, and applying to clubs on campus. Think of it as a "LinkedIn for clubs" where students can discover, understand, and apply to university clubs.
+A personalized student club discovery platform that streamlines finding, comparing, and applying to clubs on campus. Think of it as "LinkedIn for clubs" where students can discover, understand, and apply to university clubs.
 
 ## Features
 
-### Current Implementation
-- **Home Dashboard**: Browse and search through available clubs
-- **Club Discovery**: Filter clubs by category, search by name/description, and sort by various criteria
-- **Club Details**: Comprehensive information including meeting times, locations, contact details, and social media links
-- **Reviews & Ratings**: Students can leave reviews and ratings for clubs they've experienced
-- **Application Timeline**: View hiring deadlines and interview schedules
-- **Responsive Design**: Mobile-friendly interface
+### 🔐 Authentication System
+- **User Login**: Beautiful split-panel design with Nest branding
+- **User Registration**: Complete registration form with student information
+- **Session Management**: Logout functionality and route protection
+- **Modern UI**: Clean, responsive design with Tailwind CSS
 
-### Database Schema
-- **Clubs Table**: Stores comprehensive club information including contact details, social media, and application timelines
-- **Reviews Table**: Stores student reviews and ratings with foreign key relationships
+### 🏢 Club Discovery
+- **Club Dashboard**: Browse all available clubs with search and filtering
+- **Club Details**: Comprehensive information including:
+  - Meeting times and locations
+  - Contact information (email, phone, social media)
+  - Application deadlines and interview timelines
+  - Member count and ratings
+  - Student reviews and testimonials
+- **Advanced Filtering**: Search by name, filter by category, sort by various criteria
 
-### Sample Data
-The platform comes pre-loaded with 5 sample clubs across different categories:
-- Computer Science Club (Technology)
-- Business Innovation Society (Business)
-- Environmental Sustainability Group (Environment)
-- Arts & Culture Collective (Arts & Culture)
-- Sports & Fitness Club (Sports & Fitness)
+### 📊 Club Information
+- **Social Media Integration**: Instagram, LinkedIn, Twitter, Facebook links
+- **Application Timeline**: Deadlines, interview dates, and hiring process
+- **Member Reviews**: Rating system and detailed feedback from past members
+- **Contact Details**: Direct communication channels for each club
+
+### 🎨 Modern Design
+- **Responsive Layout**: Works on desktop, tablet, and mobile
+- **Tailwind CSS**: Modern utility-first CSS framework
+- **Beautiful UI**: Clean, professional interface with smooth animations
+- **Sidebar Navigation**: Easy access to all platform features
 
 ## Tech Stack
 
-- **Backend**: Node.js + Express.js
-- **Database**: SQLite3
-- **Frontend**: React.js with modern hooks
-- **Styling**: Custom CSS with responsive design
-- **Icons**: Lucide React icons
-- **HTTP Client**: Axios
+### Backend
+- **Node.js** with Express.js framework
+- **SQLite3** database for data storage
+- **RESTful API** endpoints for data access
+- **CORS** enabled for cross-origin requests
 
-## Installation & Setup
+### Frontend
+- **React 18** with modern hooks
+- **React Router DOM** for client-side routing
+- **Tailwind CSS** for styling
+- **Lucide React** for beautiful icons
+- **Axios** for HTTP requests
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
-
-### Backend Setup
-1. Install backend dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Start the backend server:
-   ```bash
-   npm run dev
-   ```
-   The server will run on `http://localhost:5000`
-
-### Frontend Setup
-1. Navigate to the client directory:
-   ```bash
-   cd client
-   ```
-
-2. Install frontend dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the React development server:
-   ```bash
-   npm start
-   ```
-   The frontend will run on `http://localhost:3000`
-
-### Alternative: Run Both Simultaneously
-From the root directory, you can install all dependencies and run both servers:
-```bash
-npm install
-npm run install-client
-npm run dev
-```
-
-## API Endpoints
-
-### Clubs
-- `GET /api/clubs` - Get all clubs with optional filtering and sorting
-- `GET /api/clubs/:id` - Get specific club details
-- `GET /api/categories` - Get all available club categories
-
-### Reviews
-- `GET /api/clubs/:id/reviews` - Get reviews for a specific club
-- `POST /api/clubs/:id/reviews` - Add a new review
-
-### Query Parameters
-- `category` - Filter by club category
-- `search` - Search clubs by name or description
-- `sortBy` - Sort by: name, rating, member_count, review_count
-- `order` - Sort order: ASC or DESC
-
-## Database Schema
-
-### Clubs Table
+### Database Schema
 ```sql
+-- Clubs table
 CREATE TABLE clubs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -119,10 +72,8 @@ CREATE TABLE clubs (
   member_count INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-```
 
-### Reviews Table
-```sql
+-- Reviews table
 CREATE TABLE reviews (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   club_id INTEGER,
@@ -134,39 +85,131 @@ CREATE TABLE reviews (
 );
 ```
 
+## Installation & Setup
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Backend Setup
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+
+# The backend will run on http://localhost:5001
+```
+
+### Frontend Setup
+```bash
+# Navigate to client directory
+cd client
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm start
+
+# The frontend will run on http://localhost:3000
+```
+
+## API Endpoints
+
+### Clubs
+- `GET /api/clubs` - Get all clubs (with optional filtering)
+- `GET /api/clubs/:id` - Get specific club details
+- `GET /api/categories` - Get all club categories
+
+### Reviews
+- `GET /api/clubs/:id/reviews` - Get reviews for a specific club
+- `POST /api/clubs/:id/reviews` - Add a new review
+
+### Query Parameters for Clubs
+- `category` - Filter by club category
+- `search` - Search in club names and descriptions
+- `sortBy` - Sort by field (name, rating, member_count, created_at)
+- `order` - Sort order (ASC or DESC)
+
 ## Usage
 
-1. **Browse Clubs**: Visit the home page to see all available clubs
-2. **Search & Filter**: Use the search bar and category dropdown to find specific clubs
-3. **Sort Results**: Sort clubs by name, rating, member count, or review count
-4. **View Details**: Click on any club card to see comprehensive information
-5. **Read Reviews**: Browse student reviews and ratings for each club
-6. **Leave Reviews**: Share your experience by writing reviews for clubs you've joined
+### For Students
+1. **Register/Login**: Create an account or sign in to access the platform
+2. **Browse Clubs**: Use the dashboard to explore available clubs
+3. **Search & Filter**: Find clubs by category, name, or other criteria
+4. **View Details**: Click on clubs to see comprehensive information
+5. **Read Reviews**: Check out what other students say about clubs
+6. **Contact Clubs**: Use provided contact information to reach out
+
+### For Club Administrators
+1. **Club Information**: All club data is stored in the SQLite database
+2. **Add New Clubs**: Currently requires database insertion (see below)
+3. **Manage Reviews**: Reviews are automatically linked to clubs
+4. **Update Information**: Modify club details directly in the database
+
+## Adding New Clubs
+
+### Method 1: Direct Database Insertion (Recommended)
+```bash
+# Connect to the database
+sqlite3 clubs.db
+
+# Insert a new club
+INSERT INTO clubs (
+  name, description, category,
+  meeting_time, meeting_location,
+  contact_email, contact_phone,
+  website, instagram, linkedin, twitter, facebook,
+  application_deadline, interview_start_date, interview_end_date,
+  member_count
+) VALUES (
+  'New Club Name', 'Description here', 'Technology',
+  'Tues 6pm', 'Engineering Building 101',
+  'club@university.edu', '(555) 123-4567',
+  'https://club.example.com', '@clubinsta', 'club-linkedin', '@clubtwitter', 'clubfacebook',
+  '2025-09-20', '2025-09-25', '2025-10-01',
+  42
+);
+```
+
+### Method 2: Modify server.js
+Add club data to the `insertSampleData()` function and restart the server.
 
 ## Future Enhancements
 
-The platform is designed to be easily extensible for future features:
+### Planned Features
+- **Club Hiring Dashboard**: Application management for clubs
+- **Interview Scheduling**: Calendar integration for club interviews
+- **Applicant Analytics**: Demographic and performance insights
+- **AI Recommendation System**: Personalized club suggestions
+- **Real-time Notifications**: Updates on application status
+- **Mobile App**: Native iOS and Android applications
 
-- **AI Recommendation System**: Suggest clubs based on student interests and preferences
-- **Application Dashboard**: Streamlined application process for clubs
-- **Interview Scheduling**: Calendar integration for interview coordination
-- **Analytics Portfolio**: Demographic and engagement analytics for club leaders
-- **User Authentication**: Student and club leader accounts
-- **Real-time Updates**: Live notifications for application status and deadlines
+### Technical Improvements
+- **User Authentication**: JWT tokens and secure login
+- **Database Migration**: PostgreSQL for production use
+- **API Rate Limiting**: Protect against abuse
+- **Image Uploads**: Club logos and event photos
+- **Email Integration**: Automated notifications
 
 ## Contributing
 
-This is a foundation that can be built upon. Feel free to:
-- Add new club categories
-- Implement additional filtering options
-- Enhance the UI/UX design
-- Add new features like favorites, comparisons, or notifications
-- Integrate with external APIs for additional data sources
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT License - feel free to use this project for educational or commercial purposes.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Support
 
-For questions or support, please refer to the code comments or create an issue in the repository. 
+For questions or support, please open an issue in the GitHub repository or contact the development team.
+
+---
+
+**Built with ❤️ for university students everywhere**
