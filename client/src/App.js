@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ClubDashboard from './components/ClubDashboard';
+import Home from './components/Home';
+import SearchPage from './components/Search';
 import ClubDetail from './components/ClubDetail';
 import Sidebar from './components/Sidebar';
 import Login from './components/Login';
@@ -21,7 +22,16 @@ function App() {
           <div className="App flex h-screen bg-gray-100">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-              <ClubDashboard />
+              <Home />
+            </div>
+          </div>
+        } />
+        
+        <Route path="/search" element={
+          <div className="App flex h-screen bg-gray-100">
+            <Sidebar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <SearchPage />
             </div>
           </div>
         } />

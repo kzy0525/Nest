@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Heart, Star, Search, Filter, SortAsc, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 
-const ClubDashboard = () => {
+const SearchPage = () => {
   const [clubs, setClubs] = useState([]);
   const [filteredClubs, setFilteredClubs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,11 +14,19 @@ const ClubDashboard = () => {
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const sortDropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetchClubs();
     loadFavorites();
   }, []);
+
+  useEffect(() => {
+    // Handle search term passed from home page
+    if (location.state?.searchTerm) {
+      setSearchTerm(location.state.searchTerm);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     filterClubs();
@@ -462,4 +470,4 @@ const ClubDashboard = () => {
   );
 };
 
-export default ClubDashboard; 
+export default SearchPage;
