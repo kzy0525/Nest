@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, ShoppingBag, Heart, Edit, RotateCcw, LogOut, Camera } from 'lucide-react';
+import { Home, Compass, Heart, Edit, LogOut } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -14,24 +14,19 @@ const Sidebar = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/explore', icon: Compass, label: 'Explore' },
-    { path: '/clubs', icon: ShoppingBag, label: 'Clubs' },
     { path: '/favorites', icon: Heart, label: 'Favorites' },
-    { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' },
-    { path: '/history', icon: RotateCcw, label: 'History' }
+    { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' }
   ];
 
   return (
-    <div className="w-20 bg-gray-800 flex flex-col items-center py-6 space-y-8">
+    <div className="w-20 bg-gray-800 flex flex-col items-center py-6 h-screen">
       {/* Logo */}
-      <div 
-        className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors"
-        onClick={() => navigate('/')}
-      >
-        <Camera size={24} className="text-white" />
+      <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-8">
+        <div className="w-6 h-6 bg-white rounded-full"></div>
       </div>
 
-      {/* Navigation Icons */}
-      <div className="flex flex-col items-center space-y-6">
+      {/* Navigation Items */}
+      <div className="flex-1 flex flex-col items-center space-y-8">
         {navItems.map((item) => (
           <div
             key={item.path}
@@ -43,22 +38,25 @@ const Sidebar = () => {
             onClick={() => navigate(item.path)}
             title={item.label}
           >
-            <item.icon 
-              size={24} 
-              className={isActive(item.path) ? 'text-white' : 'text-gray-300'} 
+            <item.icon
+              size={24}
+              className={isActive(item.path) ? 'text-white' : 'text-gray-300'}
             />
           </div>
         ))}
       </div>
 
-      {/* Logout */}
+      {/* Logout Button - Bottom Left */}
       <div className="mt-auto">
-        <div 
-          className="w-12 h-12 bg-gray-700 rounded-xl flex items-center justify-center hover:bg-gray-600 transition-colors cursor-pointer"
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors cursor-pointer bg-gray-700 hover:bg-gray-600"
           onClick={() => navigate('/login')}
           title="Logout"
         >
-          <LogOut size={24} className="text-gray-300" />
+          <LogOut
+            size={24}
+            className="text-gray-300 hover:text-white"
+          />
         </div>
       </div>
     </div>
