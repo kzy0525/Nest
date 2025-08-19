@@ -66,22 +66,29 @@ const SearchPage = () => {
     // Filter by category
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(club => {
-        // Check if the club's category matches the selected category
-        // Also check if any of the club's tags match the category
-        const clubTags = [club.category, 'Technology', 'Business', 'Cultural', 'Engineering'];
-        return clubTags.some(tag => 
-          tag && tag.toLowerCase() === selectedCategory.toLowerCase()
-        );
+        // Handle both array and string formats for category
+        if (Array.isArray(club.category)) {
+          return club.category.some(cat => 
+            cat && cat.toLowerCase() === selectedCategory.toLowerCase()
+          );
+        } else {
+          // Fallback for old string format
+          return club.category && club.category.toLowerCase() === selectedCategory.toLowerCase();
+        }
       });
     }
 
     // Filter by search term
     if (searchTerm.trim()) {
-      filtered = filtered.filter(club =>
-        club.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        club.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        club.category.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(club => {
+        const categoryText = Array.isArray(club.category) 
+          ? club.category.join(' ') 
+          : (club.category || '');
+        
+        return club.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               club.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               categoryText.toLowerCase().includes(searchTerm.toLowerCase());
+      });
     }
 
     // Sort clubs
@@ -176,25 +183,46 @@ const SearchPage = () => {
   };
 
   const getClubTags = (club) => {
-    const tags = [club.category];
+    let tags = [];
     
-    // Add additional tags based on club characteristics
-    if (club.name.toLowerCase().includes('tech') || club.name.toLowerCase().includes('technology')) {
-      tags.push('Technology');
+    // Handle both array and string formats for category
+    if (Array.isArray(club.category)) {
+      tags = [...club.category];
+    } else if (club.category) {
+      tags = [club.category];
     }
-    if (club.name.toLowerCase().includes('business') || club.name.toLowerCase().includes('consulting') || club.name.toLowerCase().includes('investment')) {
-      tags.push('Business');
-    }
-    if (club.name.toLowerCase().includes('cultural') || club.name.toLowerCase().includes('vietnamese')) {
-      tags.push('Cultural');
-    }
-    if (club.name.toLowerCase().includes('engineering') || club.name.toLowerCase().includes('hyperloop')) {
-      tags.push('Engineering');
+    
+    // Add additional tags based on club characteristics if we don't have enough
+    if (tags.length < 2) {
+      if (club.name.toLowerCase().includes('tech') || club.name.toLowerCase().includes('technology')) {
+        if (!tags.includes('Technology')) tags.push('Technology');
+      }
+      if (club.name.toLowerCase().includes('business') || club.name.toLowerCase().includes('consulting') || club.name.toLowerCase().includes('startup')) {
+        if (!tags.includes('Business')) tags.push('Business');
+      }
+      if (club.name.toLowerCase().includes('cultural') || club.name.toLowerCase().includes('vietnamese') || club.name.toLowerCase().includes('arts')) {
+        if (!tags.includes('Culture')) tags.push('Culture');
+      }
+      if (club.name.toLowerCase().includes('engineering') || club.name.toLowerCase().includes('hyperloop') || club.name.toLowerCase().includes('science')) {
+        if (!tags.includes('Science')) tags.push('Science');
+      }
+      if (club.name.toLowerCase().includes('environmental') || club.name.toLowerCase().includes('sustainability')) {
+        if (!tags.includes('Environment')) tags.push('Environment');
+      }
+      if (club.name.toLowerCase().includes('political') || club.name.toLowerCase().includes('politics')) {
+        if (!tags.includes('Politics')) tags.push('Politics');
+      }
+              if (club.name.toLowerCase().includes('media') || club.name.toLowerCase().includes('publications')) {
+          if (!tags.includes('Media')) tags.push('Media');
+        }
     }
     
     // Ensure we have at least 2 tags
-    if (tags.length === 1) {
+    if (tags.length === 0) {
       tags.push('Technology');
+    }
+    if (tags.length === 1) {
+      tags.push('Innovation');
     }
     
     return tags.slice(0, 2); // Return only first 2 tags
@@ -376,22 +404,41 @@ const SearchPage = () => {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold text-gray-900">Search Results</h1>
           
-          {/* Category Filters */}
-          <div className="flex space-x-6">
-            {['All', 'Academics', 'Arts', 'Business', 'Debate', 'Environment', 'Health', 'See more'].map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`pb-2 transition-colors ${
-                  selectedCategory === category
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+                      {/* Category Filters */}
+            <div className="flex flex-col items-end space-y-2">
+              {/* First Row */}
+              <div className="flex space-x-4">
+                {['All', 'Academic', 'Arts', 'Business', 'Culture', 'Community', 'Sports'].map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`pb-1 text-sm transition-colors ${
+                      selectedCategory === category
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+              {/* Second Row */}
+              <div className="flex space-x-4">
+                {['Health', 'Environment', 'Innovation', 'Science', 'Technology', 'Politics', 'Media', 'Social'].map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`pb-1 text-sm transition-colors ${
+                      selectedCategory === category
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
         </div>
 
         {/* Clubs Grid */}
@@ -438,13 +485,13 @@ const SearchPage = () => {
                   <span className="text-sm text-gray-600">{club.member_count || 'N/A'} Members</span>
                 </div>
                 
-                {/* Club Name - Clickable */}
-                <h3 
-                  className="font-semibold text-gray-900 mb-3 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
-                  onClick={() => navigate(`/club/${club.id}`)}
-                >
-                  {club.name}
-                </h3>
+                                  {/* Club Name - Clickable */}
+                  <h3 
+                    className="font-semibold text-gray-900 mb-3 h-12 flex items-start cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => navigate(`/club/${club.id}`)}
+                  >
+                    <span className="line-clamp-2">{club.name}</span>
+                  </h3>
                 
                 {/* Recruiting Button - Clickable */}
                 <button 

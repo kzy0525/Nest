@@ -118,6 +118,52 @@ const Home = () => {
     }
   };
 
+  const getClubTags = (club) => {
+    let tags = [];
+    
+    // Handle both array and string formats for category
+    if (Array.isArray(club.category)) {
+      tags = [...club.category];
+    } else if (club.category) {
+      tags = [club.category];
+    }
+    
+    // Add additional tags based on club characteristics if we don't have enough
+    if (tags.length < 2) {
+      if (club.name.toLowerCase().includes('tech') || club.name.toLowerCase().includes('technology')) {
+        if (!tags.includes('Technology')) tags.push('Technology');
+      }
+      if (club.name.toLowerCase().includes('business') || club.name.toLowerCase().includes('consulting') || club.name.toLowerCase().includes('startup')) {
+        if (!tags.includes('Business')) tags.push('Business');
+      }
+      if (club.name.toLowerCase().includes('cultural') || club.name.toLowerCase().includes('vietnamese') || club.name.toLowerCase().includes('arts')) {
+        if (!tags.includes('Culture')) tags.push('Culture');
+      }
+      if (club.name.toLowerCase().includes('engineering') || club.name.toLowerCase().includes('hyperloop') || club.name.toLowerCase().includes('science')) {
+        if (!tags.includes('Science')) tags.push('Science');
+      }
+      if (club.name.toLowerCase().includes('environmental') || club.name.toLowerCase().includes('sustainability')) {
+        if (!tags.includes('Environment')) tags.push('Environment');
+      }
+      if (club.name.toLowerCase().includes('political') || club.name.toLowerCase().includes('politics')) {
+        if (!tags.includes('Politics')) tags.push('Politics');
+      }
+      if (club.name.toLowerCase().includes('media') || club.name.toLowerCase().includes('publications')) {
+        if (!tags.includes('Media')) tags.push('Media');
+      }
+    }
+    
+    // Ensure we have at least 2 tags
+    if (tags.length === 0) {
+      tags.push('Technology');
+    }
+    if (tags.length === 1) {
+      tags.push('Innovation');
+    }
+    
+    return tags.slice(0, 2); // Return only first 2 tags
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
@@ -192,8 +238,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clubs.slice(currentCarouselIndex, currentCarouselIndex + 3).map((club) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {clubs.slice(currentCarouselIndex, currentCarouselIndex + 4).map((club) => (
               <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
                 {/* Club Logo/Image Section */}
                 <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
@@ -215,19 +261,25 @@ const Home = () => {
                 {/* Club Details */}
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                      {club.category}
-                    </span>
+                    <div className="flex space-x-2">
+                      {getClubTags(club).map((tag, index) => (
+                        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                     <span className="text-sm text-gray-600">{club.member_count || 'N/A'} Members</span>
                   </div>
                   
-                  <h3 className="font-semibold text-gray-900 mb-3 line-clamp-2">{club.name}</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3 h-12 flex items-start">
+                    <span className="line-clamp-2">{club.name}</span>
+                  </h3>
                   
                   <button 
                     className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
                     onClick={() => navigate(`/club/${club.id}`)}
                   >
-                    View Details
+                    Recruiting Open
                   </button>
                 </div>
               </div>

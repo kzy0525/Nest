@@ -133,7 +133,7 @@ const ClubDetail = () => {
 
             {/* User Profile */}
             <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
-              <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+              <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
               <div className="hidden md:block">
                 <div className="text-sm font-medium text-gray-900">William Smith</div>
                 <div className="text-xs text-gray-500">williamsmith@gmail.com</div>
@@ -158,7 +158,7 @@ const ClubDetail = () => {
                 <div className="bg-blue-600 h-32 relative">
                   <button
                     onClick={handleFavorite}
-                    className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all"
+                    className="absolute top-4 left-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all"
                   >
                     <Heart 
                       size={20} 
@@ -196,7 +196,7 @@ const ClubDetail = () => {
                 </div>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                {club.description || "The Queen's Technology and Media Association (QTMA) is the flagship product development launchpad and incubation platform for student technology products. Founded in 2014 to bridge the gap between the increasingly convergent worlds of business and technology, QTMA is pillared on technological education, cultivating a strong network of alumni professionals across an array of technological fields, and the deliverance of novel technological products that solve problems facing the modern student."}
+                The Queen's Technology and Media Association (QTMA) is the flagship product development launchpad and incubation platform for student technology products. Founded in 2014 to bridge the gap between the increasingly convergent worlds of business and technology, QTMA is pillared on technological education, cultivating a strong network of alumni professionals across an array of technological fields, and the deliverance of novel technological products that solve problems facing the modern student.
               </p>
             </div>
 
@@ -205,32 +205,34 @@ const ClubDetail = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Reviews and Ratings</h3>
               
               {/* Overall Rating */}
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="text-4xl font-bold text-gray-900">{averageRating}</div>
-                <div className="flex space-x-1">
-                  {renderStars(Math.round(averageRating))}
+              <div className="flex items-start space-x-8 mb-6">
+                <div className="text-left">
+                  <div className="text-4xl font-bold text-gray-900 mb-2">{averageRating}</div>
+                  <div className="flex space-x-1 mb-2">
+                    {renderStars(Math.round(averageRating))}
+                  </div>
+                  <div className="text-gray-600">{reviews.length} Reviews</div>
                 </div>
-                <div className="text-gray-600">{reviews.length} Reviews</div>
-              </div>
-
-              {/* Rating Distribution */}
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Rating Distribution</h4>
-                <div className="space-y-2">
-                  {[5, 4, 3, 2, 1].map(rating => (
-                    <div key={rating} className="flex items-center space-x-3">
-                      <span className="text-sm text-gray-600 w-4">{rating}</span>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-500 h-2 rounded-full"
-                          style={{ 
-                            width: `${maxRating > 0 ? (ratingDistribution[rating] / maxRating) * 100 : 0}%` 
-                          }}
-                        ></div>
+                
+                {/* Rating Distribution */}
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Rating Distribution</h4>
+                  <div className="space-y-2">
+                    {[5, 4, 3, 2, 1].map(rating => (
+                      <div key={rating} className="flex items-center space-x-3">
+                        <span className="text-sm text-gray-600 w-4">{rating}</span>
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full"
+                            style={{ 
+                              width: `${maxRating > 0 ? (ratingDistribution[rating] / maxRating) * 100 : 0}%` 
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-600 w-8">{ratingDistribution[rating]}</span>
                       </div>
-                      <span className="text-sm text-gray-600 w-8">{ratingDistribution[rating]}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -260,40 +262,37 @@ const ClubDetail = () => {
             
             {/* Social Media Links */}
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Connect With Us</h3>
-              <div className="space-y-3">
-                {club.instagram && (
-                  <div className="flex items-center space-x-3">
-                    <Instagram size={20} className="text-pink-500" />
-                    <span className="text-gray-700">@{club.instagram.replace('@', '')}</span>
-                  </div>
-                )}
-                {club.website && (
-                  <div className="flex items-center space-x-3">
-                    <Globe size={20} className="text-blue-500" />
-                    <span className="text-gray-700">{club.website}</span>
-                  </div>
-                )}
-                {club.linkedin && (
-                  <div className="flex items-center space-x-3">
-                    <Linkedin size={20} className="text-blue-600" />
-                    <span className="text-gray-700">linkedin.com/company/{club.linkedin}</span>
-                  </div>
-                )}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">Instagram</span>
+                  <span className="text-gray-900">@queenstechmedia</span>
+                </div>
+                <div className="border-t border-gray-200"></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">Website</span>
+                  <span className="text-gray-900">qtma.ca</span>
+                </div>
+                <div className="border-t border-gray-200"></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">LinkedIn</span>
+                  <span className="text-gray-900">linkedin.com/company/qtma/</span>
+                </div>
               </div>
             </div>
 
             {/* Recruitment Information */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recruitment Information</h3>
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-gray-700">Open Positions</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>• Business Analyst x3</li>
-                  <li>• UI/UX Designer x2</li>
-                  <li>• Software Developer x4</li>
-                  <li>• Project Manager x1</li>
-                </ul>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Open Positions</h4>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    <li>• Business Analyst x3</li>
+                    <li>• UI/UX Designer x2</li>
+                    <li>• Software Developer x4</li>
+                    <li>• Project Manager x1</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
@@ -311,7 +310,7 @@ const ClubDetail = () => {
                   ].map((item, index) => (
                     <div key={index} className="flex items-start space-x-3">
                       <div className="relative">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
                         {index < 4 && (
                           <div className="absolute top-3 left-1.5 w-px h-8 bg-gray-300"></div>
                         )}
@@ -322,9 +321,6 @@ const ClubDetail = () => {
                       </div>
                     </div>
                   ))}
-                </div>
-                <div className="mt-4 text-center">
-                  <div className="w-4 h-4 bg-gray-400 rounded-full mx-auto"></div>
                 </div>
               </div>
             </div>

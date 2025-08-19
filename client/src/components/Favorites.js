@@ -18,14 +18,84 @@ const Favorites = () => {
     localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
   };
 
-  const renderStars = (rating) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        size={16}
-        className={`${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-      />
-    ));
+  const getClubInitials = (clubName) => {
+    return clubName.split(' ').map(word => word[0]).join('').substring(0, 4);
+  };
+
+  const getClubBackground = (clubName) => {
+    const backgrounds = [
+      'bg-black',
+      'bg-blue-600',
+      'bg-white',
+      'bg-blue-800',
+      'bg-white',
+      'bg-gray-900',
+      'bg-gradient-to-br from-orange-400 to-pink-500',
+      'bg-gradient-to-br from-yellow-400 to-orange-500'
+    ];
+    const index = clubName.length % backgrounds.length;
+    return backgrounds[index];
+  };
+
+  const getClubTextColor = (clubName) => {
+    const backgrounds = [
+      'text-white',
+      'text-white',
+      'text-gray-800',
+      'text-white',
+      'text-blue-800',
+      'text-white',
+      'text-white',
+      'text-gray-800'
+    ];
+    const index = clubName.length % backgrounds.length;
+    return backgrounds[index];
+  };
+
+  const getClubTags = (club) => {
+    let tags = [];
+    
+    // Handle both array and string formats for category
+    if (Array.isArray(club.category)) {
+      tags = [...club.category];
+    } else if (club.category) {
+      tags = [club.category];
+    }
+    
+    // Add additional tags based on club characteristics if we don't have enough
+    if (tags.length < 2) {
+      if (club.name.toLowerCase().includes('tech') || club.name.toLowerCase().includes('technology')) {
+        if (!tags.includes('Technology')) tags.push('Technology');
+      }
+      if (club.name.toLowerCase().includes('business') || club.name.toLowerCase().includes('consulting') || club.name.toLowerCase().includes('startup')) {
+        if (!tags.includes('Business')) tags.push('Business');
+      }
+      if (club.name.toLowerCase().includes('cultural') || club.name.toLowerCase().includes('vietnamese') || club.name.toLowerCase().includes('arts')) {
+        if (!tags.includes('Culture')) tags.push('Culture');
+      }
+      if (club.name.toLowerCase().includes('engineering') || club.name.toLowerCase().includes('hyperloop') || club.name.toLowerCase().includes('science')) {
+        if (!tags.includes('Science')) tags.push('Science');
+      }
+      if (club.name.toLowerCase().includes('environmental') || club.name.toLowerCase().includes('sustainability')) {
+        if (!tags.includes('Environment')) tags.push('Environment');
+      }
+      if (club.name.toLowerCase().includes('political') || club.name.toLowerCase().includes('politics')) {
+        if (!tags.includes('Politics')) tags.push('Politics');
+      }
+              if (club.name.toLowerCase().includes('media') || club.name.toLowerCase().includes('publications')) {
+          if (!tags.includes('Media')) tags.push('Media');
+        }
+    }
+    
+    // Ensure we have at least 2 tags
+    if (tags.length === 0) {
+      tags.push('Technology');
+    }
+    if (tags.length === 1) {
+      tags.push('Innovation');
+    }
+    
+    return tags.slice(0, 2); // Return only first 2 tags
   };
 
   if (favorites.length === 0) {
@@ -105,79 +175,55 @@ const Favorites = () => {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {favorites.map((club) => (
-            <div key={club.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              {/* Club Header */}
-              <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 relative">
+            <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+              {/* Club Logo/Image Section */}
+              <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
+                <div className={`text-2xl font-bold ${getClubTextColor(club.name)}`}>
+                  {getClubInitials(club.name)}
+                </div>
+                
+                {/* Heart Icon */}
                 <button
                   onClick={() => handleUnlike(club.id)}
-                  className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all"
+                  className="absolute bottom-2 left-2 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
                 >
-                  <Heart size={20} className="text-red-500 fill-current" />
+                  <Heart size={16} className="text-red-500 fill-current" />
                 </button>
                 
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-xl font-bold text-white">
-                      {club.name.split(' ').map(word => word[0]).join('').substring(0, 4)}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-1">{club.name}</h3>
-                  <span className="text-blue-100 text-sm">{club.category}</span>
+                {/* Rating */}
+                <div className="absolute bottom-2 right-2 text-white text-sm font-medium">
+                  {club.rating ? `${club.rating.toFixed(1)} ★` : 'N/A'}
                 </div>
               </div>
 
               {/* Club Details */}
-              <div className="p-6">
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                  {club.description}
-                </p>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Users size={16} />
-                    <span>{club.member_count || 'N/A'} members</span>
+              <div className="p-4">
+                {/* Tags and Member Count */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex space-x-2">
+                    {getClubTags(club).map((tag, index) => (
+                      <span 
+                        key={index} 
+                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Star size={16} className="text-yellow-400" />
-                    <span>{club.rating ? club.rating.toFixed(1) : 'N/A'}</span>
-                  </div>
+                  <span className="text-sm text-gray-600">{club.member_count || 'N/A'} Members</span>
                 </div>
-
-                {/* Rating */}
-                {club.rating && (
-                  <div className="flex items-center space-x-2 mb-4">
-                    <div className="flex space-x-1">
-                      {renderStars(Math.round(club.rating))}
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      ({club.review_count || 0} reviews)
-                    </span>
-                  </div>
-                )}
-
-                {/* Meeting Info */}
-                <div className="space-y-2 mb-4">
-                  {club.meeting_time && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <Calendar size={16} />
-                      <span>{club.meeting_time}</span>
-                    </div>
-                  )}
-                  {club.meeting_location && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <MapPin size={16} />
-                      <span>{club.meeting_location}</span>
-                    </div>
-                  )}
-                </div>
-
+                
+                                            {/* Club Name */}
+                            <h3 className="font-semibold text-gray-900 mb-3 h-12 flex items-start">
+                              <span className="line-clamp-2">{club.name}</span>
+                            </h3>
+                
                 {/* View Details Button */}
                 <button
                   onClick={() => navigate(`/club/${club.id}`)}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
                 >
                   View Details
                 </button>
