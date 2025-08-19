@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import Login from './components/Login';
 import Register from './components/Register';
 import HiringDashboard from './components/HiringDashboard';
+import Favorites from './components/Favorites';
 
 function App() {
   return (
@@ -39,6 +40,15 @@ function App() {
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
               <HiringDashboard />
+            </div>
+          </div>
+        } />
+
+        <Route path="/favorites" element={
+          <div className="App flex h-screen bg-gray-100">
+            <Sidebar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Favorites />
             </div>
           </div>
         } />

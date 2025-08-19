@@ -1,64 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Heart, Star, MapPin, Users, Calendar } from 'lucide-react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-const ClubDashboard = () => {
-  const [clubs, setClubs] = useState([]);
-  const [loading, setLoading] = useState(true);
+const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchClubs();
-    loadFavorites();
-  }, []);
-
-  const fetchClubs = async () => {
-    try {
-      const response = await axios.get('/api/clubs');
-      setClubs(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching clubs:', error);
-      setLoading(false);
-    }
-  };
-
-  const loadFavorites = () => {
+    // Load favorites from localStorage
     const savedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
     setFavorites(savedFavorites);
-  };
+  }, []);
 
-  const handleFavorite = (club) => {
-    const updatedFavorites = [...favorites];
-    const existingIndex = updatedFavorites.findIndex(fav => fav.id === club.id);
-    
-    if (existingIndex >= 0) {
-      // Remove from favorites
-      updatedFavorites.splice(existingIndex, 1);
-    } else {
-      // Add to favorites
-      const newFavorite = {
-        id: club.id,
-        name: club.name,
-        description: club.description,
-        category: club.category,
-        rating: club.rating,
-        review_count: club.review_count,
-        member_count: club.member_count,
-        meeting_time: club.meeting_time,
-        meeting_location: club.meeting_location
-      };
-      updatedFavorites.push(newFavorite);
-    }
-    
+  const handleUnlike = (clubId) => {
+    const updatedFavorites = favorites.filter(club => club.id !== clubId);
     setFavorites(updatedFavorites);
     localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-  };
-
-  const isFavorite = (clubId) => {
-    return favorites.some(fav => fav.id === clubId);
   };
 
   const renderStars = (rating) => {
@@ -71,10 +28,49 @@ const ClubDashboard = () => {
     ));
   };
 
-  if (loading) {
+  if (favorites.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading clubs...</div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">Favorites</h1>
+            
+            <div className="flex items-center space-x-4">
+              {/* Notifications */}
+              <div className="relative">
+                <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                </div>
+              </div>
+
+              {/* User Profile */}
+              <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
+                <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+                <div className="hidden md:block">
+                  <div className="text-sm font-medium text-gray-900">William Smith</div>
+                  <div className="text-xs text-gray-500">williamsmith@gmail.com</div>
+                </div>
+                <div className="w-4 h-4 bg-gray-400 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <Heart size={64} className="text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">No favorites yet</h3>
+            <p className="text-gray-500 mb-6">Start exploring clubs and add them to your favorites!</p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Explore Clubs
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -84,20 +80,9 @@ const ClubDashboard = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-8 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Discover Clubs</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Favorites</h1>
           
           <div className="flex items-center space-x-4">
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search clubs..."
-                  className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
             {/* Notifications */}
             <div className="relative">
               <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
@@ -120,41 +105,16 @@ const ClubDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-6">
-        {/* Category Filters */}
-        <div className="mb-6">
-          <div className="flex space-x-2 overflow-x-auto pb-2">
-            {['All', 'Technology', 'Business', 'Arts & Culture', 'Sports & Fitness', 'Science', 'Social Impact'].map((category) => (
-              <button
-                key={category}
-                className="px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap"
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Recruiting Open Button */}
-        <div className="mb-6">
-          <button className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
-            🚀 Recruiting Open
-          </button>
-        </div>
-
-        {/* Clubs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clubs.map((club) => (
+          {favorites.map((club) => (
             <div key={club.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
               {/* Club Header */}
               <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 relative">
                 <button
-                  onClick={() => handleFavorite(club)}
+                  onClick={() => handleUnlike(club.id)}
                   className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all"
                 >
-                  <Heart 
-                    size={20} 
-                    className={`${isFavorite(club.id) ? 'text-red-500 fill-current' : 'text-white'}`} 
-                  />
+                  <Heart size={20} className="text-red-500 fill-current" />
                 </button>
                 
                 <div className="text-center">
@@ -230,4 +190,4 @@ const ClubDashboard = () => {
   );
 };
 
-export default ClubDashboard; 
+export default Favorites;

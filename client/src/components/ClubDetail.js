@@ -13,6 +13,7 @@ const ClubDetail = () => {
   useEffect(() => {
     fetchClubDetails();
     fetchClubReviews();
+    checkFavoriteStatus();
   }, [id]);
 
   const fetchClubDetails = async () => {
@@ -35,8 +36,36 @@ const ClubDetail = () => {
     }
   };
 
+  const checkFavoriteStatus = () => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    setIsFavorite(favorites.some(fav => fav.id === parseInt(id)));
+  };
+
   const handleFavorite = () => {
-    setIsFavorite(!isFavorite);
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    
+    if (isFavorite) {
+      // Remove from favorites
+      const updatedFavorites = favorites.filter(fav => fav.id !== club.id);
+      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+      setIsFavorite(false);
+    } else {
+      // Add to favorites
+      const newFavorite = {
+        id: club.id,
+        name: club.name,
+        description: club.description,
+        category: club.category,
+        rating: club.rating,
+        review_count: club.review_count,
+        member_count: club.member_count,
+        meeting_time: club.meeting_time,
+        meeting_location: club.meeting_location
+      };
+      favorites.push(newFavorite);
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+      setIsFavorite(true);
+    }
   };
 
   const renderStars = (rating) => {
