@@ -118,30 +118,9 @@ const ClubDetail = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
+      {/* Page Title */}
       <div className="bg-white border-b border-gray-200 px-8 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Club Profile</h1>
-          
-          <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <div className="relative">
-              <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              </div>
-            </div>
-
-            {/* User Profile */}
-            <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
-              <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-              <div className="hidden md:block">
-                <div className="text-sm font-medium text-gray-900">William Smith</div>
-                <div className="text-xs text-gray-500">williamsmith@gmail.com</div>
-              </div>
-              <div className="w-4 h-4 bg-gray-400 rounded"></div>
-            </div>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Club Profile</h1>
       </div>
 
       {/* Main Content */}

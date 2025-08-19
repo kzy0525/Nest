@@ -166,27 +166,7 @@ const Home = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-4">
-        <div className="flex items-center justify-between">
-          {/* Nest Logo/Name */}
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-              <div className="w-6 h-6 bg-white rounded-full"></div>
-            </div>
-            <h1 className="text-2xl font-bold text-blue-600">Nest</h1>
-          </div>
 
-          {/* User Profile */}
-          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
-            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-            <div className="hidden md:block">
-              <div className="text-sm font-medium text-gray-900">William Smith</div>
-              <div className="text-xs text-gray-500">williamsmith@gmail.com</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-8">

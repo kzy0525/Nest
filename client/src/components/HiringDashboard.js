@@ -83,22 +83,9 @@ const HiringDashboard = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
+      {/* Page Title */}
       <div className="bg-white border-b border-gray-200 px-8 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Hiring Dashboard</h1>
-          
-          <div className="flex items-center space-x-4">
-            {/* User Profile */}
-            <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
-              <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-              <div className="hidden md:block">
-                <div className="text-sm font-medium text-gray-900">William Smith</div>
-                <div className="text-xs text-gray-500">williamsmith@gmail.com</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Hiring Dashboard</h1>
       </div>
 
       {/* Main Content */}
@@ -166,18 +153,21 @@ const HiringDashboard = () => {
         </div>
 
         {/* Bottom Section - Timeline and Documents */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Timeline - Left Side */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Timeline</h3>
-            
+        <div className="grid grid-cols-10 gap-6">
+          {/* Timeline - Takes up 7/10 of the width */}
+          <div className="col-span-7 bg-white rounded-xl shadow-sm p-6">
             <div className="grid grid-cols-7 gap-2">
               {Array.from({ length: 7 }, (_, i) => {
                 const day = 12 + i;
                 const event = calendarEvents.find(e => e.day === day);
                 
                 return (
-                  <div key={day} className="text-center">
+                  <div key={day} className="text-center relative">
+                    {/* Vertical grey line between dates (except for the last one) */}
+                    {i < 6 && (
+                      <div className="absolute top-0 left-full w-px h-5/6 bg-gray-100 transform -translate-x-1/2"></div>
+                    )}
+                    
                     <div className="text-sm font-medium text-gray-900 mb-2">{day}</div>
                     {event && (
                       <div className="text-center">
@@ -193,10 +183,8 @@ const HiringDashboard = () => {
             </div>
           </div>
 
-          {/* Documents - Right Side */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents & Resources</h3>
-            
+          {/* Documents - Takes up 3/10 of the width */}
+          <div className="col-span-3 bg-white rounded-xl shadow-sm p-6">
             <div className="space-y-3">
               {documents.map((doc, index) => (
                 <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Heart, Edit, LogOut } from 'lucide-react';
+import { Home, Compass, Heart, Edit } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -20,13 +20,10 @@ const Sidebar = () => {
 
   return (
     <div className="w-20 bg-gray-800 flex flex-col items-center py-6 h-screen">
-      {/* Logo */}
-      <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-8">
-        <div className="w-6 h-6 bg-white rounded-full"></div>
-      </div>
 
-      {/* Navigation Items */}
-      <div className="flex-1 flex flex-col items-center space-y-8">
+
+      {/* Navigation Items - Vertically Centered */}
+      <div className="flex-1 flex flex-col items-center justify-center space-y-8">
         {navItems.map((item) => (
           <div
             key={item.path}
@@ -46,19 +43,6 @@ const Sidebar = () => {
         ))}
       </div>
 
-      {/* Logout Button - Bottom Left */}
-      <div className="mt-auto">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors cursor-pointer bg-gray-700 hover:bg-gray-600"
-          onClick={() => navigate('/login')}
-          title="Logout"
-        >
-          <LogOut
-            size={24}
-            className="text-gray-300 hover:text-white"
-          />
-        </div>
-      </div>
     </div>
   );
 };
