@@ -101,10 +101,7 @@ const Favorites = () => {
   if (favorites.length === 0) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Page Title */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Favorites</h1>
-        </div>
+
 
         {/* Empty State */}
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
@@ -126,10 +123,7 @@ const Favorites = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Page Title */}
-      <div className="bg-white border-b border-gray-200 px-8 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">Favorites</h1>
-      </div>
+
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-6">

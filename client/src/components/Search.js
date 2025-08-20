@@ -262,18 +262,18 @@ const SearchPage = () => {
 
 
       {/* Search and Filter Section */}
-      <div className="bg-white border-b border-gray-200 px-8 py-4">
+      <div className="px-8 py-4" style={{ backgroundColor: '#F5F6FA' }}>
         <div className="flex items-center justify-between">
           {/* Search Bar */}
-          <div className="flex-1 max-w-md">
+          <div className="flex-1 max-w-2xl">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                className="w-full pl-12 pr-6 py-4 border border-gray-300 rounded-3xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-lg text-gray-700 placeholder-gray-500 placeholder:text-lg"
               />
             </div>
           </div>
@@ -287,7 +287,7 @@ const SearchPage = () => {
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
               >
                 <SortAsc size={16} />
-                <span className="text-sm">{getSortLabel()}</span>
+                <span className="text-lg">{getSortLabel()}</span>
                 {showSortDropdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               
@@ -371,17 +371,23 @@ const SearchPage = () => {
             
             <button className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
               <Filter size={16} />
-              <span className="text-sm">Filter</span>
+              <span className="text-lg">Filter</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gray-50 p-8">
-        {/* Search Results Title and Category Filters */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">Search Results</h1>
+      <div className="flex-1 overflow-auto" style={{ backgroundColor: '#F5F6FA' }}>
+        {/* Separator Line */}
+        <div className="px-8">
+          <div className="border-b border-gray-200"></div>
+        </div>
+        
+        <div className="p-8">
+          {/* Search Results Title and Category Filters */}
+          <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Search Results</h1>
           
                       {/* Category Filters */}
             <div className="flex flex-col items-end space-y-2">
@@ -491,6 +497,7 @@ const SearchPage = () => {
             <p className="text-gray-500">Try adjusting your search criteria or category filter.</p>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
