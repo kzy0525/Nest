@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Heart, Edit } from 'lucide-react';
+import { Home, Compass, Heart, Edit, Plus } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -15,7 +15,8 @@ const Sidebar = () => {
     { path: '/', icon: Home, label: 'Home' },
     { path: '/search', icon: Compass, label: 'Search' },
     { path: '/favorites', icon: Heart, label: 'Favorites' },
-    { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' }
+    { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' },
+    { path: '/register-club', icon: Plus, label: 'Register Club' }
   ];
 
   return (

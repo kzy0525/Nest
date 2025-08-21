@@ -409,6 +409,55 @@ app.post('/api/clubs/:id/reviews', (req, res) => {
   );
 });
 
+// Create a new club
+app.post('/api/clubs', (req, res) => {
+  const clubData = req.body;
+  
+  // Validate required fields
+  if (!clubData.name || !clubData.description || !clubData.contact_email || !clubData.member_count) {
+    res.status(400).json({ error: 'Missing required fields' });
+    return;
+  }
+  
+  // Add default values
+  clubData.rating = 0;
+  clubData.review_count = 0;
+  clubData.created_at = new Date().toISOString();
+  
+  // Insert into database
+  const insertClub = db.prepare(`
+    INSERT INTO clubs (
+      name, description, category, contact_email, website, instagram, linkedin,
+      application_deadline, interview_start_date, interview_end_date,
+      member_count, rating, review_count, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  try {
+    insertClub.run(
+      clubData.name,
+      clubData.description,
+      JSON.stringify(clubData.category), // Convert array to JSON string
+      clubData.contact_email,
+      clubData.website || '',
+      clubData.instagram || '',
+      clubData.linkedin || '',
+      clubData.application_deadline || '',
+      clubData.interview_start_date || '',
+      clubData.interview_end_date || '',
+      clubData.member_count,
+      clubData.rating,
+      clubData.review_count,
+      clubData.created_at
+    );
+    
+    res.json({ success: true, message: 'Club created successfully' });
+  } catch (error) {
+    console.error('Error creating club:', error);
+    res.status(500).json({ success: false, message: 'Error creating club' });
+  }
+});
+
 // Serve React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));

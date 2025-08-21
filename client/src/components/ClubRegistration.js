@@ -1,0 +1,520 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Save, X, CheckCircle } from 'lucide-react';
+
+const ClubRegistration = () => {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: [],
+    contact_email: '',
+    website: '',
+    instagram: '',
+    linkedin: '',
+    slogan: '',
+    member_count: '',
+    acceptance_rate: '',
+    isHiring: false,
+    application_deadline: '',
+    interview_start_date: '',
+    interview_end_date: '',
+    positions: [{ title: '', spots: '' }]
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const categories = [
+    'Academic', 'Arts', 'Business', 'Culture', 'Community', 
+    'Sports', 'Health', 'Environment', 'Innovation', 'Science', 
+    'Technology', 'Politics', 'Media', 'Social'
+  ];
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const handleCategoryChange = (category) => {
+    setFormData(prev => ({
+      ...prev,
+      category: prev.category.includes(category)
+        ? prev.category.filter(c => c !== category)
+        : [...prev.category, category]
+    }));
+  };
+
+  const addPosition = () => {
+    setFormData(prev => ({
+      ...prev,
+      positions: [...prev.positions, { title: '', spots: '' }]
+    }));
+  };
+
+  const removePosition = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      positions: prev.positions.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updatePosition = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      positions: prev.positions.map((pos, i) => 
+        i === index ? { ...pos, [field]: value } : pos
+      )
+    }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) newErrors.name = 'Club name is required';
+    if (!formData.description.trim()) newErrors.description = 'Description is required';
+    if (formData.category.length === 0) newErrors.category = 'Please select at least one category';
+    if (!formData.contact_email.trim()) newErrors.contact_email = 'Contact email is required';
+    if (!formData.member_count) newErrors.member_count = 'Member count is required';
+    
+    // Validate positions if hiring is enabled
+    if (formData.isHiring) {
+      formData.positions.forEach((pos, index) => {
+        if (!pos.title.trim()) {
+          newErrors[`position_${index}_title`] = `Position ${index + 1} title is required`;
+        }
+        if (!pos.spots || parseInt(pos.spots) < 1) {
+          newErrors[`position_${index}_spots`] = `Position ${index + 1} must have at least 1 spot`;
+        }
+      });
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch('/api/clubs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          member_count: parseInt(formData.member_count),
+          rating: 0,
+          review_count: 0,
+          // Convert positions to a format the server can handle
+          open_positions: formData.isHiring ? formData.positions.map(p => p.title).join(', ') : '',
+          available_spots: formData.isHiring ? formData.positions.reduce((total, p) => total + parseInt(p.spots || 0), 0) : 0
+        }),
+      });
+      
+      if (response.ok) {
+        setSubmitSuccess(true);
+        setTimeout(() => {
+          navigate('/search');
+        }, 2000);
+      } else {
+        throw new Error('Failed to create club');
+      }
+    } catch (error) {
+      console.error('Error creating club:', error);
+      setErrors({ submit: 'Failed to create club. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/search');
+  };
+
+  if (submitSuccess) {
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-auto bg-gray-50 p-6">
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Club Created Successfully!</h2>
+              <p className="text-gray-600 mb-4">Your club profile has been added to the database.</p>
+              <p className="text-sm text-gray-500">Redirecting to search page...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-auto bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Register Your Club</h1>
+            <p className="text-gray-600">Create a profile for your club to help students discover and join your organization.</p>
+          </div>
+
+          {/* Form */}
+          <div className="bg-white rounded-xl shadow-sm p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Club Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.name ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter club name"
+                  />
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Club Slogan
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.slogan}
+                    onChange={(e) => handleInputChange('slogan', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Innovation through collaboration"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Club Description *
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  rows={4}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.description ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Describe your club's mission, activities, and what makes it unique..."
+                />
+                {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
+              </div>
+
+              {/* Member Count and Acceptance Rate */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Current Member Count *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.member_count}
+                    onChange={(e) => handleInputChange('member_count', e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.member_count ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., 25"
+                    min="1"
+                  />
+                  {errors.member_count && <p className="mt-1 text-sm text-red-600">{errors.member_count}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Acceptance Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.acceptance_rate}
+                    onChange={(e) => handleInputChange('acceptance_rate', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 15"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              </div>
+
+              {/* Categories */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Categories * (Select all that apply)
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {categories.map((category) => (
+                    <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.category.includes(category)}
+                        onChange={() => handleCategoryChange(category)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{category}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
+              </div>
+
+              {/* Contact Information */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contact Email *
+                </label>
+                <input
+                  type="email"
+                  value={formData.contact_email}
+                  onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.contact_email ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="club@university.edu"
+                />
+                {errors.contact_email && <p className="mt-1 text-sm text-red-600">{errors.contact_email}</p>}
+              </div>
+
+              {/* Social Media & Website */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="https://yourclub.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Instagram
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.instagram}
+                    onChange={(e) => handleInputChange('instagram', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="@yourclub"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    LinkedIn
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.linkedin}
+                    onChange={(e) => handleInputChange('linkedin', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="your-club-linkedin"
+                  />
+                </div>
+              </div>
+
+              {/* Currently Hiring Toggle */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Recruitment</h3>
+                    <p className="text-sm text-gray-600">Is your club currently hiring new members?</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('isHiring', !formData.isHiring)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      formData.isHiring ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        formData.isHiring ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Hiring Information - Only show if isHiring is true */}
+              {formData.isHiring && (
+                <>
+                  {/* Open Positions */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Open Positions
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addPosition}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        + Add Position
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {formData.positions.map((position, index) => (
+                        <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Position Title {index + 1}
+                            </label>
+                            <input
+                              type="text"
+                              value={position.title}
+                              onChange={(e) => updatePosition(index, 'title', e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                errors[`position_${index}_title`] ? 'border-red-300' : 'border-gray-300'
+                              }`}
+                              placeholder="e.g., Software Developer"
+                            />
+                            {errors[`position_${index}_title`] && (
+                              <p className="mt-1 text-sm text-red-600">{errors[`position_${index}_title`]}</p>
+                            )}
+                          </div>
+                          
+                          <div className="w-32">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Spots
+                            </label>
+                            <input
+                              type="number"
+                              value={position.spots}
+                              onChange={(e) => updatePosition(index, 'spots', e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                errors[`position_${index}_title`] ? 'border-red-300' : 'border-gray-300'
+                              }`}
+                              placeholder="1"
+                              min="1"
+                            />
+                            {errors[`position_${index}_spots`] && (
+                              <p className="mt-1 text-sm text-red-600">{errors[`position_${index}_spots`]}</p>
+                            )}
+                          </div>
+                          
+                          {formData.positions.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removePosition(index)}
+                              className="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Remove position"
+                            >
+                              <X size={16} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recruitment Dates */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Application Deadline
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.application_deadline}
+                        onChange={(e) => handleInputChange('application_deadline', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Interview Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.interview_start_date}
+                        onChange={(e) => handleInputChange('interview_start_date', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Interview End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.interview_end_date}
+                        onChange={(e) => handleInputChange('interview_end_date', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+
+
+              {/* Error Message */}
+              {errors.submit && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-600">{errors.submit}</p>
+                </div>
+              )}
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                >
+                  <X size={16} />
+                  <span>Cancel</span>
+                </button>
+                
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                >
+                  <Save size={16} />
+                  <span>{isSubmitting ? 'Creating...' : 'Create Club'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ClubRegistration;
