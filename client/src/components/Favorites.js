@@ -52,7 +52,7 @@ const Favorites = () => {
     return backgrounds[index];
   };
 
-  const getClubTags = (club) => {
+    const getClubTags = (club) => {
     let tags = [];
     
     // Handle both array and string formats for category
@@ -76,15 +76,15 @@ const Favorites = () => {
       if (club.name.toLowerCase().includes('engineering') || club.name.toLowerCase().includes('hyperloop') || club.name.toLowerCase().includes('science')) {
         if (!tags.includes('Science')) tags.push('Science');
       }
-      if (club.name.toLowerCase().includes('environmental') || club.name.toLowerCase().includes('sustainability')) {
+      if (club.name.toLowerCase().includes('environmental') || club.name.toLowerCase().includes('environmental')) {
         if (!tags.includes('Environment')) tags.push('Environment');
       }
       if (club.name.toLowerCase().includes('political') || club.name.toLowerCase().includes('politics')) {
         if (!tags.includes('Politics')) tags.push('Politics');
       }
-              if (club.name.toLowerCase().includes('media') || club.name.toLowerCase().includes('publications')) {
-          if (!tags.includes('Media')) tags.push('Media');
-        }
+      if (club.name.toLowerCase().includes('media') || club.name.toLowerCase().includes('publications')) {
+        if (!tags.includes('Media')) tags.push('Media');
+      }
     }
     
     // Ensure we have at least 2 tags
@@ -96,6 +96,15 @@ const Favorites = () => {
     }
     
     return tags.slice(0, 2); // Return only first 2 tags
+  };
+
+  const isClubRecruiting = (club) => {
+    if (!club.application_deadline) {
+      return false;
+    }
+    const deadline = new Date(club.application_deadline);
+    const now = new Date();
+    return deadline > now;
   };
 
   if (favorites.length === 0) {
@@ -167,18 +176,25 @@ const Favorites = () => {
                   <span className="text-sm text-gray-600">{club.member_count || 'N/A'} Members</span>
                 </div>
                 
-                                            {/* Club Name */}
-                            <h3 className="font-semibold text-gray-900 mb-3 h-12 flex items-start">
-                              <span className="line-clamp-2">{club.name}</span>
-                            </h3>
+                                              {/* Club Name - Clickable */}
+                  <h3 
+                    className="font-semibold text-gray-900 mb-3 h-12 flex items-start cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => navigate(`/club/${club.id}`)}
+                  >
+                    <span className="line-clamp-2">{club.name}</span>
+                  </h3>
                 
-                {/* View Details Button */}
-                <button
-                  onClick={() => navigate(`/club/${club.id}`)}
-                  className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-                >
-                  View Details
-                </button>
+                  {/* Recruiting Button - Clickable */}
+                  <button 
+                    className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isClubRecruiting(club) 
+                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                        : 'bg-gray-400 text-white cursor-default'
+                    }`}
+                    onClick={() => navigate(`/club/${club.id}`)}
+                  >
+                    {isClubRecruiting(club) ? 'Recruiting Open' : 'Recruiting Closed'}
+                  </button>
               </div>
             </div>
           ))}

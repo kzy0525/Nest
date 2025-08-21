@@ -177,6 +177,37 @@ const Home = () => {
     return tags.slice(0, 2); // Return only first 2 tags
   };
 
+  const isFavorite = (clubId) => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    return favorites.some(fav => fav.id === clubId);
+  };
+
+  const handleFavorite = (club) => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    
+    if (isFavorite(club.id)) {
+      // Remove from favorites
+      const updatedFavorites = favorites.filter(fav => fav.id !== club.id);
+      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+    } else {
+      // Add to favorites
+      const newFavorite = {
+        id: club.id,
+        name: club.name,
+        description: club.description,
+        category: club.category,
+        rating: club.rating,
+        review_count: club.review_count,
+        member_count: club.member_count
+      };
+      favorites.push(newFavorite);
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+    
+    // Force re-render
+    setClubs([...clubs]);
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
 
@@ -241,8 +272,14 @@ const Home = () => {
                   </div>
                   
                   {/* Heart Icon */}
-                  <button className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all">
-                    <Heart size={16} className="text-white" />
+                  <button
+                    onClick={() => handleFavorite(club)}
+                    className="absolute bottom-2 left-2 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+                  >
+                    <Heart 
+                      size={16} 
+                      className={`${isFavorite(club.id) ? 'text-red-500 fill-current' : 'text-white'}`} 
+                    />
                   </button>
                   
                   {/* Rating */}
@@ -253,10 +290,14 @@ const Home = () => {
 
                 {/* Club Details */}
                 <div className="p-4">
+                  {/* Tags and Member Count */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex space-x-2">
                       {getClubTags(club).map((tag, index) => (
-                        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                        <span 
+                          key={index} 
+                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                        >
                           {tag}
                         </span>
                       ))}
@@ -264,10 +305,15 @@ const Home = () => {
                     <span className="text-sm text-gray-600">{club.member_count || 'N/A'} Members</span>
                   </div>
                   
-                  <h3 className="font-semibold text-gray-900 mb-3 h-12 flex items-start">
+                  {/* Club Name - Clickable */}
+                  <h3 
+                    className="font-semibold text-gray-900 mb-3 h-12 flex items-start cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => navigate(`/club/${club.id}`)}
+                  >
                     <span className="line-clamp-2">{club.name}</span>
                   </h3>
                   
+                  {/* Recruiting Button - Clickable */}
                   <button 
                     className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
                       isClubRecruiting(club) 

@@ -134,10 +134,10 @@ const ClubDetail = () => {
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="relative">
                 {/* Blue Header Section */}
-                <div className="bg-blue-600 h-32 relative">
+                <div className="bg-blue-600 h-32 relative z-0">
                   <button
                     onClick={handleFavorite}
-                    className="absolute top-4 left-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all"
+                    className="absolute top-4 left-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all z-10"
                   >
                     <Heart 
                       size={20} 
@@ -146,16 +146,23 @@ const ClubDetail = () => {
                   </button>
                 </div>
                 
-                {/* Club Avatar and Info */}
-                <div className="px-6 pb-6">
-                  <div className="flex items-center space-x-4 -mt-16">
-                    <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                {/* Club Avatar and Info - Positioned above the blue background */}
+                <div className="px-6 pb-6 relative z-10">
+                  <div className="flex items-start space-x-4 -mt-16">
+                    <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg relative z-20">
                       {club.name.split(' ').map(word => word[0]).join('').substring(0, 4)}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 pt-2">
                       <h2 className="text-2xl font-bold text-gray-900">{club.name}</h2>
                       {club.slogan && (
                         <p className="text-gray-600 mt-1">{club.slogan}</p>
+                      )}
+                      
+                      {/* Apply Button - Only show if club is hiring */}
+                      {club.application_deadline && new Date(club.application_deadline) > new Date() && (
+                        <button className="mt-4 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium">
+                          Apply
+                        </button>
                       )}
                     </div>
                   </div>
@@ -248,36 +255,36 @@ const ClubDetail = () => {
               <div className="space-y-4">
                 {club.instagram && (
                   <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-700">Instagram</span>
-                      <span className="text-gray-900">{club.instagram}</span>
+                    <div className="space-y-2">
+                      <span className="text-sm text-gray-500 block">Instagram</span>
+                      <span className="text-gray-900 block">{club.instagram}</span>
                     </div>
                     <div className="border-t border-gray-200"></div>
                   </>
                 )}
                 {club.website && (
                   <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-700">Website</span>
-                      <span className="text-gray-900">{club.website}</span>
+                    <div className="space-y-2">
+                      <span className="text-sm text-gray-500 block">Website</span>
+                      <span className="text-gray-900 block">{club.website}</span>
                     </div>
                     <div className="border-t border-gray-200"></div>
                   </>
                 )}
                 {club.linkedin && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">LinkedIn</span>
-                    <span className="text-gray-900">{club.linkedin}</span>
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <span className="text-sm text-gray-500 block">LinkedIn</span>
+                      <span className="text-gray-900 block">{club.linkedin}</span>
+                    </div>
+                    <div className="border-t border-gray-200"></div>
+                  </>
                 )}
                 {club.contact_email && (
-                  <>
-                    <div className="border-t border-gray-200"></div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-700">Contact Email</span>
-                      <span className="text-gray-900">{club.contact_email}</span>
-                    </div>
-                  </>
+                  <div className="space-y-2">
+                    <span className="text-sm text-gray-500 block">Contact Email</span>
+                    <span className="text-gray-900 block">{club.contact_email}</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -288,17 +295,15 @@ const ClubDetail = () => {
               <div className="space-y-4">
                 {club.open_positions ? (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Open Positions</h4>
-                    <ul className="space-y-1 text-sm text-gray-600">
+                    <h4 className="text-lg font-bold text-gray-900 mb-3">Open Positions</h4>
+                    <ul className="space-y-2 text-sm text-gray-600">
                       {club.open_positions.split(', ').map((position, index) => (
-                        <li key={index}>• {position}</li>
+                        <li key={index} className="flex justify-between items-center">
+                          <span>• {position}</span>
+                          <span className="text-gray-500">x{Math.ceil(club.available_spots / club.open_positions.split(', ').length)}</span>
+                        </li>
                       ))}
                     </ul>
-                    {club.available_spots > 0 && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Total spots available: <span className="font-medium">{club.available_spots}</span>
-                      </p>
-                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-600">No positions currently open</p>
