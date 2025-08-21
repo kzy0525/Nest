@@ -118,6 +118,19 @@ const Home = () => {
     }
   };
 
+  const isClubRecruiting = (club) => {
+    // Check if club has application deadline and it's in the future
+    if (!club.application_deadline) {
+      return false;
+    }
+    
+    const deadline = new Date(club.application_deadline);
+    const now = new Date();
+    
+    // Club is recruiting if deadline is in the future
+    return deadline > now;
+  };
+
   const getClubTags = (club) => {
     let tags = [];
     
@@ -256,10 +269,14 @@ const Home = () => {
                   </h3>
                   
                   <button 
-                    className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                    className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isClubRecruiting(club) 
+                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                        : 'bg-gray-400 text-white cursor-default'
+                    }`}
                     onClick={() => navigate(`/club/${club.id}`)}
                   >
-                    Recruiting Open
+                    {isClubRecruiting(club) ? 'Recruiting Open' : 'Recruiting Closed'}
                   </button>
                 </div>
               </div>
