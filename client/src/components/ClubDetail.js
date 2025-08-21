@@ -154,7 +154,9 @@ const ClubDetail = () => {
                     </div>
                     <div className="flex-1">
                       <h2 className="text-2xl font-bold text-gray-900">{club.name}</h2>
-                      <p className="text-gray-600 mt-1">Canada's premier undergraduate product development club</p>
+                      {club.slogan && (
+                        <p className="text-gray-600 mt-1">{club.slogan}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -167,15 +169,17 @@ const ClubDetail = () => {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="flex items-center space-x-2">
                   <Users size={20} className="text-gray-500" />
-                  <span className="text-gray-700">Active Members: <span className="font-bold">52</span></span>
+                  <span className="text-gray-700">Active Members: <span className="font-bold">{club.member_count}</span></span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <TrendingUp size={20} className="text-gray-500" />
-                  <span className="text-gray-700">Acceptance Rate: <span className="font-bold">15%</span></span>
-                </div>
+                {club.acceptance_rate > 0 && (
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp size={20} className="text-gray-500" />
+                    <span className="text-gray-700">Acceptance Rate: <span className="font-bold">{club.acceptance_rate}%</span></span>
+                  </div>
+                )}
               </div>
               <p className="text-gray-700 leading-relaxed">
-                The Queen's Technology and Media Association (QTMA) is the flagship product development launchpad and incubation platform for student technology products. Founded in 2014 to bridge the gap between the increasingly convergent worlds of business and technology, QTMA is pillared on technological education, cultivating a strong network of alumni professionals across an array of technological fields, and the deliverance of novel technological products that solve problems facing the modern student.
+                {club.description}
               </p>
             </div>
 
@@ -242,20 +246,39 @@ const ClubDetail = () => {
             {/* Social Media Links */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">Instagram</span>
-                  <span className="text-gray-900">@queenstechmedia</span>
-                </div>
-                <div className="border-t border-gray-200"></div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">Website</span>
-                  <span className="text-gray-900">qtma.ca</span>
-                </div>
-                <div className="border-t border-gray-200"></div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">LinkedIn</span>
-                  <span className="text-gray-900">linkedin.com/company/qtma/</span>
-                </div>
+                {club.instagram && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Instagram</span>
+                      <span className="text-gray-900">{club.instagram}</span>
+                    </div>
+                    <div className="border-t border-gray-200"></div>
+                  </>
+                )}
+                {club.website && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Website</span>
+                      <span className="text-gray-900">{club.website}</span>
+                    </div>
+                    <div className="border-t border-gray-200"></div>
+                  </>
+                )}
+                {club.linkedin && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700">LinkedIn</span>
+                    <span className="text-gray-900">{club.linkedin}</span>
+                  </div>
+                )}
+                {club.contact_email && (
+                  <>
+                    <div className="border-t border-gray-200"></div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Contact Email</span>
+                      <span className="text-gray-900">{club.contact_email}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -263,15 +286,23 @@ const ClubDetail = () => {
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recruitment Information</h3>
               <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Open Positions</h4>
-                  <ul className="space-y-1 text-sm text-gray-600">
-                    <li>• Business Analyst x3</li>
-                    <li>• UI/UX Designer x2</li>
-                    <li>• Software Developer x4</li>
-                    <li>• Project Manager x1</li>
-                  </ul>
-                </div>
+                {club.open_positions ? (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Open Positions</h4>
+                    <ul className="space-y-1 text-sm text-gray-600">
+                      {club.open_positions.split(', ').map((position, index) => (
+                        <li key={index}>• {position}</li>
+                      ))}
+                    </ul>
+                    {club.available_spots > 0 && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        Total spots available: <span className="font-medium">{club.available_spots}</span>
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">No positions currently open</p>
+                )}
               </div>
             </div>
 
@@ -280,26 +311,85 @@ const ClubDetail = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Hiring Timeline</h3>
               <div className="relative">
                 <div className="space-y-4">
-                  {[
-                    { date: 'February 26', event: 'Applications Open' },
-                    { date: 'March 5', event: 'Applications Close' },
-                    { date: 'March 12', event: 'First Round Interviews' },
-                    { date: 'March 15', event: 'Second Round Interviews' },
-                    { date: 'March 18', event: 'Results' }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-start space-x-3">
+                  {club.applications_open && (
+                    <div className="flex items-start space-x-3">
                       <div className="relative">
-                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                        {index < 4 && (
-                          <div className="absolute top-3 left-1.5 w-px h-8 bg-gray-300"></div>
-                        )}
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <div className="absolute top-3 left-1.5 w-px h-8 bg-gray-300"></div>
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{item.date}</div>
-                        <div className="text-sm text-gray-600">{item.event}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {new Date(club.applications_open).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                        </div>
+                        <div className="text-sm text-gray-600">Applications Open</div>
                       </div>
                     </div>
-                  ))}
+                  )}
+                  
+                  {club.application_deadline && (
+                    <div className="flex items-start space-x-3">
+                      <div className="relative">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <div className="absolute top-3 left-1.5 w-px h-8 bg-gray-300"></div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {new Date(club.application_deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                        </div>
+                        <div className="text-sm text-gray-600">Applications Close</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {club.interview_start_date && (
+                    <div className="flex items-start space-x-3">
+                      <div className="relative">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div className="absolute top-3 left-1.5 w-px h-8 bg-gray-300"></div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {new Date(club.interview_start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                        </div>
+                        <div className="text-sm text-gray-600">First Round Interviews</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {club.interview_end_date && (
+                    <div className="flex items-start space-x-3">
+                      <div className="relative">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div className="absolute top-3 left-1.5 w-px h-8 bg-gray-300"></div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">
+                            {new Date(club.interview_end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                          </div>
+                          <div className="text-sm text-gray-600">Second Round Interviews</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {club.results_released && (
+                    <div className="flex items-start space-x-3">
+                      <div className="relative">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {new Date(club.results_released).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                        </div>
+                        <div className="text-sm text-gray-600">Results Released</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!club.applications_open && !club.application_deadline && (
+                    <p className="text-sm text-gray-600">No hiring timeline available</p>
+                  )}
                 </div>
               </div>
             </div>

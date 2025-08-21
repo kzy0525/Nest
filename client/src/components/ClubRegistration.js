@@ -19,9 +19,12 @@ const ClubRegistration = () => {
     member_count: '',
     acceptance_rate: '',
     isHiring: false,
-    application_deadline: '',
-    interview_start_date: '',
-    interview_end_date: '',
+    applications_open: '',
+    applications_close: '',
+    hasInterviews: false,
+    first_round_interviews: '',
+    second_round_interviews: '',
+    results_released: '',
     positions: [{ title: '', spots: '' }]
   });
 
@@ -113,33 +116,48 @@ const ClubRegistration = () => {
     setIsSubmitting(true);
     
     try {
+      const requestBody = {
+        ...formData,
+        member_count: parseInt(formData.member_count),
+        rating: 0,
+        review_count: 0,
+        // Convert positions to a format the server can handle
+        open_positions: formData.isHiring ? formData.positions.map(p => p.title).join(', ') : '',
+        available_spots: formData.isHiring ? formData.positions.reduce((total, p) => total + parseInt(p.spots || 0), 0) : 0,
+        // Map new date fields to server fields
+        application_deadline: formData.applications_close,
+        interview_start_date: formData.hasInterviews ? formData.first_round_interviews : '',
+        interview_end_date: formData.hasInterviews ? formData.second_round_interviews : '',
+        // Send all the new fields directly
+        applications_open: formData.applications_open,
+        results_released: formData.results_released
+      };
+      
+      console.log('Sending club data:', requestBody);
+      
       const response = await fetch('/api/clubs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          member_count: parseInt(formData.member_count),
-          rating: 0,
-          review_count: 0,
-          // Convert positions to a format the server can handle
-          open_positions: formData.isHiring ? formData.positions.map(p => p.title).join(', ') : '',
-          available_spots: formData.isHiring ? formData.positions.reduce((total, p) => total + parseInt(p.spots || 0), 0) : 0
-        }),
+        body: JSON.stringify(requestBody),
       });
       
       if (response.ok) {
+        const result = await response.json();
+        console.log('Club created successfully:', result);
         setSubmitSuccess(true);
         setTimeout(() => {
           navigate('/search');
         }, 2000);
       } else {
-        throw new Error('Failed to create club');
+        const errorData = await response.json();
+        console.error('Server error:', errorData);
+        throw new Error(errorData.error || 'Failed to create club');
       }
     } catch (error) {
       console.error('Error creating club:', error);
-      setErrors({ submit: 'Failed to create club. Please try again.' });
+      setErrors({ submit: error.message || 'Failed to create club. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -439,42 +457,103 @@ const ClubRegistration = () => {
                     </div>
                   </div>
 
-                  {/* Recruitment Dates */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Required Recruitment Dates */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Application Deadline
+                        Application Open Date *
                       </label>
                       <input
                         type="date"
-                        value={formData.application_deadline}
-                        onChange={(e) => handleInputChange('application_deadline', e.target.value)}
+                        value={formData.applications_open}
+                        onChange={(e) => handleInputChange('applications_open', e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Interview Start Date
+                        Application Close Date *
                       </label>
                       <input
                         type="date"
-                        value={formData.interview_start_date}
-                        onChange={(e) => handleInputChange('interview_start_date', e.target.value)}
+                        value={formData.applications_close}
+                        onChange={(e) => handleInputChange('applications_close', e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
                       />
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Interview End Date
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.interview_end_date}
-                        onChange={(e) => handleInputChange('interview_end_date', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
+                  {/* Optional Interview Dates */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-lg font-medium text-gray-900">Interview Process (Optional)</h4>
+                        <p className="text-sm text-gray-600">Add interview dates if your club conducts interviews</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange('hasInterviews', !formData.hasInterviews)}
+                        className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                          formData.hasInterviews 
+                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {formData.hasInterviews ? 'Remove Interviews' : 'Add Interviews'}
+                      </button>
+                    </div>
+
+                    {formData.hasInterviews && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            First Round Interviews
+                          </label>
+                          <input
+                            type="date"
+                            value={formData.first_round_interviews}
+                            onChange={(e) => handleInputChange('first_round_interviews', e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Second Round Interviews
+                          </label>
+                          <input
+                            type="date"
+                            value={formData.second_round_interviews}
+                            onChange={(e) => handleInputChange('second_round_interviews', e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Results Released Date - Independent Section */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="mb-4">
+                      <h4 className="text-lg font-medium text-gray-900">Results</h4>
+                      <p className="text-sm text-gray-600">When will you notify applicants of the final decision?</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Results Released Date
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.results_released}
+                          onChange={(e) => handleInputChange('results_released', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
                     </div>
                   </div>
                 </>

@@ -44,7 +44,13 @@ function createTables() {
       rating REAL DEFAULT 0,
       review_count INTEGER DEFAULT 0,
       member_count INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      slogan TEXT,
+      acceptance_rate INTEGER DEFAULT 0,
+      applications_open TEXT,
+      results_released TEXT,
+      open_positions TEXT,
+      available_spots INTEGER DEFAULT 0
     )
   `;
 
@@ -413,8 +419,16 @@ app.post('/api/clubs/:id/reviews', (req, res) => {
 app.post('/api/clubs', (req, res) => {
   const clubData = req.body;
   
+  console.log('Received club data:', clubData);
+  
   // Validate required fields
   if (!clubData.name || !clubData.description || !clubData.contact_email || !clubData.member_count) {
+    console.log('Missing required fields:', { 
+      name: !!clubData.name, 
+      description: !!clubData.description, 
+      contact_email: !!clubData.contact_email, 
+      member_count: !!clubData.member_count 
+    });
     res.status(400).json({ error: 'Missing required fields' });
     return;
   }
@@ -429,8 +443,9 @@ app.post('/api/clubs', (req, res) => {
     INSERT INTO clubs (
       name, description, category, contact_email, website, instagram, linkedin,
       application_deadline, interview_start_date, interview_end_date,
-      member_count, rating, review_count, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      member_count, rating, review_count, created_at, slogan, acceptance_rate,
+      applications_open, results_released, open_positions, available_spots
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   try {
@@ -448,7 +463,13 @@ app.post('/api/clubs', (req, res) => {
       clubData.member_count,
       clubData.rating,
       clubData.review_count,
-      clubData.created_at
+      clubData.created_at,
+      clubData.slogan || '',
+      clubData.acceptance_rate || 0,
+      clubData.applications_open || '',
+      clubData.results_released || '',
+      clubData.open_positions || '',
+      clubData.available_spots || 0
     );
     
     res.json({ success: true, message: 'Club created successfully' });
