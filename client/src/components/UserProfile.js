@@ -96,64 +96,68 @@ const UserProfile = () => {
         <div className="max-w-4xl mx-auto space-y-6">
           
           {/* Profile Header Card */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="relative">
-              {/* Background Banner */}
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-32"></div>
+          <div className="relative">
+            {/* Gradient Background Card */}
+            <div className="bg-gradient-to-r from-purple-200 to-blue-200 rounded-2xl p-6 relative overflow-hidden">
+              {/* Decorative dots */}
+              <div className="absolute top-4 left-4 text-purple-300 text-2xl">•••</div>
+              <div className="absolute top-8 left-8 text-purple-300 text-lg">•••</div>
+              <div className="absolute top-12 left-12 text-purple-300 text-sm">•••</div>
               
-              {/* Profile Info Section */}
-              <div className="px-6 pb-6">
-                <div className="flex items-start space-x-6 -mt-16">
-                  {/* Avatar */}
-                  <div className="relative">
-                    <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center text-4xl font-bold text-gray-600 border-4 border-white">
-                      {userProfile.avatar ? (
-                        <img src={userProfile.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        userProfile.name.split(' ').map(word => word[0]).join('')
-                      )}
-                    </div>
-                    <button className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors">
-                      <Camera size={16} />
-                    </button>
+              <div className="flex items-start space-x-6 relative z-10">
+                {/* Profile Picture - overlapping the card edges */}
+                <div className="relative -ml-4 -mt-4">
+                  <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center text-4xl font-bold text-gray-600 border-4 border-white shadow-lg">
+                    {userProfile.avatar ? (
+                      <img src={userProfile.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      userProfile.name.split(' ').map(word => word[0]).join('')
+                    )}
                   </div>
-                  
-                  {/* User Details */}
-                  <div className="flex-1 pt-4">
-                    <div className="flex items-start justify-between">
+                </div>
+                
+                {/* User Information */}
+                <div className="flex-1 pt-2">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-4">
+                      {/* Name and Pronouns */}
                       <div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-2">{userProfile.name}</h2>
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2 text-gray-600">
-                            <GraduationCap size={16} />
-                            <span>{userProfile.program}</span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-gray-600">
-                            <Calendar size={16} />
-                            <span>{userProfile.year}</span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-gray-600">
-                            <MapPin size={16} />
-                            <span>{userProfile.faculty}</span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-gray-600">
-                            <User size={16} />
-                            <span>{userProfile.pronouns}</span>
-                          </div>
-                        </div>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-1">{userProfile.name}</h2>
+                        <span className="text-lg text-gray-700">{userProfile.pronouns}</span>
                       </div>
                       
-                      <button
-                        onClick={handleEdit}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                      >
-                        <Edit size={16} />
-                        <span>Edit Profile</span>
-                      </button>
+                      {/* Academic Details with Icons */}
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-3 text-gray-800">
+                          <Calendar size={18} className="text-gray-700" />
+                          <span className="text-lg">{userProfile.year}</span>
+                        </div>
+                        <div className="flex items-center space-x-3 text-gray-800">
+                          <GraduationCap size={18} className="text-gray-700" />
+                          <span className="text-lg">{userProfile.program}</span>
+                        </div>
+                        <div className="flex items-center space-x-3 text-gray-800">
+                          <MapPin size={18} className="text-gray-700" />
+                          <span className="text-lg">{userProfile.faculty}</span>
+                        </div>
+                      </div>
                     </div>
+                    
+                    {/* Edit Button */}
+                    <button
+                      onClick={handleEdit}
+                      className="p-3 text-gray-800 hover:text-gray-600 transition-colors"
+                      title="Edit Profile"
+                    >
+                      <Edit size={20} />
+                    </button>
                   </div>
                 </div>
               </div>
+              
+              {/* Additional decorative dots */}
+              <div className="absolute bottom-6 right-20 text-purple-300 text-lg">•••</div>
+              <div className="absolute bottom-8 right-16 text-purple-300 text-sm">•••</div>
             </div>
           </div>
 
