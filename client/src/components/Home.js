@@ -67,39 +67,39 @@ const Home = () => {
     return backgrounds[index];
   };
 
-  // Mock application data
-  const applications = [
-    {
-      id: 1,
-      clubName: "Queen's Tech and Media Association",
-      status: "pending",
-      date: "2024-01-15",
-      stage: "Application Review"
-    },
-    {
-      id: 2,
-      clubName: "Queen's Investment Counsel",
-      status: "interview",
-      date: "2024-01-20",
-      stage: "Interview Scheduled"
-    },
-    {
-      id: 3,
-      clubName: "Smith Engineering Hyperloop",
-      status: "accepted",
-      date: "2024-01-10",
-      stage: "Application Accepted"
-    }
-  ];
+  // Get real application data from localStorage
+  const [applications, setApplications] = useState([]);
+
+  useEffect(() => {
+    // Load applications from localStorage
+    const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+    setApplications(savedApplications);
+    
+    // Listen for new applications
+    const handleNewApplication = (event) => {
+      const { application } = event.detail;
+      setApplications(prev => [...prev, application]);
+    };
+
+    window.addEventListener('clubApplicationAdded', handleNewApplication);
+
+    return () => {
+      window.removeEventListener('clubApplicationAdded', handleNewApplication);
+    };
+  }, []);
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'pending':
-        return <Clock size={16} className="text-yellow-500" />;
-      case 'interview':
-        return <AlertCircle size={16} className="text-blue-500" />;
-      case 'accepted':
+      case 'Submitted':
+        return <Clock size={16} className="text-blue-500" />;
+      case 'Interview':
+        return <AlertCircle size={16} className="text-purple-500" />;
+      case 'Accepted':
         return <CheckCircle size={16} className="text-green-500" />;
+      case 'Rejected':
+        return <AlertCircle size={16} className="text-red-500" />;
+      case 'Incomplete':
+        return <Clock size={16} className="text-yellow-500" />;
       default:
         return <Clock size={16} className="text-gray-500" />;
     }
@@ -107,14 +107,35 @@ const Home = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
-        return 'text-yellow-600 bg-yellow-50';
-      case 'interview':
+      case 'Submitted':
         return 'text-blue-600 bg-blue-50';
-      case 'accepted':
+      case 'Interview':
+        return 'text-purple-600 bg-purple-50';
+      case 'Accepted':
         return 'text-green-600 bg-green-50';
+      case 'Rejected':
+        return 'text-red-600 bg-red-50';
+      case 'Incomplete':
+        return 'text-yellow-600 bg-yellow-50';
       default:
         return 'text-gray-600 bg-gray-50';
+    }
+  };
+
+  const getStatusDescription = (status) => {
+    switch (status) {
+      case 'Submitted':
+        return 'Application under review';
+      case 'Interview':
+        return 'Interview scheduled';
+      case 'Accepted':
+        return 'Welcome to the club!';
+      case 'Rejected':
+        return 'Application not selected';
+      case 'Incomplete':
+        return 'Draft saved - complete to submit';
+      default:
+        return 'Status unknown';
     }
   };
 
@@ -346,23 +367,31 @@ const Home = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="p-6">
               <div className="space-y-4">
-                {applications.map((app) => (
-                  <div key={app.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      {getStatusIcon(app.status)}
-                      <div>
-                        <h3 className="font-medium text-gray-900">{app.clubName}</h3>
-                        <p className="text-sm text-gray-600">{app.stage}</p>
+                {applications.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Clock size={48} className="text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg mb-2">No applications yet</p>
+                    <p className="text-gray-400 text-sm">Click "Apply" on any club page to get started</p>
+                  </div>
+                ) : (
+                  applications.slice(0, 3).map((app) => (
+                    <div key={app.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center space-x-4">
+                        {getStatusIcon(app.status)}
+                        <div>
+                          <h3 className="font-medium text-gray-900">{app.clubName}</h3>
+                          <p className="text-sm text-gray-600">{getStatusDescription(app.status)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
+                          {app.status}
+                        </span>
+                        <span className="text-sm text-gray-500">{app.dateSubmitted}</span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
-                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                      </span>
-                      <span className="text-sm text-gray-500">{app.date}</span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
