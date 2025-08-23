@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Camera, MapPin, GraduationCap, Calendar, User, Target, Users, Clock, CheckCircle } from 'lucide-react';
+import { Edit, Camera, MapPin, GraduationCap, Calendar, User, Target, Users, Clock, CheckCircle, Plus, Search, X, MoreVertical } from 'lucide-react';
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -47,6 +47,16 @@ const UserProfile = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ ...userProfile });
+  const [showAddClubModal, setShowAddClubModal] = useState(false);
+  const [availableClubs, setAvailableClubs] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClub, setSelectedClub] = useState(null);
+  const [newClubForm, setNewClubForm] = useState({
+    role: '',
+    joinDate: ''
+  });
+  const [editingClub, setEditingClub] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(null);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -69,6 +79,110 @@ const UserProfile = () => {
       [field]: value
     }));
   };
+
+  // Fetch available clubs from the database
+  useEffect(() => {
+    const fetchClubs = async () => {
+      try {
+        const response = await fetch('http://localhost:5001/api/clubs');
+        if (response.ok) {
+          const clubs = await response.json();
+          setAvailableClubs(clubs);
+        }
+      } catch (error) {
+        console.error('Error fetching clubs:', error);
+      }
+    };
+
+    if (showAddClubModal) {
+      fetchClubs();
+    }
+  }, [showAddClubModal]);
+
+  const handleAddClub = () => {
+    setShowAddClubModal(true);
+    setSearchQuery('');
+    setSelectedClub(null);
+    setNewClubForm({ role: '', joinDate: '' });
+  };
+
+  const handleClubSelect = (club) => {
+    setSelectedClub(club);
+    setSearchQuery(club.name);
+  };
+
+  const handleSubmitClub = () => {
+    if (selectedClub && newClubForm.role && newClubForm.joinDate) {
+      const newClub = {
+        id: Date.now(), // Generate unique ID
+        name: selectedClub.name,
+        role: newClubForm.role,
+        joinDate: newClubForm.joinDate
+      };
+      
+      setUserProfile(prev => ({
+        ...prev,
+        currentClubs: [...prev.currentClubs, newClub]
+      }));
+      
+      setShowAddClubModal(false);
+      setSearchQuery('');
+      setSelectedClub(null);
+      setNewClubForm({ role: '', joinDate: '' });
+    }
+  };
+
+  const handleRemoveClub = (clubId) => {
+    setUserProfile(prev => ({
+      ...prev,
+      currentClubs: prev.currentClubs.filter(club => club.id !== clubId)
+    }));
+    setShowDropdown(null);
+  };
+
+  const handleEditClub = (club) => {
+    setEditingClub(club);
+    setNewClubForm({ role: club.role, joinDate: club.joinDate });
+    setShowDropdown(null);
+  };
+
+  const handleUpdateClub = () => {
+    if (editingClub && newClubForm.role && newClubForm.joinDate) {
+      setUserProfile(prev => ({
+        ...prev,
+        currentClubs: prev.currentClubs.map(club => 
+          club.id === editingClub.id 
+            ? { ...club, role: newClubForm.role, joinDate: newClubForm.joinDate }
+            : club
+        )
+      }));
+      setEditingClub(null);
+      setNewClubForm({ role: '', joinDate: '' });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingClub(null);
+    setNewClubForm({ role: '', joinDate: '' });
+  };
+
+  const toggleDropdown = (clubId) => {
+    setShowDropdown(showDropdown === clubId ? null : clubId);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long' 
+    });
+  };
+
+  const filteredClubs = availableClubs.filter(club => 
+    club.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    !userProfile.currentClubs.some(userClub => userClub.name === club.name)
+  );
 
 
 
@@ -218,9 +332,18 @@ const UserProfile = () => {
 
           {/* Current Clubs Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center space-x-2 mb-6">
-              <Users size={20} className="text-green-600" />
-              <h3 className="text-xl font-semibold text-gray-900">Current Clubs</h3>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <Users size={20} className="text-green-600" />
+                <h3 className="text-xl font-semibold text-gray-900">Current Clubs</h3>
+              </div>
+              <button
+                onClick={handleAddClub}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus size={16} />
+                <span>Add Club</span>
+              </button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -228,19 +351,43 @@ const UserProfile = () => {
                 <div key={club.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 mb-1">{club.name}</h4>
+                      <h4 
+                        className="font-semibold text-gray-900 mb-1 cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => navigate(`/club/${club.id}`)}
+                      >
+                        {club.name}
+                      </h4>
                       <p className="text-sm text-blue-600 mb-2">{club.role}</p>
                       <div className="flex items-center space-x-2 text-sm text-gray-500">
                         <CheckCircle size={14} className="text-green-500" />
-                        <span>Member since {club.joinDate}</span>
+                        <span>Member since {formatDate(club.joinDate)}</span>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => navigate(`/club/${club.id}`)}
-                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                    >
-                      View Club
-                    </button>
+                    <div className="relative">
+                      <button 
+                        onClick={() => toggleDropdown(club.id)}
+                        className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      
+                      {showDropdown === club.id && (
+                        <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
+                          <button
+                            onClick={() => handleEditClub(club)}
+                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleRemoveClub(club.id)}
+                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -280,6 +427,163 @@ const UserProfile = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Club Modal */}
+      {showAddClubModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Add Club</h3>
+              <button
+                onClick={() => setShowAddClubModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search for a club..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Club Search Results */}
+            {!selectedClub && searchQuery && (
+              <div className="mb-4 max-h-40 overflow-y-auto">
+                {filteredClubs.map((club) => (
+                  <div
+                    key={club.id}
+                    onClick={() => handleClubSelect(club)}
+                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer mb-2"
+                  >
+                    <h4 className="font-medium text-gray-900">{club.name}</h4>
+                    <p className="text-sm text-gray-600">{club.description?.substring(0, 60)}...</p>
+                  </div>
+                ))}
+                {filteredClubs.length === 0 && (
+                  <p className="text-gray-500 text-center py-2">No clubs found</p>
+                )}
+              </div>
+            )}
+
+            {/* Club Details Form */}
+            {selectedClub && (
+              <div className="space-y-4">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-medium text-blue-900">{selectedClub.name}</h4>
+                  <p className="text-sm text-blue-700">{selectedClub.description?.substring(0, 80)}...</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Your Role</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Member, Executive, Developer"
+                    value={newClubForm.role}
+                    onChange={(e) => setNewClubForm(prev => ({ ...prev, role: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
+                  <input
+                    type="date"
+                    value={newClubForm.joinDate}
+                    onChange={(e) => setNewClubForm(prev => ({ ...prev, joinDate: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="flex space-x-3 pt-2">
+                  <button
+                    onClick={handleSubmitClub}
+                    disabled={!newClubForm.role || !newClubForm.joinDate}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    Add Club
+                  </button>
+                  <button
+                    onClick={() => setShowAddClubModal(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Club Modal */}
+      {editingClub && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Edit Club</h3>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-medium text-blue-900">{editingClub.name}</h4>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Your Role</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Member, Executive, Developer"
+                  value={newClubForm.role}
+                  onChange={(e) => setNewClubForm(prev => ({ ...prev, role: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
+                <input
+                  type="date"
+                  value={newClubForm.joinDate}
+                  onChange={(e) => setNewClubForm(prev => ({ ...prev, joinDate: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={handleUpdateClub}
+                  disabled={!newClubForm.role || !newClubForm.joinDate}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Update Club
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
