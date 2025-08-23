@@ -102,7 +102,12 @@ function insertSampleData() {
       interview_end_date: "2024-02-25",
       rating: 4.9,
       review_count: 15,
-      member_count: 45
+      member_count: 45,
+      application_questions: JSON.stringify([
+        { id: 1, text: "What engineering projects have you worked on in the past?", type: "long" },
+        { id: 2, text: "Why are you interested in joining SEH?", type: "short" },
+        { id: 3, text: "What skills can you contribute to the team?", type: "long" }
+      ])
     },
     {
       name: "Queen's Startup Consulting (QSC)",
@@ -251,8 +256,8 @@ function insertSampleData() {
       name, description, category, meeting_time, meeting_location, 
       contact_email, contact_phone, website, instagram, linkedin, 
       twitter, facebook, application_deadline, interview_start_date, 
-      interview_end_date, rating, review_count, member_count
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      interview_end_date, rating, review_count, member_count, application_questions
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   sampleClubs.forEach(club => {
@@ -264,7 +269,8 @@ function insertSampleData() {
       club.meeting_location, club.contact_email, club.contact_phone,
       club.website, club.instagram, club.linkedin, club.twitter,
       club.facebook, club.application_deadline, club.interview_start_date,
-      club.interview_end_date, club.rating, club.review_count, club.member_count
+      club.interview_end_date, club.rating, club.review_count, club.member_count,
+      club.application_questions || null
     ]);
   });
 
@@ -450,7 +456,7 @@ app.post('/api/clubs', (req, res) => {
   `);
   
   try {
-    insertClub.run(
+    const result = insertClub.run(
       clubData.name,
       clubData.description,
       JSON.stringify(clubData.category), // Convert array to JSON string
@@ -474,7 +480,11 @@ app.post('/api/clubs', (req, res) => {
       clubData.application_questions || ''
     );
     
-    res.json({ success: true, message: 'Club created successfully' });
+    res.json({ 
+      success: true, 
+      message: 'Club created successfully',
+      clubId: result.lastID 
+    });
   } catch (error) {
     console.error('Error creating club:', error);
     res.status(500).json({ success: false, message: 'Error creating club' });

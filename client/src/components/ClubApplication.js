@@ -11,10 +11,10 @@ const ClubApplication = () => {
   const [loading, setLoading] = useState(true);
   const [applicationForm, setApplicationForm] = useState({
     resume: null,
-    coverLetter: '',
     answers: {}
   });
   const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchClubDetails();
@@ -95,14 +95,55 @@ const ClubApplication = () => {
     }));
   };
 
-  const handleSubmit = async () => {
+  const saveDraft = async () => {
     if (!applicationForm.resume) {
       alert('Please upload your resume.');
       return;
     }
 
-    if (applicationForm.coverLetter.trim() === '') {
-      alert('Please write a cover letter.');
+    setSaving(true);
+
+    try {
+      // Simulate saving
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Add to applications list as incomplete
+      const newApplication = {
+        id: Date.now(),
+        clubId: club.id,
+        clubName: club.name,
+        clubIcon: club.name.split(' ').map(word => word[0]).join('').substring(0, 4),
+        clubIconBg: "bg-blue-600",
+        status: "Incomplete",
+        statusColor: "bg-yellow-100 text-yellow-600",
+        dateSubmitted: new Date().toLocaleDateString('en-US', { 
+          month: 'long', 
+          day: 'numeric', 
+          year: 'numeric' 
+        })
+      };
+
+      const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+      const updatedApplications = [...existingApplications, newApplication];
+      localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
+
+      // Trigger custom event for HiringDashboard
+      window.dispatchEvent(new CustomEvent('clubApplicationAdded', { 
+        detail: { application: newApplication } 
+      }));
+
+      alert('Draft saved successfully! You can complete and submit it later from the Hiring Dashboard.');
+      navigate('/hiring');
+    } catch (error) {
+      alert('Error saving draft. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!applicationForm.resume) {
+      alert('Please upload your resume.');
       return;
     }
 
@@ -261,16 +302,7 @@ const ClubApplication = () => {
             </div>
           </div>
 
-          {/* Cover Letter */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Cover Letter</h3>
-            <textarea
-              value={applicationForm.coverLetter}
-              onChange={(e) => setApplicationForm(prev => ({ ...prev, coverLetter: e.target.value }))}
-              placeholder="Tell us why you want to join this club and what you can contribute..."
-              className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-            />
-          </div>
+
 
           {/* Application Questions */}
           {questions.length > 0 && (
@@ -304,25 +336,46 @@ const ClubApplication = () => {
             </div>
           )}
 
-          {/* Submit Button */}
+          {/* Action Buttons */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                <>
-                  <Send size={20} />
-                  <span>Submit Application</span>
-                </>
-              )}
-            </button>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Save Draft Button */}
+              <button
+                onClick={saveDraft}
+                disabled={saving}
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Save Draft</span>
+                  </>
+                )}
+              </button>
+
+              {/* Submit Button */}
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={20} />
+                    <span>Submit Application</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

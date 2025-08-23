@@ -184,9 +184,12 @@ const ClubDetail = () => {
               {club.application_deadline && new Date(club.application_deadline) > new Date() && (
                 <button 
                   onClick={() => {
-                    // Check if already applied
+                    // Check if already applied - convert both IDs to strings for comparison
                     const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
-                    const alreadyApplied = existingApplications.some(app => app.clubId === club.id);
+                    
+                    const alreadyApplied = existingApplications.some(app => 
+                      String(app.clubId) === String(club.id)
+                    );
                     
                     if (alreadyApplied) {
                       alert('You have already applied to this club!');

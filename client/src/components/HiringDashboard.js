@@ -84,10 +84,17 @@ const HiringDashboard = () => {
     const applicationDate = new Date(app.dateSubmitted);
     const daysDiff = Math.floor((today - applicationDate) / (1000 * 60 * 60 * 24));
     
+    let eventText = "Application Submitted";
+    if (app.status === "Interview") {
+      eventText = "Interview";
+    } else if (app.status === "Incomplete") {
+      eventText = "Draft Saved";
+    }
+    
     return {
       day: today.getDate() + daysDiff + 1,
       club: app.clubIcon,
-      event: app.status === "Interview" ? "Interview" : "Application Submitted",
+      event: eventText,
       clubIcon: app.clubIcon,
       clubIconBg: app.clubIconBg
     };
@@ -117,10 +124,10 @@ const HiringDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-6">
         {/* My Applications Table - Full Width */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6" style={{ position: 'relative', zIndex: 1 }}>
           <h2 className="text-xl font-bold text-gray-900 mb-6">My Applications</h2>
           
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" style={{ position: 'relative', zIndex: 1 }}>
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
@@ -157,18 +164,18 @@ const HiringDashboard = () => {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-gray-600">{app.dateSubmitted}</td>
-                      <td className="py-4 px-4">
-                        <div className="relative">
-                          <button
-                            onClick={() => handleActionClick(app)}
-                            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          
-                          {/* Dropdown for all applications */}
-                                                      {selectedApplication === app.id && (
-                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                              <td className="py-4 px-4">
+                          <div className="relative" style={{ zIndex: 1000 }}>
+                            <button
+                              onClick={() => handleActionClick(app)}
+                              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            
+                            {/* Dropdown for all applications */}
+                            {selectedApplication === app.id && (
+                              <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200" style={{ zIndex: 9999 }}>
                               <div className="py-1">
                                 <button 
                                   onClick={() => handleViewClub(app)}
