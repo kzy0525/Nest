@@ -8,7 +8,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    studentId: '',
+    school: '',
     major: ''
   });
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -26,7 +26,7 @@ const Register = () => {
     
     // Basic validation
     if (!formData.firstName || !formData.lastName || !formData.email || 
-        !formData.password || !formData.confirmPassword || !formData.studentId || !formData.major) {
+        !formData.password || !formData.confirmPassword || !formData.school || !formData.major) {
       alert('Please fill in all fields');
       return;
     }
@@ -50,190 +50,185 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      {/* Background grid pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-      
-      {/* Register text in top-left */}
-      <div className="absolute top-8 left-8 text-white text-2xl font-semibold">
-        Register
+    <div className="min-h-screen flex">
+      {/* Left Side - Nest Branding */}
+      <div className="flex-1 bg-gray-100 flex items-center justify-center relative overflow-hidden">
+        {/* Abstract Grid Pattern */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `
+              linear-gradient(90deg, #3D5CF5 1px, transparent 1px),
+              linear-gradient(0deg, #3D5CF5 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px'
+          }}></div>
+        </div>
+        
+        {/* Nest Branding */}
+        <div className="relative text-center z-10">
+          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-[#3D5CF5] to-[#3DB8F5] bg-clip-text text-transparent">
+            Nest
+          </h1>
+          <p className="text-xl text-gray-700">
+            All your campus opportunities, in one place
+          </p>
+        </div>
       </div>
 
-      {/* Main container */}
-      <div className="relative w-full max-w-6xl h-[700px] bg-white rounded-3xl shadow-2xl overflow-hidden">
-        {/* Left Panel - Branding */}
-        <div className="absolute left-0 top-0 w-1/2 h-full bg-gradient-to-br from-blue-50 to-blue-100 rounded-l-3xl">
-          {/* Abstract pattern overlay */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1)_0%,transparent_50%),radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.1)_0%,transparent_50%)]"></div>
+      {/* Right Side - Registration Form */}
+      <div className="w-2/5 bg-gradient-to-b from-[#3D5CF5] to-[#3DB8F5] opacity-60 flex items-center justify-center p-8">
+        <div className="w-full max-w-sm">
+          <h2 className="text-4xl font-bold text-white mb-8 text-center">Create Account</h2>
           
-          {/* Content */}
-          <div className="relative z-10 h-full flex flex-col justify-center items-center px-12">
-            <h1 className="text-6xl font-bold bg-gradient-to-b from-blue-600 to-blue-800 bg-clip-text text-transparent mb-4">
-              Nest
-            </h1>
-            <p className="text-gray-700 text-lg text-center leading-relaxed">
-              Join thousands of students discovering amazing opportunities
-            </p>
-          </div>
-        </div>
-
-        {/* Right Panel - Registration Form */}
-        <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-b from-purple-400 to-blue-400 rounded-r-3xl overflow-y-auto">
-          <div className="h-full flex flex-col justify-center px-12 py-8">
-            <h2 className="text-3xl font-semibold text-white mb-8">Create Account</h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    First Name:
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white rounded-xl border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none transition-all duration-200"
-                    placeholder="First name"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    Last Name:
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white rounded-xl border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none transition-all duration-200"
-                    placeholder="Last name"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Email Field */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-white text-sm font-medium mb-2">
-                  Email:
+                  First Name:
                 </label>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-white rounded-xl border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none transition-all duration-200"
-                  placeholder="Enter your email"
+                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                  placeholder="First name"
                   required
                 />
               </div>
-
-              {/* Student Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    Student ID:
-                  </label>
-                  <input
-                    type="text"
-                    name="studentId"
-                    value={formData.studentId}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white rounded-xl border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none transition-all duration-200"
-                    placeholder="Student ID"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    Major:
-                  </label>
-                  <input
-                    type="text"
-                    name="major"
-                    value={formData.major}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white rounded-xl border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none transition-all duration-200"
-                    placeholder="Your major"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Password Fields */}
               <div>
                 <label className="block text-white text-sm font-medium mb-2">
-                  Password:
+                  Last Name:
                 </label>
                 <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-white rounded-xl border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none transition-all duration-200"
-                  placeholder="Create a password"
+                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                  placeholder="Last name"
                   required
                 />
               </div>
+            </div>
 
+            {/* Email Field */}
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">
+                Email:
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+
+            {/* School and Major */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-white text-sm font-medium mb-2">
-                  Confirm Password:
+                  School:
                 </label>
                 <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
+                  type="text"
+                  name="school"
+                  value={formData.school}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-white rounded-xl border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none transition-all duration-200"
-                  placeholder="Confirm your password"
+                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                  placeholder="Your school"
                   required
                 />
               </div>
-
-              {/* Terms Agreement */}
-              <div className="flex items-center space-x-2">
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">
+                  Major:
+                </label>
                 <input
-                  type="checkbox"
-                  checked={agreeToTerms}
-                  onChange={(e) => setAgreeToTerms(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-white border-0 rounded focus:ring-2 focus:ring-blue-300"
+                  type="text"
+                  name="major"
+                  value={formData.major}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                  placeholder="Your major"
                   required
                 />
-                <span className="text-white text-sm">
-                  I agree to the{' '}
-                  <button className="text-blue-200 hover:text-white underline bg-transparent border-0 cursor-pointer">
-                    Terms of Service
-                  </button>{' '}
-                  and{' '}
-                  <button className="text-blue-200 hover:text-white underline bg-transparent border-0 cursor-pointer">
-                    Privacy Policy
-                  </button>
-                </span>
               </div>
+            </div>
 
-              {/* Register Button */}
-              <button
-                type="submit"
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              >
-                Create Account
-              </button>
+            {/* Password Fields */}
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">
+                Password:
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                placeholder="Create a password"
+                required
+              />
+            </div>
 
-              {/* Login Link */}
-              <div className="text-center">
-                <span className="text-white text-sm">
-                  Already have an account?{' '}
-                  <a href="/login" className="text-blue-200 hover:text-white underline font-medium">
-                    Login
-                  </a>
-                </span>
-              </div>
-            </form>
-          </div>
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">
+                Confirm Password:
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                placeholder="Confirm your password"
+                required
+              />
+            </div>
+
+            {/* Terms Agreement */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={agreeToTerms}
+                onChange={(e) => setAgreeToTerms(e.target.checked)}
+                className="w-4 h-4 text-[#3D5CF5] bg-white border-0 rounded focus:ring-2 focus:ring-[#3D5CF5]"
+                required
+              />
+              <span className="text-white text-sm">
+                I agree to the{' '}
+                <button className="text-blue-200 hover:text-white underline bg-transparent border-0 cursor-pointer">
+                  Terms of Service
+                </button>{' '}
+                and{' '}
+                <button className="text-blue-200 hover:text-white underline bg-transparent border-0 cursor-pointer">
+                  Privacy Policy
+                </button>
+              </span>
+            </div>
+
+            {/* Register Button */}
+            <button
+              type="submit"
+              className="w-full bg-white text-[#3D5CF5] py-3 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors duration-200"
+            >
+              Create Account
+            </button>
+
+            {/* Login Link */}
+            <div className="text-center">
+              <span className="text-white text-sm">Already have an account? </span>
+              <a href="/login" className="text-white text-sm hover:underline font-medium">
+                Login
+              </a>
+            </div>
+          </form>
         </div>
       </div>
     </div>
