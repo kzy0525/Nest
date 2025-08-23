@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, Star, Instagram, Globe, Linkedin, Users, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
 const ClubDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [club, setClub] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -183,10 +184,17 @@ const ClubDetail = () => {
               {club.application_deadline && new Date(club.application_deadline) > new Date() && (
                 <button 
                   onClick={() => {
-                    if (window.addClubApplication) {
-                      window.addClubApplication(club);
-                      alert('Application submitted! Check your Hiring Dashboard to track your application.');
+                    // Check if already applied
+                    const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+                    const alreadyApplied = existingApplications.some(app => app.clubId === club.id);
+                    
+                    if (alreadyApplied) {
+                      alert('You have already applied to this club!');
+                      return;
                     }
+
+                    // Navigate to application page
+                    navigate(`/club/${club.id}/apply`);
                   }}
                   className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
                 >

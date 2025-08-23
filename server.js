@@ -50,7 +50,8 @@ function createTables() {
       applications_open TEXT,
       results_released TEXT,
       open_positions TEXT,
-      available_spots INTEGER DEFAULT 0
+      available_spots INTEGER DEFAULT 0,
+      application_questions TEXT
     )
   `;
 
@@ -444,8 +445,8 @@ app.post('/api/clubs', (req, res) => {
       name, description, category, contact_email, website, instagram, linkedin,
       application_deadline, interview_start_date, interview_end_date,
       member_count, rating, review_count, created_at, slogan, acceptance_rate,
-      applications_open, results_released, open_positions, available_spots
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      applications_open, results_released, open_positions, available_spots, application_questions
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   try {
@@ -469,7 +470,8 @@ app.post('/api/clubs', (req, res) => {
       clubData.applications_open || '',
       clubData.results_released || '',
       clubData.open_positions || '',
-      clubData.available_spots || 0
+      clubData.available_spots || 0,
+      clubData.application_questions || ''
     );
     
     res.json({ success: true, message: 'Club created successfully' });

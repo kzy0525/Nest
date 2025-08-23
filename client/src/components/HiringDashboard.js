@@ -11,6 +11,18 @@ const HiringDashboard = () => {
   useEffect(() => {
     const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
     setApplications(savedApplications);
+
+    // Listen for new applications added from other components
+    const handleNewApplication = (event) => {
+      const { application } = event.detail;
+      setApplications(prev => [...prev, application]);
+    };
+
+    window.addEventListener('clubApplicationAdded', handleNewApplication);
+
+    return () => {
+      window.removeEventListener('clubApplicationAdded', handleNewApplication);
+    };
   }, []);
 
   // Function to add a new application
@@ -35,13 +47,7 @@ const HiringDashboard = () => {
     localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
   };
 
-  // Make addApplication available globally so it can be called from ClubDetail
-  useEffect(() => {
-    window.addClubApplication = addApplication;
-    return () => {
-      delete window.addClubApplication;
-    };
-  }, [applications]);
+
 
   // Function to remove an application
   const removeApplication = (applicationId) => {
@@ -161,8 +167,8 @@ const HiringDashboard = () => {
                           </button>
                           
                           {/* Dropdown for all applications */}
-                          {selectedApplication === app.id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                                      {selectedApplication === app.id && (
+                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                               <div className="py-1">
                                 <button 
                                   onClick={() => handleViewClub(app)}

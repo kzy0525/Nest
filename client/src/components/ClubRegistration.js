@@ -25,7 +25,9 @@ const ClubRegistration = () => {
     first_round_interviews: '',
     second_round_interviews: '',
     results_released: '',
-    positions: [{ title: '', spots: '' }]
+    positions: [{ title: '', spots: '' }],
+    hasApplicationQuestions: false,
+    applicationQuestions: []
   });
 
   const [errors, setErrors] = useState({});
@@ -83,6 +85,33 @@ const ClubRegistration = () => {
     }));
   };
 
+  const addApplicationQuestion = () => {
+    setFormData(prev => ({
+      ...prev,
+      applicationQuestions: [...prev.applicationQuestions, { 
+        id: Date.now(), 
+        text: '', 
+        type: 'short' 
+      }]
+    }));
+  };
+
+  const removeApplicationQuestion = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      applicationQuestions: prev.applicationQuestions.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateApplicationQuestion = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      applicationQuestions: prev.applicationQuestions.map((q, i) => 
+        i === index ? { ...q, [field]: value } : q
+      )
+    }));
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -130,7 +159,9 @@ const ClubRegistration = () => {
         interview_end_date: formData.hasInterviews ? formData.second_round_interviews : '',
         // Send all the new fields directly
         applications_open: formData.applications_open,
-        results_released: formData.results_released
+        results_released: formData.results_released,
+        // Include application questions if they exist
+        application_questions: formData.hasApplicationQuestions ? JSON.stringify(formData.applicationQuestions) : ''
       };
       
       console.log('Sending club data:', requestBody);
@@ -555,6 +586,96 @@ const ClubRegistration = () => {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  {/* Application Questions Section */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-lg font-medium text-gray-900">Application Questions</h4>
+                        <p className="text-sm text-gray-600">Add custom questions for applicants to answer</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange('hasApplicationQuestions', !formData.hasApplicationQuestions)}
+                        className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                          formData.hasApplicationQuestions 
+                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {formData.hasApplicationQuestions ? 'Remove Questions' : 'Add Questions'}
+                      </button>
+                    </div>
+
+                    {formData.hasApplicationQuestions && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Application Questions
+                          </label>
+                          <button
+                            type="button"
+                            onClick={addApplicationQuestion}
+                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            + Add Question
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          {formData.applicationQuestions.map((question, index) => (
+                            <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                              <div className="flex-1 space-y-3">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Question {index + 1}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={question.text}
+                                    onChange={(e) => updateApplicationQuestion(index, 'text', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="e.g., Why do you want to join this club?"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Answer Type
+                                  </label>
+                                  <select
+                                    value={question.type}
+                                    onChange={(e) => updateApplicationQuestion(index, 'type', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  >
+                                    <option value="short">Short Answer (1-2 sentences)</option>
+                                    <option value="long">Long Answer (Paragraph)</option>
+                                  </select>
+                                </div>
+                              </div>
+                              
+                              {formData.applicationQuestions.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeApplicationQuestion(index)}
+                                  className="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Remove question"
+                                >
+                                  <X size={16} />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          
+                          {formData.applicationQuestions.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                              <p>No questions added yet. Click "Add Question" to get started.</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

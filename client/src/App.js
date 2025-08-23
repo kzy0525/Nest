@@ -11,6 +11,7 @@ import HiringDashboard from './components/HiringDashboard';
 import Favorites from './components/Favorites';
 import UserProfile from './components/UserProfile';
 import ClubRegistration from './components/ClubRegistration';
+import ClubApplication from './components/ClubApplication';
 
 function App() {
   return (
@@ -47,6 +48,16 @@ function App() {
             <div className="flex-1 flex flex-col overflow-hidden">
               <Header />
               <ClubDetail />
+            </div>
+          </div>
+        } />
+
+        <Route path="/club/:id/apply" element={
+          <div className="App flex h-screen bg-gray-100">
+            <Sidebar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Header />
+              <ClubApplication />
             </div>
           </div>
         } />
