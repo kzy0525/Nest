@@ -149,17 +149,10 @@ const ClubDetail = () => {
                     <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg relative z-20">
                       {club.name.split(' ').map(word => word[0]).join('').substring(0, 4)}
                     </div>
-                    <div className="flex-1 pt-2">
+                    <div className="pt-2">
                       <h2 className="text-2xl font-bold text-gray-900">{club.name}</h2>
                       {club.slogan && (
                         <p className="text-gray-600 mt-1">{club.slogan}</p>
-                      )}
-                      
-                      {/* Apply Button - Only show if club is hiring */}
-                      {club.application_deadline && new Date(club.application_deadline) > new Date() && (
-                        <button className="mt-4 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium">
-                          Apply
-                        </button>
                       )}
                     </div>
                   </div>
@@ -185,6 +178,21 @@ const ClubDetail = () => {
               <p className="text-gray-700 leading-relaxed">
                 {club.description}
               </p>
+              
+              {/* Apply Button - Only show if club is hiring */}
+              {club.application_deadline && new Date(club.application_deadline) > new Date() && (
+                <button 
+                  onClick={() => {
+                    if (window.addClubApplication) {
+                      window.addClubApplication(club);
+                      alert('Application submitted! Check your Hiring Dashboard to track your application.');
+                    }
+                  }}
+                  className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
+                >
+                  Apply
+                </button>
+              )}
             </div>
 
             {/* Reviews and Ratings Section */}
@@ -286,26 +294,23 @@ const ClubDetail = () => {
               </div>
             </div>
 
-            {/* Recruitment Information */}
+            {/* Open Positions */}
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recruitment Information</h3>
-              <div className="space-y-4">
-                {club.open_positions ? (
-                  <div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-3">Open Positions</h4>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                      {club.open_positions.split(', ').map((position, index) => (
-                        <li key={index} className="flex justify-between items-center">
-                          <span>• {position}</span>
-                          <span className="text-gray-500">x{Math.ceil(club.available_spots / club.open_positions.split(', ').length)}</span>
-                        </li>
-                      ))}
-                    </ul>
+              {club.open_positions ? (
+                <div>
+                  <h4 className="text-lg font-bold text-gray-900 mb-3">Open Positions</h4>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    {club.open_positions.split(', ').map((position, index) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <span>{position.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
+                        <span className="text-gray-500">x{Math.ceil(club.available_spots / club.open_positions.split(', ').length)}</span>
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-gray-600">No positions currently open</p>
-                )}
-              </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">No positions currently open</p>
+              )}
             </div>
 
             {/* Hiring Timeline */}

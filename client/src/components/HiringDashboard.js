@@ -1,67 +1,91 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Eye, Plus, ChevronDown } from 'lucide-react';
+import { Edit, Eye, Plus, ChevronDown, Trash2 } from 'lucide-react';
 
 const HiringDashboard = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [applications, setApplications] = useState([]);
   const navigate = useNavigate();
 
-  // Mock applications data
-  const applications = [
-    {
-      id: 1,
-      clubName: "Queen's Tech and Media Association",
-      clubIcon: "QTMA",
-      clubIconBg: "bg-blue-600",
-      status: "Interview",
-      statusColor: "bg-blue-100 text-blue-600",
-      dateSubmitted: "March 4, 2025"
-    },
-    {
-      id: 2,
-      clubName: "Queen's Startup Consulting",
-      clubIcon: "QSC",
-      clubIconBg: "bg-black",
-      status: "Submitted",
-      statusColor: "bg-green-100 text-green-600",
-      dateSubmitted: "March 8, 2025"
-    },
-    {
-      id: 3,
-      clubName: "Freshsight Consulting",
-      clubIcon: "FC",
-      clubIconBg: "bg-blue-800",
-      status: "Incomplete",
-      statusColor: "bg-yellow-100 text-yellow-600",
-      dateSubmitted: "March 10, 2025"
-    },
-    {
-      id: 4,
-      clubName: "Queen's University Investment Counsel",
-      clubIcon: "QUIC",
-      clubIconBg: "bg-blue-800",
-      status: "Submitted",
-      statusColor: "bg-green-100 text-green-600",
-      dateSubmitted: "March 12, 2025"
-    },
-    {
-      id: 5,
-      clubName: "Limestone Capital",
-      clubIcon: "LC",
-      clubIconBg: "bg-orange-600",
-      status: "Submitted",
-      statusColor: "bg-green-100 text-green-600",
-      dateSubmitted: "March 15, 2025"
-    }
-  ];
+  // Load applications from localStorage on component mount
+  useEffect(() => {
+    const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+    setApplications(savedApplications);
+  }, []);
 
-  // Mock calendar events
-  const calendarEvents = [
-    { day: 13, club: "QTMA", event: "2:00pm Interview", clubIcon: "QTMA", clubIconBg: "bg-blue-600" },
-    { day: 15, club: "Freshsight Consulting", event: "Application Deadline", clubIcon: "FC", clubIconBg: "bg-blue-800" },
-    { day: 16, club: "Limestone Capital", event: "Application Deadline", clubIcon: "LC", clubIconBg: "bg-orange-600" },
-    { day: 18, club: "QTMA", event: "Interview Results", clubIcon: "QTMA", clubIconBg: "bg-blue-600" }
-  ];
+  // Function to add a new application
+  const addApplication = (clubData) => {
+    const newApplication = {
+      id: Date.now(),
+      clubId: clubData.id,
+      clubName: clubData.name,
+      clubIcon: clubData.name.split(' ').map(word => word[0]).join('').substring(0, 4),
+      clubIconBg: "bg-blue-600",
+      status: "Submitted",
+      statusColor: "bg-green-100 text-green-600",
+      dateSubmitted: new Date().toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      })
+    };
+
+    const updatedApplications = [...applications, newApplication];
+    setApplications(updatedApplications);
+    localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
+  };
+
+  // Make addApplication available globally so it can be called from ClubDetail
+  useEffect(() => {
+    window.addClubApplication = addApplication;
+    return () => {
+      delete window.addClubApplication;
+    };
+  }, [applications]);
+
+  // Function to remove an application
+  const removeApplication = (applicationId) => {
+    const updatedApplications = applications.filter(app => app.id !== applicationId);
+    setApplications(updatedApplications);
+    localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
+    setSelectedApplication(null);
+  };
+
+  // Function to update application status
+  const updateApplicationStatus = (applicationId, newStatus) => {
+    const statusConfig = {
+      "Submitted": "bg-green-100 text-green-600",
+      "Interview": "bg-blue-100 text-blue-600",
+      "Accepted": "bg-green-100 text-green-800",
+      "Rejected": "bg-red-100 text-red-600",
+      "Incomplete": "bg-yellow-100 text-yellow-600"
+    };
+
+    const updatedApplications = applications.map(app => 
+      app.id === applicationId 
+        ? { ...app, status: newStatus, statusColor: statusConfig[newStatus] }
+        : app
+    );
+    
+    setApplications(updatedApplications);
+    localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
+    setSelectedApplication(null);
+  };
+
+  // Generate calendar events based on applications
+  const calendarEvents = applications.map(app => {
+    const today = new Date();
+    const applicationDate = new Date(app.dateSubmitted);
+    const daysDiff = Math.floor((today - applicationDate) / (1000 * 60 * 60 * 24));
+    
+    return {
+      day: today.getDate() + daysDiff + 1,
+      club: app.clubIcon,
+      event: app.status === "Interview" ? "Interview" : "Application Submitted",
+      clubIcon: app.clubIcon,
+      clubIconBg: app.clubIconBg
+    };
+  }).slice(0, 4); // Limit to 4 events
 
   // Mock documents
   const documents = [
@@ -73,12 +97,11 @@ const HiringDashboard = () => {
   ];
 
   const handleActionClick = (application) => {
-    if (application.id === 5) { // Limestone Capital
-      setSelectedApplication(selectedApplication === application.id ? null : application.id);
-    } else {
-      // For other applications, navigate to view application
-      navigate(`/club/${application.id}`);
-    }
+    setSelectedApplication(selectedApplication === application.id ? null : application.id);
+  };
+
+  const handleViewClub = (application) => {
+    navigate(`/club/${application.clubId}`);
   };
 
   return (
@@ -102,48 +125,85 @@ const HiringDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {applications.map((app) => (
-                  <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 ${app.clubIconBg} rounded-full flex items-center justify-center text-white font-semibold text-sm`}>
-                          {app.clubIcon}
-                        </div>
-                        <span className="font-medium text-gray-900">{app.clubName}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${app.statusColor}`}>
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-gray-600">{app.dateSubmitted}</td>
-                    <td className="py-4 px-4">
-                      <div className="relative">
-                        <button
-                          onClick={() => handleActionClick(app)}
-                          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        
-                        {/* Dropdown for Limestone Capital */}
-                        {selectedApplication === app.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                            <div className="py-1">
-                              <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                View Application
-                              </button>
-                              <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                Withdraw Application
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                {applications.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="py-12 text-center text-gray-500">
+                      <div className="space-y-2">
+                        <p className="text-lg">No applications yet</p>
+                        <p className="text-sm">Click "Apply" on any club page to add it to your applications</p>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  applications.map((app) => (
+                    <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-10 h-10 ${app.clubIconBg} rounded-full flex items-center justify-center text-white font-semibold text-sm`}>
+                            {app.clubIcon}
+                          </div>
+                          <span className="font-medium text-gray-900">{app.clubName}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${app.statusColor}`}>
+                          {app.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-gray-600">{app.dateSubmitted}</td>
+                      <td className="py-4 px-4">
+                        <div className="relative">
+                          <button
+                            onClick={() => handleActionClick(app)}
+                            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          
+                          {/* Dropdown for all applications */}
+                          {selectedApplication === app.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                              <div className="py-1">
+                                <button 
+                                  onClick={() => handleViewClub(app)}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                >
+                                  View Club
+                                </button>
+                                <button 
+                                  onClick={() => updateApplicationStatus(app.id, "Interview")}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                >
+                                  Mark as Interview
+                                </button>
+                                <button 
+                                  onClick={() => updateApplicationStatus(app.id, "Accepted")}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                >
+                                  Mark as Accepted
+                                </button>
+                                <button 
+                                  onClick={() => updateApplicationStatus(app.id, "Rejected")}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                >
+                                  Mark as Rejected
+                                </button>
+                                <div className="border-t border-gray-200 my-1"></div>
+                                <button 
+                                  onClick={() => removeApplication(app.id)}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 size={14} className="inline mr-2" />
+                                  Remove Application
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

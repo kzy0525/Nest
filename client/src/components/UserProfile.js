@@ -406,7 +406,12 @@ const UserProfile = () => {
                 <div key={club.id} className="border border-gray-200 rounded-lg p-4 hover:border-yellow-300 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 mb-2">{club.name}</h4>
+                      <h4 
+                        className="font-semibold text-gray-900 mb-2 cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => navigate(`/club/${club.id}`)}
+                      >
+                        {club.name}
+                      </h4>
                       <div className="flex items-center justify-between">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(club.status)}`}>
                           {club.status}
@@ -414,12 +419,6 @@ const UserProfile = () => {
                         <span className="text-sm text-gray-500">{club.date}</span>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => navigate(`/club/${club.id}`)}
-                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                    >
-                      View Club
-                    </button>
                   </div>
                 </div>
               ))}
