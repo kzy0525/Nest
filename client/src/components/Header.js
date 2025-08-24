@@ -1,22 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, ChevronDown, LogOut, User, Settings } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, User, Settings, CheckCircle, Heart, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef(null);
+  const notificationsRef = useRef(null);
 
   const handleLogout = () => {
     // TODO: Implement actual logout logic (clear tokens, etc.)
     navigate('/login');
   };
 
-  // Close dropdown when clicking outside
+  // Sample notifications data
+  const notifications = [
+    {
+      id: 1,
+      type: 'application',
+      message: 'Your application to Queen\'s Tech and Media Association has been reviewed',
+      time: '2 hours ago',
+      icon: CheckCircle,
+      color: 'text-green-600'
+    },
+    {
+      id: 2,
+      type: 'hiring',
+      message: 'Smith Engineering Hyperloop is now hiring!',
+      time: '1 day ago',
+      icon: Heart,
+      color: 'text-blue-600'
+    },
+    {
+      id: 3,
+      type: 'update',
+      message: 'Interview scheduled for Queen\'s Investment Counsel',
+      time: '3 days ago',
+      icon: Clock,
+      color: 'text-purple-600'
+    }
+  ];
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
       }
     };
 
@@ -40,9 +73,53 @@ const Header = () => {
         {/* Right Side */}
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <div className="relative">
-            <Bell size={20} className="text-gray-600 cursor-pointer hover:text-gray-800" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+          <div className="relative" ref={notificationsRef}>
+            <div 
+              className="relative cursor-pointer hover:text-gray-800 p-2 rounded-lg"
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
+              <Bell size={20} className="text-gray-600" />
+              {notifications.length > 0 && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+              )}
+            </div>
+            
+            {/* Notifications Dropdown */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200 max-h-96 overflow-y-auto">
+                <div className="px-4 py-2 border-b border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                </div>
+                
+                {notifications.length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <Bell size={24} className="text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">No notifications</p>
+                  </div>
+                ) : (
+                  notifications.map((notification) => {
+                    const IconComponent = notification.icon;
+                    return (
+                      <div key={notification.id} className="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                        <div className="flex items-start space-x-3">
+                          <IconComponent size={16} className={`mt-0.5 ${notification.color}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900 leading-relaxed">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {notification.time}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                
+
+              </div>
+            )}
           </div>
 
 
