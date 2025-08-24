@@ -248,17 +248,12 @@ const Home = () => {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={24} />
               <input
                 type="text"
-                placeholder="Search for clubs, opportunities, or skills..."
+                placeholder="Discover new clubs and opportunities"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                className="w-full pl-12 pr-6 py-4 text-lg border border-gray-300 rounded-3xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
               />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Search
-              </button>
+
             </div>
           </form>
         </div>
@@ -288,9 +283,17 @@ const Home = () => {
               <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
                 {/* Club Logo/Image Section */}
                 <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
-                  <div className={`text-2xl font-bold ${getClubTextColor(club.name)}`}>
-                    {getClubInitials(club.name)}
-                  </div>
+                  {club.logo ? (
+                    <img 
+                      src={club.logo} 
+                      alt={`${club.name} logo`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className={`text-2xl font-bold ${getClubTextColor(club.name)}`}>
+                      {getClubInitials(club.name)}
+                    </div>
+                  )}
                   
                   {/* Heart Icon */}
                   <button

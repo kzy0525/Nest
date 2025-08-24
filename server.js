@@ -2,14 +2,48 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'client/build')));
+app.use('/uploads', express.static(uploadsDir));
 
 // Database setup
 const db = new sqlite3.Database('./clubs.db', (err) => {
@@ -51,7 +85,9 @@ function createTables() {
       results_released TEXT,
       open_positions TEXT,
       available_spots INTEGER DEFAULT 0,
-      application_questions TEXT
+      application_questions TEXT,
+      logo TEXT,
+      backdrop TEXT
     )
   `;
 
@@ -60,6 +96,7 @@ function createTables() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       club_id INTEGER,
       student_name TEXT,
+      club_position TEXT,
       rating INTEGER,
       review_text TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -390,7 +427,7 @@ app.get('/api/categories', (req, res) => {
 // Add a review
 app.post('/api/clubs/:id/reviews', (req, res) => {
   const { id } = req.params;
-  const { student_name, rating, review_text } = req.body;
+  const { student_name, club_position, rating, review_text } = req.body;
   
   if (!student_name || !rating || !review_text) {
     res.status(400).json({ error: 'Missing required fields' });
@@ -398,8 +435,8 @@ app.post('/api/clubs/:id/reviews', (req, res) => {
   }
   
   db.run(
-    'INSERT INTO reviews (club_id, student_name, rating, review_text) VALUES (?, ?, ?, ?)',
-    [id, student_name, rating, review_text],
+    'INSERT INTO reviews (club_id, student_name, club_position, rating, review_text) VALUES (?, ?, ?, ?, ?)',
+    [id, student_name, club_position || '', rating, review_text],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
@@ -423,10 +460,15 @@ app.post('/api/clubs/:id/reviews', (req, res) => {
 });
 
 // Create a new club
-app.post('/api/clubs', (req, res) => {
+app.post('/api/clubs', upload.fields([
+  { name: 'logo', maxCount: 1 },
+  { name: 'backdrop', maxCount: 1 }
+]), (req, res) => {
   const clubData = req.body;
+  const files = req.files;
   
   console.log('Received club data:', clubData);
+  console.log('Received files:', files);
   
   // Validate required fields
   if (!clubData.name || !clubData.description || !clubData.contact_email || !clubData.member_count) {
@@ -445,21 +487,26 @@ app.post('/api/clubs', (req, res) => {
   clubData.review_count = 0;
   clubData.created_at = new Date().toISOString();
   
+  // Handle file paths
+  const logoPath = files.logo ? `/uploads/${files.logo[0].filename}` : null;
+  const backdropPath = files.backdrop ? `/uploads/${files.backdrop[0].filename}` : null;
+  
   // Insert into database
   const insertClub = db.prepare(`
     INSERT INTO clubs (
       name, description, category, contact_email, website, instagram, linkedin,
       application_deadline, interview_start_date, interview_end_date,
       member_count, rating, review_count, created_at, slogan, acceptance_rate,
-      applications_open, results_released, open_positions, available_spots, application_questions
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      applications_open, results_released, open_positions, available_spots, application_questions,
+      logo, backdrop
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   try {
     const result = insertClub.run(
       clubData.name,
       clubData.description,
-      JSON.stringify(clubData.category), // Convert array to JSON string
+      clubData.category, // Already JSON string from FormData
       clubData.contact_email,
       clubData.website || '',
       clubData.instagram || '',
@@ -477,7 +524,9 @@ app.post('/api/clubs', (req, res) => {
       clubData.results_released || '',
       clubData.open_positions || '',
       clubData.available_spots || 0,
-      clubData.application_questions || ''
+      clubData.application_questions || '',
+      logoPath,
+      backdropPath
     );
     
     res.json({ 

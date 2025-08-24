@@ -18,6 +18,8 @@ const ClubRegistration = () => {
     slogan: '',
     member_count: '',
     acceptance_rate: '',
+    logo: null,
+    backdrop: null,
     isHiring: false,
     applications_open: '',
     applications_close: '',
@@ -85,6 +87,20 @@ const ClubRegistration = () => {
     }));
   };
 
+  const handleFileUpload = (field, file) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: file
+    }));
+  };
+
+  const handleFileRemove = (field) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: null
+    }));
+  };
+
   const addApplicationQuestion = () => {
     setFormData(prev => ({
       ...prev,
@@ -145,33 +161,52 @@ const ClubRegistration = () => {
     setIsSubmitting(true);
     
     try {
-      const requestBody = {
-        ...formData,
-        member_count: parseInt(formData.member_count),
-        rating: 0,
-        review_count: 0,
-        // Convert positions to a format the server can handle
-        open_positions: formData.isHiring ? formData.positions.map(p => p.title).join(', ') : '',
-        available_spots: formData.isHiring ? formData.positions.reduce((total, p) => total + parseInt(p.spots || 0), 0) : 0,
-        // Map new date fields to server fields
-        application_deadline: formData.applications_close,
-        interview_start_date: formData.hasInterviews ? formData.first_round_interviews : '',
-        interview_end_date: formData.hasInterviews ? formData.second_round_interviews : '',
-        // Send all the new fields directly
-        applications_open: formData.applications_open,
-        results_released: formData.results_released,
-        // Include application questions if they exist
-        application_questions: formData.hasApplicationQuestions ? JSON.stringify(formData.applicationQuestions) : ''
-      };
+      // Create FormData for file uploads
+      const formDataToSend = new FormData();
       
-      console.log('Sending club data:', requestBody);
+      // Add all text fields
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('category', JSON.stringify(formData.category));
+      formDataToSend.append('contact_email', formData.contact_email);
+      formDataToSend.append('website', formData.website || '');
+      formDataToSend.append('instagram', formData.instagram || '');
+      formDataToSend.append('linkedin', formData.linkedin || '');
+      formDataToSend.append('slogan', formData.slogan || '');
+      formDataToSend.append('member_count', formData.member_count);
+      formDataToSend.append('acceptance_rate', formData.acceptance_rate || '');
+      formDataToSend.append('rating', '0');
+      formDataToSend.append('review_count', '0');
+      
+      // Add files if they exist
+      if (formData.logo) {
+        formDataToSend.append('logo', formData.logo);
+      }
+      if (formData.backdrop) {
+        formDataToSend.append('backdrop', formData.backdrop);
+      }
+      
+      // Add hiring-related fields
+      formDataToSend.append('isHiring', formData.isHiring.toString());
+      if (formData.isHiring) {
+        formDataToSend.append('open_positions', formData.positions.map(p => p.title).join(', '));
+        formDataToSend.append('available_spots', formData.positions.reduce((total, p) => total + parseInt(p.spots || 0), 0).toString());
+        formDataToSend.append('applications_open', formData.applications_open);
+        formDataToSend.append('applications_close', formData.applications_close);
+        formDataToSend.append('hasInterviews', formData.hasInterviews.toString());
+        if (formData.hasInterviews) {
+          formDataToSend.append('interview_start_date', formData.first_round_interviews);
+          formDataToSend.append('interview_end_date', formData.second_round_interviews);
+        }
+        formDataToSend.append('results_released', formData.results_released);
+        formDataToSend.append('application_questions', formData.hasApplicationQuestions ? JSON.stringify(formData.applicationQuestions) : '');
+      }
+      
+      console.log('Sending club data with files');
       
       const response = await fetch('/api/clubs', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+        body: formDataToSend, // Don't set Content-Type header for FormData
       });
       
       if (response.ok) {
@@ -275,6 +310,111 @@ const ClubRegistration = () => {
                   placeholder="Describe your club's mission, activities, and what makes it unique..."
                 />
                 {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
+              </div>
+
+              {/* Club Images */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Logo Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Club Logo
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                    {formData.logo ? (
+                      <div className="space-y-3">
+                        <div className="w-20 h-20 mx-auto">
+                          <img 
+                            src={URL.createObjectURL(formData.logo)} 
+                            alt="Club logo preview" 
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        </div>
+                        <p className="text-sm text-gray-600">{formData.logo.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleFileRemove('logo')}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="mx-auto w-12 h-12 text-gray-400 mb-3">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">Upload club logo</p>
+                        <p className="text-xs text-gray-500 mb-3">PNG, JPG up to 5MB</p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload('logo', e.target.files[0])}
+                          className="hidden"
+                          id="logo-upload"
+                        />
+                        <label
+                          htmlFor="logo-upload"
+                          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+                        >
+                          Choose File
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Backdrop Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Club Backdrop
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                    {formData.backdrop ? (
+                      <div className="space-y-3">
+                        <div className="w-full h-32 mx-auto">
+                          <img 
+                            src={URL.createObjectURL(formData.backdrop)} 
+                            alt="Club backdrop preview" 
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        </div>
+                        <p className="text-sm text-gray-600">{formData.backdrop.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleFileRemove('backdrop')}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="mx-auto w-12 h-12 text-gray-400 mb-3">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">Upload club backdrop</p>
+                        <p className="text-xs text-gray-500 mb-3">PNG, JPG up to 10MB</p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload('backdrop', e.target.files[0])}
+                          className="hidden"
+                          id="backdrop-upload"
+                        />
+                        <label
+                          htmlFor="backdrop-upload"
+                          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+                        >
+                          Choose File
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Member Count and Acceptance Rate */}

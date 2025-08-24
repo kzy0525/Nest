@@ -141,9 +141,17 @@ const Favorites = () => {
             <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
               {/* Club Logo/Image Section */}
               <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
-                <div className={`text-2xl font-bold ${getClubTextColor(club.name)}`}>
-                  {getClubInitials(club.name)}
-                </div>
+                {club.logo ? (
+                  <img 
+                    src={club.logo} 
+                    alt={`${club.name} logo`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className={`text-2xl font-bold ${getClubTextColor(club.name)}`}>
+                    {getClubInitials(club.name)}
+                  </div>
+                )}
                 
                 {/* Heart Icon */}
                 <button

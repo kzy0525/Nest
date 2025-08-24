@@ -275,7 +275,7 @@ const SearchPage = () => {
 
 
       {/* Search and Filter Section */}
-      <div className="px-8 py-4" style={{ backgroundColor: '#F5F6FA' }}>
+      <div className="px-8 py-8" style={{ backgroundColor: '#F5F6FA' }}>
         <div className="flex items-center justify-between">
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl">
@@ -283,10 +283,10 @@ const SearchPage = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Discover new clubs and opportunities"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-6 py-4 border border-gray-300 rounded-3xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-lg text-gray-700 placeholder-gray-500 placeholder:text-lg"
+                className="w-full pl-12 pr-6 py-4 border border-gray-300 rounded-3xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-lg text-gray-700 placeholder-gray-500 placeholder:text-lg"
               />
             </div>
           </div>
@@ -445,9 +445,17 @@ const SearchPage = () => {
             <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
               {/* Club Logo/Image Section */}
               <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
-                <div className={`text-2xl font-bold ${getClubTextColor(club.name)}`}>
-                  {getClubInitials(club.name)}
-                </div>
+                {club.logo ? (
+                  <img 
+                    src={club.logo} 
+                    alt={`${club.name} logo`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className={`text-2xl font-bold ${getClubTextColor(club.name)}`}>
+                    {getClubInitials(club.name)}
+                  </div>
+                )}
                 
                 {/* Heart Icon */}
                 <button
