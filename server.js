@@ -42,6 +42,7 @@ const upload = multer({
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Add this for FormData
 app.use(express.static(path.join(__dirname, 'client/build')));
 app.use('/uploads', express.static(uploadsDir));
 
@@ -69,7 +70,7 @@ function createTables() {
       contact_phone TEXT,
       website TEXT,
       instagram TEXT,
-      linkedin TEXT,
+
       twitter TEXT,
       facebook TEXT,
       application_deadline TEXT,
@@ -131,7 +132,7 @@ function insertSampleData() {
       contact_phone: "(555) 123-4567",
       website: "https://seh.university.edu",
       instagram: "@university_seh",
-      linkedin: "university-seh",
+
       twitter: "@university_seh",
       facebook: "universityseh",
       application_deadline: "2024-02-15",
@@ -156,7 +157,7 @@ function insertSampleData() {
       contact_phone: "(555) 234-5678",
       website: "https://qsc.university.edu",
       instagram: "@university_qsc",
-      linkedin: "university-qsc",
+
       twitter: "@university_qsc",
       facebook: "universityqsc",
       application_deadline: "2024-02-20",
@@ -176,7 +177,7 @@ function insertSampleData() {
       contact_phone: "(555) 345-6789",
       website: "https://qvsa.university.edu",
       instagram: "@university_qvsa",
-      linkedin: "university-qvsa",
+
       twitter: "@university_qvsa",
       facebook: "universityqvsa",
       application_deadline: "2024-02-10",
@@ -196,7 +197,7 @@ function insertSampleData() {
       contact_phone: "(555) 456-7890",
       website: "https://qtma.university.edu",
       instagram: "@university_qtma",
-      linkedin: "university-qtma",
+
       twitter: "@university_qtma",
       facebook: "universityqtma",
       application_deadline: "2024-02-25",
@@ -216,7 +217,7 @@ function insertSampleData() {
       contact_phone: "(555) 567-8901",
       website: "https://sfc.university.edu",
       instagram: "@university_sfc",
-      linkedin: "university-sports-fitness",
+
       twitter: "@university_sfc",
       facebook: "universitysfc",
       application_deadline: "2024-02-18",
@@ -236,7 +237,7 @@ function insertSampleData() {
       contact_phone: "(555) 678-9012",
       website: "https://esg.university.edu",
       instagram: "@university_esg",
-      linkedin: "university-esg",
+
       twitter: "@university_esg",
       facebook: "universityesg",
       application_deadline: "2024-02-28",
@@ -256,7 +257,7 @@ function insertSampleData() {
       contact_phone: "(555) 789-0123",
       website: "https://pss.university.edu",
       instagram: "@university_pss",
-      linkedin: "university-pss",
+
       twitter: "@university_pss",
       facebook: "universitypss",
       application_deadline: "2024-03-01",
@@ -276,7 +277,7 @@ function insertSampleData() {
       contact_phone: "(555) 890-1234",
       website: "https://acc.university.edu",
       instagram: "@university_acc",
-      linkedin: "university-acc",
+
       twitter: "@university_acc",
       facebook: "universityacc",
       application_deadline: "2024-03-05",
@@ -290,25 +291,35 @@ function insertSampleData() {
 
   const insertClub = db.prepare(`
     INSERT OR IGNORE INTO clubs (
-      name, description, category, meeting_time, meeting_location, 
-      contact_email, contact_phone, website, instagram, linkedin, 
-      twitter, facebook, application_deadline, interview_start_date, 
-      interview_end_date, rating, review_count, member_count, application_questions
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      name, description, category, meeting_time, meeting_location, contact_email, contact_phone, website, instagram,
+      twitter, facebook, application_deadline, interview_start_date, interview_end_date,
+      member_count, rating, review_count, created_at, slogan, acceptance_rate,
+      applications_open, results_released, open_positions, available_spots, application_questions,
+      logo, backdrop
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   sampleClubs.forEach(club => {
     // Convert category array to JSON string for storage
     const categoryString = Array.isArray(club.category) ? JSON.stringify(club.category) : club.category;
     
-    insertClub.run([
+    insertClub.run(
       club.name, club.description, categoryString, club.meeting_time,
       club.meeting_location, club.contact_email, club.contact_phone,
-      club.website, club.instagram, club.linkedin, club.twitter,
+      club.website, club.instagram, club.twitter,
       club.facebook, club.application_deadline, club.interview_start_date,
-      club.interview_end_date, club.rating, club.review_count, club.member_count,
-      club.application_questions || null
-    ]);
+      club.interview_end_date, club.member_count, club.rating, club.review_count, 
+      new Date().toISOString(), // created_at
+      '', // slogan
+      0, // acceptance_rate
+      '', // applications_open
+      '', // results_released
+      '', // open_positions
+      0, // available_spots
+      club.application_questions || '', // application_questions
+      null, // logo
+      null  // backdrop
+    );
   });
 
   insertClub.finalize();
@@ -459,6 +470,23 @@ app.post('/api/clubs/:id/reviews', (req, res) => {
   );
 });
 
+// Test endpoint for debugging
+app.post('/api/test-club', (req, res) => {
+  console.log('=== Test endpoint ===');
+  console.log('Request body:', req.body);
+  console.log('Content-Type:', req.headers['content-type']);
+  
+  const { name, description, category, contact_email, member_count } = req.body;
+  
+  if (!name || !description || !contact_email || !member_count) {
+    console.log('Test validation failed');
+    res.status(400).json({ error: 'Test validation failed', received: { name, description, category, contact_email, member_count } });
+    return;
+  }
+  
+  res.json({ success: true, message: 'Test validation passed' });
+});
+
 // Create a new club
 app.post('/api/clubs', upload.fields([
   { name: 'logo', maxCount: 1 },
@@ -467,14 +495,42 @@ app.post('/api/clubs', upload.fields([
   const clubData = req.body;
   const files = req.files;
   
+  // Debug: Check if body is empty
+  console.log('Request body keys:', Object.keys(req.body));
+  console.log('Request body raw:', req.body);
+  console.log('Content-Type header:', req.headers['content-type']);
+  
   console.log('Received club data:', clubData);
   console.log('Received files:', files);
+  console.log('Files type:', typeof files);
+  console.log('Files keys:', files ? Object.keys(files) : 'No files object');
   
   // Validate required fields
-  if (!clubData.name || !clubData.description || !clubData.contact_email || !clubData.member_count) {
+  console.log('=== Server validation check ===');
+  console.log('clubData.name:', clubData.name, 'Type:', typeof clubData.name);
+  console.log('clubData.description:', clubData.description, 'Type:', typeof clubData.description);
+  console.log('clubData.category:', clubData.category, 'Type:', typeof clubData.category);
+  console.log('clubData.contact_email:', clubData.contact_email, 'Type:', typeof clubData.contact_email);
+  console.log('clubData.member_count:', clubData.member_count, 'Type:', typeof clubData.member_count);
+  
+  // Check if category is empty JSON array
+  let categoryIsValid = false;
+  try {
+    if (clubData.category) {
+      const parsedCategory = JSON.parse(clubData.category);
+      categoryIsValid = Array.isArray(parsedCategory) && parsedCategory.length > 0;
+    }
+  } catch (e) {
+    console.log('Error parsing category:', e);
+    categoryIsValid = false;
+  }
+  
+  if (!clubData.name || !clubData.description || !clubData.contact_email || !clubData.member_count || !categoryIsValid) {
     console.log('Missing required fields:', { 
       name: !!clubData.name, 
       description: !!clubData.description, 
+      category: !!clubData.category,
+      categoryValid: categoryIsValid,
       contact_email: !!clubData.contact_email, 
       member_count: !!clubData.member_count 
     });
@@ -487,19 +543,35 @@ app.post('/api/clubs', upload.fields([
   clubData.review_count = 0;
   clubData.created_at = new Date().toISOString();
   
-  // Handle file paths
-  const logoPath = files.logo ? `/uploads/${files.logo[0].filename}` : null;
-  const backdropPath = files.backdrop ? `/uploads/${files.backdrop[0].filename}` : null;
+  // Handle file paths - files might be undefined if no files uploaded
+  let logoPath = null;
+  let backdropPath = null;
+  
+  try {
+    if (files && files.logo && files.logo.length > 0) {
+      logoPath = `/uploads/${files.logo[0].filename}`;
+    }
+    if (files && files.backdrop && files.backdrop.length > 0) {
+      backdropPath = `/uploads/${files.backdrop[0].filename}`;
+    }
+  } catch (error) {
+    console.log('Error handling files:', error);
+    logoPath = null;
+    backdropPath = null;
+  }
+  
+  console.log('Final logo path:', logoPath);
+  console.log('Final backdrop path:', backdropPath);
   
   // Insert into database
   const insertClub = db.prepare(`
     INSERT INTO clubs (
-      name, description, category, contact_email, website, instagram, linkedin,
-      application_deadline, interview_start_date, interview_end_date,
+      name, description, category, meeting_time, meeting_location, contact_email, contact_phone, website, instagram,
+      twitter, facebook, application_deadline, interview_start_date, interview_end_date,
       member_count, rating, review_count, created_at, slogan, acceptance_rate,
       applications_open, results_released, open_positions, available_spots, application_questions,
       logo, backdrop
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   try {
@@ -507,10 +579,14 @@ app.post('/api/clubs', upload.fields([
       clubData.name,
       clubData.description,
       clubData.category, // Already JSON string from FormData
+      '', // meeting_time (not used in new form)
+      '', // meeting_location (not used in new form)
       clubData.contact_email,
+      '', // contact_phone (not used in new form)
       clubData.website || '',
       clubData.instagram || '',
-      clubData.linkedin || '',
+      '', // twitter (not used in new form)
+      '', // facebook (not used in new form)
       clubData.application_deadline || '',
       clubData.interview_start_date || '',
       clubData.interview_end_date || '',

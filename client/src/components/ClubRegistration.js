@@ -14,7 +14,7 @@ const ClubRegistration = () => {
     contact_email: '',
     website: '',
     instagram: '',
-    linkedin: '',
+
     slogan: '',
     member_count: '',
     acceptance_rate: '',
@@ -131,6 +131,13 @@ const ClubRegistration = () => {
   const validateForm = () => {
     const newErrors = {};
     
+    console.log('=== Frontend validation ===');
+    console.log('name:', formData.name, 'trimmed:', formData.name.trim(), 'length:', formData.name.trim().length);
+    console.log('description:', formData.description, 'trimmed:', formData.description.trim(), 'length:', formData.description.trim().length);
+    console.log('category:', formData.category, 'length:', formData.category.length);
+    console.log('contact_email:', formData.contact_email, 'trimmed:', formData.contact_email.trim(), 'length:', formData.contact_email.trim().length);
+    console.log('member_count:', formData.member_count, 'type:', typeof formData.member_count);
+    
     if (!formData.name.trim()) newErrors.name = 'Club name is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (formData.category.length === 0) newErrors.category = 'Please select at least one category';
@@ -171,9 +178,9 @@ const ClubRegistration = () => {
       formDataToSend.append('contact_email', formData.contact_email);
       formDataToSend.append('website', formData.website || '');
       formDataToSend.append('instagram', formData.instagram || '');
-      formDataToSend.append('linkedin', formData.linkedin || '');
+
       formDataToSend.append('slogan', formData.slogan || '');
-      formDataToSend.append('member_count', formData.member_count);
+      formDataToSend.append('member_count', formData.member_count || '0');
       formDataToSend.append('acceptance_rate', formData.acceptance_rate || '');
       formDataToSend.append('rating', '0');
       formDataToSend.append('review_count', '0');
@@ -191,22 +198,99 @@ const ClubRegistration = () => {
       if (formData.isHiring) {
         formDataToSend.append('open_positions', formData.positions.map(p => p.title).join(', '));
         formDataToSend.append('available_spots', formData.positions.reduce((total, p) => total + parseInt(p.spots || 0), 0).toString());
-        formDataToSend.append('applications_open', formData.applications_open);
-        formDataToSend.append('applications_close', formData.applications_close);
+        formDataToSend.append('applications_open', formData.applications_open || '');
+        formDataToSend.append('application_deadline', formData.applications_close || '');
         formDataToSend.append('hasInterviews', formData.hasInterviews.toString());
         if (formData.hasInterviews) {
-          formDataToSend.append('interview_start_date', formData.first_round_interviews);
-          formDataToSend.append('interview_end_date', formData.second_round_interviews);
+          formDataToSend.append('interview_start_date', formData.first_round_interviews || '');
+          formDataToSend.append('interview_end_date', formData.second_round_interviews || '');
         }
-        formDataToSend.append('results_released', formData.results_released);
+        formDataToSend.append('results_released', formData.results_released || '');
         formDataToSend.append('application_questions', formData.hasApplicationQuestions ? JSON.stringify(formData.applicationQuestions) : '');
+      } else {
+        // Add empty values for non-hiring clubs to satisfy server requirements
+        formDataToSend.append('open_positions', '');
+        formDataToSend.append('available_spots', '0');
+        formDataToSend.append('applications_open', '');
+        formDataToSend.append('application_deadline', '');
+        formDataToSend.append('hasInterviews', 'false');
+        formDataToSend.append('interview_start_date', '');
+        formDataToSend.append('interview_end_date', '');
+        formDataToSend.append('results_released', '');
+        formDataToSend.append('application_questions', '');
       }
       
       console.log('Sending club data with files');
+      console.log('Form data being sent:', {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        contact_email: formData.contact_email,
+        member_count: formData.member_count,
+        isHiring: formData.isHiring,
+        logo: formData.logo ? 'File present' : 'No logo',
+        backdrop: formData.backdrop ? 'File present' : 'No backdrop'
+      });
+      
+      // Debug: Log the actual formData values
+      console.log('=== Actual formData values ===');
+      console.log('formData.name:', formData.name, 'Length:', formData.name.length);
+      console.log('formData.description:', formData.description, 'Length:', formData.description.length);
+      console.log('formData.category:', formData.category, 'Length:', formData.category.length);
+      console.log('formData.contact_email:', formData.contact_email, 'Length:', formData.contact_email.length);
+      console.log('formData.member_count:', formData.member_count, 'Type:', typeof formData.member_count);
+      console.log('=== End formData values ===');
+      
+      // Debug: Log all FormData entries
+      console.log('=== FormData entries being sent ===');
+      console.log('FormData object:', formDataToSend);
+      console.log('FormData entries:');
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(`${key}:`, value, 'Type:', typeof value);
+      }
+      console.log('=== End FormData entries ===');
+      
+      // Test: Create a minimal test request
+      console.log('=== Testing minimal request ===');
+      const testData = new FormData();
+      testData.append('name', 'Test Club');
+      testData.append('description', 'Test Description');
+      testData.append('category', JSON.stringify(['Business']));
+      testData.append('contact_email', 'test@test.com');
+      testData.append('member_count', '10');
+      
+      console.log('Test FormData entries:');
+      for (let [key, value] of testData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      console.log('=== End test ===');
+      
+      // Test the simple endpoint first
+      try {
+        const testResponse = await fetch('/api/test-club', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: 'Test Club',
+            description: 'Test Description',
+            category: ['Business'],
+            contact_email: 'test@test.com',
+            member_count: '10'
+          })
+        });
+        
+        const testResult = await testResponse.json();
+        console.log('Test endpoint result:', testResult);
+      } catch (testError) {
+        console.error('Test endpoint error:', testError);
+      }
       
       const response = await fetch('/api/clubs', {
         method: 'POST',
         body: formDataToSend, // Don't set Content-Type header for FormData
+        // The browser will automatically set the correct Content-Type for FormData
       });
       
       if (response.ok) {
@@ -473,25 +557,24 @@ const ClubRegistration = () => {
                 {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
               </div>
 
-              {/* Contact Information */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contact Email *
-                </label>
-                <input
-                  type="email"
-                  value={formData.contact_email}
-                  onChange={(e) => handleInputChange('contact_email', e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.contact_email ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="club@university.edu"
-                />
-                {errors.contact_email && <p className="mt-1 text-sm text-red-600">{errors.contact_email}</p>}
-              </div>
-
-              {/* Social Media & Website */}
+              {/* Contact Information & Social Media */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contact Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.contact_email ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="club@university.edu"
+                  />
+                  {errors.contact_email && <p className="mt-1 text-sm text-red-600">{errors.contact_email}</p>}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Website
@@ -513,21 +596,8 @@ const ClubRegistration = () => {
                     type="text"
                     value={formData.instagram}
                     onChange={(e) => handleInputChange('instagram', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="@yourclub"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    LinkedIn
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.linkedin}
-                    onChange={(e) => handleInputChange('linkedin', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="your-club-linkedin"
                   />
                 </div>
               </div>
