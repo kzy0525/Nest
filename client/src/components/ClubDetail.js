@@ -338,7 +338,7 @@ const ClubDetail = () => {
           {/* Left Column - Main Club Information */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Club Header Card */}
+            {/* Combined Club Profile and Overview Card */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="relative">
                 {/* Backdrop Image or Blue Header Section */}
@@ -363,11 +363,11 @@ const ClubDetail = () => {
                   </button>
                 </div>
                 
-                {/* Club Avatar and Info - Positioned above the background */}
+                {/* Club Avatar and Info - Positioned at bottom of backdrop */}
                 <div className="px-6 pb-6 relative z-10">
                   <div className="flex items-start space-x-4 -mt-16">
                     {club.logo ? (
-                      <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg relative z-20 overflow-hidden">
+                      <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl relative z-20 overflow-hidden">
                         <img 
                           src={club.logo} 
                           alt={`${club.name} logo`}
@@ -375,64 +375,63 @@ const ClubDetail = () => {
                         />
                       </div>
                     ) : (
-                      <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg relative z-20">
+                      <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-xl relative z-20">
                         {club.name.split(' ').map(word => word[0]).join('').substring(0, 4)}
                       </div>
                     )}
-                    <div className="pt-2">
-                      <h2 className="text-2xl font-bold text-gray-900">{club.name}</h2>
+                    <div className="flex-1" style={{ paddingTop: '30px' }}>
+                      <h2 className="text-3xl font-bold text-gray-900 mb-2">{club.name}</h2>
                       {club.slogan && (
-                        <p className="text-gray-600 mt-1">{club.slogan}</p>
+                        <p className="text-lg text-gray-600 mb-3 font-medium">{club.slogan}</p>
                       )}
+                      <p className="text-gray-700 leading-relaxed">
+                        {club.description}
+                      </p>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
+                  
+                  {/* Overview Stats - Completely underneath icon and club info */}
+                  <div className="mt-6">
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="flex items-center space-x-2">
+                        <Users size={20} className="text-gray-500" />
+                        <span className="text-gray-700">Active Members: <span className="font-bold">{club.member_count}</span></span>
+                      </div>
+                      {club.acceptance_rate > 0 && (
+                        <div className="flex items-center space-x-2">
+                          <TrendingUp size={20} className="text-gray-500" />
+                          <span className="text-gray-700">Acceptance Rate: <span className="font-bold">{club.acceptance_rate}%</span></span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Apply Button - Only show if club is hiring */}
+                    {club.application_deadline && new Date(club.application_deadline) > new Date() && (
+                      <button 
+                        onClick={() => {
+                          // Check if already applied - convert both IDs to strings for comparison
+                          const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+                          
+                          const alreadyApplied = existingApplications.some(app => 
+                            String(app.clubId) === String(club.id)
+                          );
+                          
+                          if (alreadyApplied) {
+                            alert('You have already applied to this club!');
+                            return;
+                          }
 
-            {/* Overview Section */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Overview</h3>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="flex items-center space-x-2">
-                  <Users size={20} className="text-gray-500" />
-                  <span className="text-gray-700">Active Members: <span className="font-bold">{club.member_count}</span></span>
-                </div>
-                {club.acceptance_rate > 0 && (
-                  <div className="flex items-center space-x-2">
-                    <TrendingUp size={20} className="text-gray-500" />
-                    <span className="text-gray-700">Acceptance Rate: <span className="font-bold">{club.acceptance_rate}%</span></span>
+                          // Navigate to application page
+                          navigate(`/club/${club.id}/apply`);
+                        }}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
+                      >
+                        Apply
+                      </button>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-              <p className="text-gray-700 leading-relaxed">
-                {club.description}
-              </p>
-              
-              {/* Apply Button - Only show if club is hiring */}
-              {club.application_deadline && new Date(club.application_deadline) > new Date() && (
-                <button 
-                  onClick={() => {
-                    // Check if already applied - convert both IDs to strings for comparison
-                    const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
-                    
-                    const alreadyApplied = existingApplications.some(app => 
-                      String(app.clubId) === String(club.id)
-                    );
-                    
-                    if (alreadyApplied) {
-                      alert('You have already applied to this club!');
-                      return;
-                    }
-
-                    // Navigate to application page
-                    navigate(`/club/${club.id}/apply`);
-                  }}
-                  className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
-                >
-                  Apply
-                </button>
-              )}
             </div>
 
             {/* Add Rating Section */}
