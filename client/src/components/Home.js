@@ -243,6 +243,11 @@ const Home = () => {
       };
       favorites.push(newFavorite);
       localStorage.setItem('favorites', JSON.stringify(favorites));
+
+      // Trigger notification event for liking a club
+      window.dispatchEvent(new CustomEvent('clubLiked', { 
+        detail: { club: club } 
+      }));
     }
     
     // Force re-render

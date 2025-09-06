@@ -9,38 +9,101 @@ const Header = () => {
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
 
+  // Load notifications from localStorage
+  const [notifications, setNotifications] = useState(() => {
+    const savedNotifications = localStorage.getItem('notifications');
+    return savedNotifications ? JSON.parse(savedNotifications) : [];
+  });
+
   const handleLogout = () => {
     // TODO: Implement actual logout logic (clear tokens, etc.)
     navigate('/login');
   };
 
-  // Sample notifications data
-  const notifications = [
-    {
-      id: 1,
-      type: 'application',
-      message: 'Your application to Queen\'s Tech and Media Association has been reviewed',
-      time: '2 hours ago',
-      icon: CheckCircle,
-      color: 'text-green-600'
-    },
-    {
-      id: 2,
-      type: 'hiring',
-      message: 'Smith Engineering Hyperloop is now hiring!',
-      time: '1 day ago',
-      icon: Heart,
-      color: 'text-blue-600'
-    },
-    {
-      id: 3,
-      type: 'update',
-      message: 'Interview scheduled for Queen\'s Investment Counsel',
-      time: '3 days ago',
-      icon: Clock,
-      color: 'text-purple-600'
-    }
-  ];
+  // Function to add a new notification
+  const addNotification = (notification) => {
+    const newNotification = {
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
+      read: false,
+      ...notification
+    };
+    
+    const updatedNotifications = [newNotification, ...notifications].slice(0, 50); // Keep only last 50
+    setNotifications(updatedNotifications);
+    localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+  };
+
+  // Function to mark notification as read
+  const markAsRead = (notificationId) => {
+    const updatedNotifications = notifications.map(notif => 
+      notif.id === notificationId ? { ...notif, read: true } : notif
+    );
+    setNotifications(updatedNotifications);
+    localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+  };
+
+  // Function to clear all notifications
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    localStorage.setItem('notifications', JSON.stringify([]));
+  };
+
+  // Listen for notification events
+  useEffect(() => {
+    const handleApplicationSaved = (event) => {
+      const { application } = event.detail;
+      addNotification({
+        type: 'application_saved',
+        message: `Draft saved for ${application.clubName}`,
+        icon: 'Save',
+        color: 'text-yellow-600'
+      });
+    };
+
+    const handleApplicationSubmitted = (event) => {
+      const { application } = event.detail;
+      addNotification({
+        type: 'application_submitted',
+        message: `Application submitted to ${application.clubName}`,
+        icon: 'CheckCircle',
+        color: 'text-green-600'
+      });
+    };
+
+    const handleClubLiked = (event) => {
+      const { club } = event.detail;
+      addNotification({
+        type: 'club_liked',
+        message: `Added ${club.name} to favorites`,
+        icon: 'Heart',
+        color: 'text-red-600'
+      });
+    };
+
+    const handleClubHiringStarted = (event) => {
+      const { club } = event.detail;
+      addNotification({
+        type: 'hiring_started',
+        message: `${club.name} is now hiring!`,
+        icon: 'Clock',
+        color: 'text-blue-600'
+      });
+    };
+
+    // Listen for custom events
+    window.addEventListener('applicationSaved', handleApplicationSaved);
+    window.addEventListener('applicationSubmitted', handleApplicationSubmitted);
+    window.addEventListener('clubLiked', handleClubLiked);
+    window.addEventListener('clubHiringStarted', handleClubHiringStarted);
+
+    return () => {
+      window.removeEventListener('applicationSaved', handleApplicationSaved);
+      window.removeEventListener('applicationSubmitted', handleApplicationSubmitted);
+      window.removeEventListener('clubLiked', handleClubLiked);
+      window.removeEventListener('clubHiringStarted', handleClubHiringStarted);
+    };
+  }, [notifications]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -79,16 +142,28 @@ const Header = () => {
               onClick={() => setShowNotifications(!showNotifications)}
             >
               <Bell size={20} className="text-gray-600" />
-              {notifications.length > 0 && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+              {notifications.filter(n => !n.read).length > 0 && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-bold">
+                    {notifications.filter(n => !n.read).length > 9 ? '9+' : notifications.filter(n => !n.read).length}
+                  </span>
+                </div>
               )}
             </div>
             
             {/* Notifications Dropdown */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200 max-h-96 overflow-y-auto">
-                <div className="px-4 py-2 border-b border-gray-200">
+                <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={clearAllNotifications}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Clear All
+                    </button>
+                  )}
                 </div>
                 
                 {notifications.length === 0 ? (
@@ -98,19 +173,45 @@ const Header = () => {
                   </div>
                 ) : (
                   notifications.map((notification) => {
-                    const IconComponent = notification.icon;
+                    // Get icon component based on icon name
+                    const getIconComponent = (iconName) => {
+                      switch (iconName) {
+                        case 'Save': return CheckCircle; // Using CheckCircle as save icon
+                        case 'CheckCircle': return CheckCircle;
+                        case 'Heart': return Heart;
+                        case 'Clock': return Clock;
+                        default: return CheckCircle;
+                      }
+                    };
+                    
+                    const IconComponent = getIconComponent(notification.icon);
+                    const timeAgo = notification.timestamp ? 
+                      new Date(notification.timestamp).toLocaleString() : 
+                      'Just now';
+                    
                     return (
-                      <div key={notification.id} className="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                      <div 
+                        key={notification.id} 
+                        className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${
+                          !notification.read ? 'bg-blue-50' : ''
+                        }`}
+                        onClick={() => markAsRead(notification.id)}
+                      >
                         <div className="flex items-start space-x-3">
                           <IconComponent size={16} className={`mt-0.5 ${notification.color}`} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-900 leading-relaxed">
+                            <p className={`text-sm leading-relaxed ${
+                              !notification.read ? 'font-medium text-gray-900' : 'text-gray-700'
+                            }`}>
                               {notification.message}
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
-                              {notification.time}
+                              {timeAgo}
                             </p>
                           </div>
+                          {!notification.read && (
+                            <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                          )}
                         </div>
                       </div>
                     );

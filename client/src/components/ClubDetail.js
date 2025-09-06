@@ -283,6 +283,11 @@ const ClubDetail = () => {
       favorites.push(newFavorite);
       localStorage.setItem('favorites', JSON.stringify(favorites));
       setIsFavorite(true);
+
+      // Trigger notification event for liking a club
+      window.dispatchEvent(new CustomEvent('clubLiked', { 
+        detail: { club: club } 
+      }));
     }
   };
 

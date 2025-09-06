@@ -145,6 +145,13 @@ const SearchPage = () => {
     
     setFavorites(updatedFavorites);
     localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+
+    // Trigger notification event for liking a club
+    if (existingIndex < 0) {
+      window.dispatchEvent(new CustomEvent('clubLiked', { 
+        detail: { club: club } 
+      }));
+    }
   };
 
   const isFavorite = (clubId) => {

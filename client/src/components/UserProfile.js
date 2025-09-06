@@ -34,20 +34,6 @@ const UserProfile = () => {
           role: "Business Analyst",
           joinDate: "January 2024"
         }
-      ],
-      applyingClubs: [
-        {
-          id: 3,
-          name: "Environmental Sustainability Group",
-          status: "Application Submitted",
-          date: "March 15, 2024"
-        },
-        {
-          id: 4,
-          name: "Political Science Society",
-          status: "Interview Scheduled",
-          date: "March 20, 2024"
-        }
       ]
     };
   });
@@ -65,6 +51,34 @@ const UserProfile = () => {
   });
   const [editingClub, setEditingClub] = useState(null);
   const [showDropdown, setShowDropdown] = useState(null);
+  const [applications, setApplications] = useState([]);
+
+  // Load applications from localStorage
+  useEffect(() => {
+    const loadApplications = () => {
+      const savedApplications = localStorage.getItem('clubApplications');
+      if (savedApplications) {
+        setApplications(JSON.parse(savedApplications));
+      }
+    };
+
+    loadApplications();
+
+    // Listen for application updates
+    const handleApplicationUpdate = () => {
+      loadApplications();
+    };
+
+    window.addEventListener('clubApplicationAdded', handleApplicationUpdate);
+    window.addEventListener('applicationSaved', handleApplicationUpdate);
+    window.addEventListener('applicationSubmitted', handleApplicationUpdate);
+
+    return () => {
+      window.removeEventListener('clubApplicationAdded', handleApplicationUpdate);
+      window.removeEventListener('applicationSaved', handleApplicationUpdate);
+      window.removeEventListener('applicationSubmitted', handleApplicationUpdate);
+    };
+  }, []);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -523,28 +537,47 @@ const UserProfile = () => {
               <h3 className="text-xl font-semibold text-gray-900">Clubs Currently Applying For</h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {userProfile.applyingClubs.map((club) => (
-                <div key={club.id} className="border border-gray-200 rounded-lg p-4 hover:border-yellow-300 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 
-                        className="font-semibold text-gray-900 mb-2 cursor-pointer hover:text-blue-600 transition-colors"
-                        onClick={() => navigate(`/club/${club.id}`)}
-                      >
-                        {club.name}
-                      </h4>
-                      <div className="flex items-center justify-between">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(club.status)}`}>
-                          {club.status}
-                        </span>
-                        <span className="text-sm text-gray-500">{club.date}</span>
+            {applications.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {applications.map((application) => (
+                  <div key={application.id} className="border border-gray-200 rounded-lg p-4 hover:border-yellow-300 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 
+                          className="font-semibold text-gray-900 mb-2 cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={() => navigate(`/club/${application.clubId}`)}
+                        >
+                          {application.clubName}
+                        </h4>
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
+                            {application.status}
+                          </span>
+                          <span className="text-sm text-gray-500">{application.dateSubmitted}</span>
+                        </div>
+                        {application.position && (
+                          <div className="mt-2">
+                            <span className="text-xs text-gray-500">Position: </span>
+                            <span className="text-xs font-medium text-gray-700">{application.position}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Clock size={48} className="text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">No applications yet</p>
+                <button
+                  onClick={() => navigate('/search')}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Browse Clubs
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

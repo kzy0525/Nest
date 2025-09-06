@@ -160,6 +160,11 @@ const ClubApplication = () => {
         detail: { application: newApplication } 
       }));
 
+      // Trigger notification event
+      window.dispatchEvent(new CustomEvent('applicationSaved', { 
+        detail: { application: newApplication } 
+      }));
+
       alert('Draft saved successfully! You can complete and submit it later from the Hiring Dashboard.');
       navigate('/hiring');
     } catch (error) {
@@ -270,6 +275,11 @@ const ClubApplication = () => {
 
       // Trigger custom event for HiringDashboard
       window.dispatchEvent(new CustomEvent('clubApplicationAdded', { 
+        detail: { application: newApplication } 
+      }));
+
+      // Trigger notification event
+      window.dispatchEvent(new CustomEvent('applicationSubmitted', { 
         detail: { application: newApplication } 
       }));
 
