@@ -405,6 +405,36 @@ app.get('/api/clubs/:id/reviews', (req, res) => {
   });
 });
 
+// Delete a club (temporary for testing)
+app.delete('/api/clubs/:id', (req, res) => {
+  const { id } = req.params;
+  
+  // First delete all reviews for this club
+  db.run('DELETE FROM reviews WHERE club_id = ?', [id], (err) => {
+    if (err) {
+      console.error('Error deleting reviews:', err);
+      res.status(500).json({ success: false, message: 'Error deleting club reviews' });
+      return;
+    }
+    
+    // Then delete the club
+    db.run('DELETE FROM clubs WHERE id = ?', [id], function(err) {
+      if (err) {
+        console.error('Error deleting club:', err);
+        res.status(500).json({ success: false, message: 'Error deleting club' });
+        return;
+      }
+      
+      if (this.changes === 0) {
+        res.status(404).json({ success: false, message: 'Club not found' });
+        return;
+      }
+      
+      res.json({ success: true, message: 'Club deleted successfully' });
+    });
+  });
+});
+
 // Get categories
 app.get('/api/categories', (req, res) => {
   db.all('SELECT category FROM clubs', (err, rows) => {

@@ -14,6 +14,11 @@ const HiringDashboard = () => {
   ]);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [showFileViewer, setShowFileViewer] = useState(false);
+  const [showApplicationViewer, setShowApplicationViewer] = useState(false);
+  const [viewingApplication, setViewingApplication] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState(null);
+  const [deleteAction, setDeleteAction] = useState(''); // 'delete' or 'withdraw'
   const navigate = useNavigate();
   const fileInputRefs = useRef({});
 
@@ -41,6 +46,7 @@ const HiringDashboard = () => {
       id: Date.now(),
       clubId: clubData.id,
       clubName: clubData.name,
+      clubLogo: clubData.logo || null,
       clubIcon: clubData.name.split(' ').map(word => word[0]).join('').substring(0, 4),
       clubIconBg: "bg-blue-600",
       status: "Submitted",
@@ -106,7 +112,9 @@ const HiringDashboard = () => {
       club: app.clubIcon,
       event: eventText,
       clubIcon: app.clubIcon,
-      clubIconBg: app.clubIconBg
+      clubIconBg: app.clubIconBg,
+      clubLogo: app.clubLogo,
+      clubName: app.clubName
     };
   }).slice(0, 4); // Limit to 4 events
 
@@ -118,6 +126,33 @@ const HiringDashboard = () => {
 
   const handleViewClub = (application) => {
     navigate(`/club/${application.clubId}`);
+  };
+
+  const handleViewApplication = (app) => {
+    setViewingApplication(app);
+    setShowApplicationViewer(true);
+    setSelectedApplication(null);
+  };
+
+  const handleDeleteClick = (app, action) => {
+    setApplicationToDelete(app);
+    setDeleteAction(action);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (applicationToDelete) {
+      removeApplication(applicationToDelete.id);
+      setShowDeleteModal(false);
+      setApplicationToDelete(null);
+      setDeleteAction('');
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setApplicationToDelete(null);
+    setDeleteAction('');
   };
 
   const handleFileUpload = (documentId, event) => {
@@ -231,9 +266,17 @@ const HiringDashboard = () => {
                     <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-3">
-                          <div className={`w-10 h-10 ${app.clubIconBg} rounded-full flex items-center justify-center text-white font-semibold text-sm`}>
-                            {app.clubIcon}
-                          </div>
+                          {app.clubLogo ? (
+                            <img 
+                              src={app.clubLogo} 
+                              alt={`${app.clubName} logo`}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className={`w-10 h-10 ${app.clubIconBg} rounded-full flex items-center justify-center text-white font-semibold text-sm`}>
+                              {app.clubIcon}
+                            </div>
+                          )}
                           <span className="font-medium text-gray-900">{app.clubName}</span>
                         </div>
                       </td>
@@ -243,53 +286,49 @@ const HiringDashboard = () => {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-gray-600">{app.dateSubmitted}</td>
-                                              <td className="py-4 px-4">
-                          <div className="relative" style={{ zIndex: 1000 }}>
-                            <button
-                              onClick={() => handleActionClick(app)}
-                              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            
-                            {/* Dropdown for all applications */}
-                            {selectedApplication === app.id && (
-                              <div className="absolute left-0 top-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200" style={{ zIndex: 9999 }}>
-                              <div className="py-1">
-                                <button 
-                                  onClick={() => handleViewClub(app)}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                >
-                                  View Club
-                                </button>
-                                <button 
-                                  onClick={() => updateApplicationStatus(app.id, "Interview")}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                >
-                                  Mark as Interview
-                                </button>
-                                <button 
-                                  onClick={() => updateApplicationStatus(app.id, "Accepted")}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                >
-                                  Mark as Accepted
-                                </button>
-                                <button 
-                                  onClick={() => updateApplicationStatus(app.id, "Rejected")}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                >
-                                  Mark as Rejected
-                                </button>
-                                <div className="border-t border-gray-200 my-1"></div>
-                                <button 
-                                  onClick={() => removeApplication(app.id)}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                >
-                                  <Trash2 size={14} className="inline mr-2" />
-                                  Remove Application
-                                </button>
-                              </div>
-                            </div>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-2">
+                          {/* Conditional Icons based on Status */}
+                          {app.status === 'Incomplete' ? (
+                            <>
+                              {/* Edit Icon for Incomplete Applications */}
+                              <button
+                                onClick={() => navigate(`/club/${app.clubId}/apply`)}
+                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit Application"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              
+                              {/* Delete Icon for Incomplete Applications */}
+                              <button
+                                onClick={() => handleDeleteClick(app, 'delete')}
+                                className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete Application"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {/* View Icon for Submitted Applications */}
+                              <button
+                                onClick={() => handleViewApplication(app)}
+                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="View Application"
+                              >
+                                <Eye size={16} />
+                              </button>
+                              
+                              {/* Withdraw Icon for Submitted Applications */}
+                              <button
+                                onClick={() => handleDeleteClick(app, 'withdraw')}
+                                className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Withdraw Application"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -320,9 +359,17 @@ const HiringDashboard = () => {
                     <div className="text-sm font-medium text-gray-900 mb-2">{day}</div>
                     {event && (
                       <div className="text-center">
-                        <div className={`w-6 h-6 ${event.clubIconBg} rounded-full flex items-center justify-center text-white text-xs font-semibold mx-auto mb-1`}>
-                          {event.clubIcon}
-                        </div>
+                        {event.clubLogo ? (
+                          <img 
+                            src={event.clubLogo} 
+                            alt={`${event.clubName} logo`}
+                            className="w-6 h-6 rounded-full object-cover mx-auto mb-1"
+                          />
+                        ) : (
+                          <div className={`w-6 h-6 ${event.clubIconBg} rounded-full flex items-center justify-center text-white text-xs font-semibold mx-auto mb-1`}>
+                            {event.clubIcon}
+                          </div>
+                        )}
                         <div className="text-xs text-gray-600 leading-tight">{event.event}</div>
                       </div>
                     )}
@@ -417,6 +464,227 @@ const HiringDashboard = () => {
             {/* Modal Content */}
             <div className="p-6 overflow-auto max-h-[calc(95vh-120px)]">
               {renderFileContent(selectedDocument.file)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Application Viewer Modal */}
+      {showApplicationViewer && viewingApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
+          <div className="bg-white w-2/3 h-full shadow-xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{viewingApplication.clubName}</h2>
+                <div className="mt-2">
+                  <span className="text-sm text-gray-600">Application Status: </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${viewingApplication.statusColor}`}>
+                    {viewingApplication.status}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowApplicationViewer(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <span className="text-2xl">×</span>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-auto h-[calc(100vh-120px)]">
+              <div className="space-y-6">
+                {/* My Information */}
+                <div className="border border-gray-200 rounded-lg">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <ChevronDown size={20} className="text-blue-600 mr-2" />
+                      My Information
+                    </h3>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm text-gray-600">Legal Name</label>
+                        <p className="text-gray-900 font-medium">John Doe</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Address</label>
+                        <p className="text-gray-900">Kingston, ON, Canada</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm text-gray-600">Email</label>
+                        <p className="text-gray-900">john.doe@queensu.ca</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Phone</label>
+                        <p className="text-gray-900">(555) 123-4567 (Mobile)</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-600">How Did You Hear About Us?</label>
+                      <p className="text-gray-900">Campus Event</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Work Experience */}
+                <div className="border border-gray-200 rounded-lg">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <ChevronDown size={20} className="text-blue-600 mr-2" />
+                      Work Experience
+                    </h3>
+                  </div>
+                  <div className="p-4">
+                    <div className="space-y-4">
+                      <div className="border-l-4 border-blue-500 pl-4">
+                        <h4 className="font-semibold text-gray-900">Technical Consultant</h4>
+                        <p className="text-gray-600">Queen's Startup Consulting</p>
+                        <p className="text-gray-500 text-sm">Kingston, ON • 03/2025 - Present</p>
+                        <p className="text-gray-700 mt-2 text-sm leading-relaxed">
+                          Collaborating with high-growth startups to design and implement technical solutions tailored to their unique business challenges, leveraging coding and analytical skills to drive product optimization. Assisted in building a scalable API for a startup that web-scraped pricing data from 6 major e-commerce platforms, enabling real-time comparison of secondhand product values based on condition and brand.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Education */}
+                <div className="border border-gray-200 rounded-lg">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <ChevronDown size={20} className="text-blue-600 mr-2" />
+                      Education
+                    </h3>
+                  </div>
+                  <div className="p-4">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">Bachelor of Science in Computer Science</h4>
+                        <p className="text-gray-600">Queen's University</p>
+                        <p className="text-gray-500 text-sm">Kingston, ON • 2022 - 2026</p>
+                        <p className="text-gray-700 mt-1 text-sm">GPA: 3.8/4.0</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Documents */}
+                <div className="border border-gray-200 rounded-lg">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <ChevronDown size={20} className="text-blue-600 mr-2" />
+                      Documents & Resources
+                    </h3>
+                  </div>
+                  <div className="p-4">
+                    <div className="space-y-3">
+                      {documents.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <FileText size={16} className="text-gray-400" />
+                            <span className="text-gray-700">{doc.name}</span>
+                            {doc.uploaded && (
+                              <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                                ✓ Uploaded
+                              </span>
+                            )}
+                          </div>
+                          {doc.uploaded && (
+                            <button
+                              onClick={() => handleViewDocument(doc)}
+                              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {showDeleteModal && applicationToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 size={20} className="text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {deleteAction === 'withdraw' ? 'Withdraw Application' : 'Delete Application'}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {deleteAction === 'withdraw' 
+                      ? 'Are you sure you want to withdraw this application?' 
+                      : 'Are you sure you want to delete this application?'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-3">
+                  {applicationToDelete.clubLogo ? (
+                    <img 
+                      src={applicationToDelete.clubLogo} 
+                      alt={`${applicationToDelete.clubName} logo`}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                      {applicationToDelete.clubIcon}
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-900">{applicationToDelete.clubName}</p>
+                    <p className="text-sm text-gray-600">Status: {applicationToDelete.status}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-6">
+                {deleteAction === 'withdraw' 
+                  ? 'This action will withdraw your application and remove it from your applications list. You can reapply later if the club is still accepting applications.'
+                  : 'This action will permanently delete your application draft. You will need to start over if you want to apply again.'
+                }
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors font-medium ${
+                    deleteAction === 'withdraw' 
+                      ? 'bg-orange-600 hover:bg-orange-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {deleteAction === 'withdraw' ? 'Withdraw' : 'Delete'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

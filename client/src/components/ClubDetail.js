@@ -4,7 +4,7 @@ import { Heart, Star, Instagram, Globe, Users, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
 // Rating Form Component
-const RatingForm = ({ clubId, onRatingAdded, existingReviews }) => {
+const RatingForm = ({ clubId, onRatingAdded, existingReviews, onClose }) => {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [studentName, setStudentName] = useState('');
@@ -73,14 +73,18 @@ const RatingForm = ({ clubId, onRatingAdded, existingReviews }) => {
         // Refresh reviews
         onRatingAdded();
         
-        // Reset form after a delay
+        // Close the form after a short delay
         setTimeout(() => {
+          if (onClose) {
+            onClose();
+          }
+          // Reset form
           setRating(0);
           setStudentName('');
           setClubPosition('');
           setReviewText('');
           setIsSubmitted(false);
-        }, 3000);
+        }, 2000);
       }
     } catch (error) {
       console.error('Error adding rating:', error);
@@ -379,19 +383,17 @@ const ClubDetail = () => {
                         {club.name.split(' ').map(word => word[0]).join('').substring(0, 4)}
                       </div>
                     )}
-                    <div className="flex-1" style={{ paddingTop: '30px' }}>
+                    <div className="flex-1" style={{ paddingTop: '70px' }}>
                       <h2 className="text-3xl font-bold text-gray-900 mb-2">{club.name}</h2>
                       {club.slogan && (
                         <p className="text-lg text-gray-600 mb-3 font-medium">{club.slogan}</p>
                       )}
-                      <p className="text-gray-700 leading-relaxed">
-                        {club.description}
-                      </p>
                     </div>
                   </div>
                   
                   {/* Overview Stats - Completely underneath icon and club info */}
                   <div className="mt-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Overview</h3>
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="flex items-center space-x-2">
                         <Users size={20} className="text-gray-500" />
@@ -405,30 +407,37 @@ const ClubDetail = () => {
                       )}
                     </div>
                     
-                    {/* Apply Button - Only show if club is hiring */}
-                    {club.application_deadline && new Date(club.application_deadline) > new Date() && (
-                      <button 
-                        onClick={() => {
-                          // Check if already applied - convert both IDs to strings for comparison
-                          const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
-                          
-                          const alreadyApplied = existingApplications.some(app => 
-                            String(app.clubId) === String(club.id)
-                          );
-                          
-                          if (alreadyApplied) {
-                            alert('You have already applied to this club!');
-                            return;
-                          }
-
-                          // Navigate to application page
-                          navigate(`/club/${club.id}/apply`);
-                        }}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
-                      >
-                        Apply
-                      </button>
+                    {/* Club Description */}
+                    {club.description && (
+                      <div className="mb-6">
+                        <p className="text-gray-700 leading-relaxed">{club.description}</p>
+                      </div>
                     )}
+                    
+                      {/* Apply Button - Only show if club is hiring */}
+                      {club.application_deadline && new Date(club.application_deadline) > new Date() && (
+                        <button 
+                          onClick={() => {
+                            // Check if already applied - convert both IDs to strings for comparison
+                            const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+                            
+                            const alreadyApplied = existingApplications.some(app => 
+                              String(app.clubId) === String(club.id)
+                            );
+                            
+                            if (alreadyApplied) {
+                              alert('You have already applied to this club!');
+                              return;
+                            }
+
+                            // Navigate to application page
+                            navigate(`/club/${club.id}/apply`);
+                          }}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
+                        >
+                          Apply
+                        </button>
+                      )}
                   </div>
                 </div>
               </div>
@@ -456,6 +465,7 @@ const ClubDetail = () => {
                   clubId={club.id} 
                   onRatingAdded={fetchClubReviews} 
                   existingReviews={reviews}
+                  onClose={() => setShowRatingForm(false)}
                 />
               </div>
             )}
@@ -540,13 +550,8 @@ const ClubDetail = () => {
                             <div className="font-medium text-gray-900">{review.student_name}</div>
                             <div className="text-sm text-gray-500">
                               {review.club_position && (
-                                <span className="mr-2">{review.club_position}</span>
+                                <span>{review.club_position}</span>
                               )}
-                              {new Date(review.created_at).toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}
                             </div>
                           </div>
                           <div className="flex space-x-1">
@@ -709,6 +714,31 @@ const ClubDetail = () => {
               </div>
             </div>
           </div>
+        </div>
+        
+        {/* Temporary Delete Button - Bottom Right Corner */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <button 
+            onClick={async () => {
+              if (window.confirm('Are you sure you want to delete this club? This action cannot be undone.')) {
+                try {
+                  const response = await axios.delete(`/api/clubs/${club.id}`);
+                  if (response.data.success) {
+                    alert('Club deleted successfully!');
+                    navigate('/search');
+                  } else {
+                    alert('Failed to delete club.');
+                  }
+                } catch (error) {
+                  console.error('Error deleting club:', error);
+                  alert('Error deleting club. Please try again.');
+                }
+              }
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-lg"
+          >
+            🗑️ Delete Club (Test)
+          </button>
         </div>
       </div>
     </div>

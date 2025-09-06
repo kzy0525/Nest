@@ -73,12 +73,29 @@ const Home = () => {
   useEffect(() => {
     // Load applications from localStorage
     const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
-    setApplications(savedApplications);
+    
+    // Enhance applications with club data from the clubs list
+    const enhancedApplications = savedApplications.map(app => {
+      const clubData = clubs.find(club => club.id === app.clubId);
+      return {
+        ...app,
+        clubLogo: clubData?.logo || null,
+        clubName: clubData?.name || app.clubName
+      };
+    });
+    
+    setApplications(enhancedApplications);
     
     // Listen for new applications
     const handleNewApplication = (event) => {
       const { application } = event.detail;
-      setApplications(prev => [...prev, application]);
+      const clubData = clubs.find(club => club.id === application.clubId);
+      const enhancedApplication = {
+        ...application,
+        clubLogo: clubData?.logo || null,
+        clubName: clubData?.name || application.clubName
+      };
+      setApplications(prev => [...prev, enhancedApplication]);
     };
 
     window.addEventListener('clubApplicationAdded', handleNewApplication);
@@ -86,7 +103,7 @@ const Home = () => {
     return () => {
       window.removeEventListener('clubApplicationAdded', handleNewApplication);
     };
-  }, []);
+  }, [clubs]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -380,10 +397,21 @@ const Home = () => {
                   applications.slice(0, 3).map((app) => (
                     <div key={app.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
                       <div className="flex items-center space-x-4">
-                        {getStatusIcon(app.status)}
-                        <div>
-                          <h3 className="font-medium text-gray-900">{app.clubName}</h3>
-                          <p className="text-sm text-gray-600">{getStatusDescription(app.status)}</p>
+                        {/* Club Logo or Status Icon */}
+                        <div className="flex items-center space-x-3">
+                          {app.clubLogo ? (
+                            <img 
+                              src={app.clubLogo} 
+                              alt={`${app.clubName} logo`}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            getStatusIcon(app.status)
+                          )}
+                          <div>
+                            <h3 className="font-medium text-gray-900">{app.clubName}</h3>
+                            <p className="text-sm text-gray-600">{getStatusDescription(app.status)}</p>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
