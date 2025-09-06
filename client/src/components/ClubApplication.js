@@ -1,24 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Heart, Upload, FileText, Send, ArrowLeft } from 'lucide-react';
+import { Upload, FileText, Send, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 
 const ClubApplication = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [club, setClub] = useState(null);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [applicationForm, setApplicationForm] = useState({
     resume: null,
-    answers: {}
+    email: '',
+    phone: '',
+    year: '',
+    program: '',
+    position: '',
+    answers: {},
+    resumeFileName: null
   });
   const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchClubDetails();
-    checkFavoriteStatus();
   }, [id]);
 
   const fetchClubDetails = async () => {
@@ -27,17 +31,43 @@ const ClubApplication = () => {
       setClub(response.data);
       setLoading(false);
       
-      // Initialize answers object with club's application questions
-      if (response.data.application_questions) {
-        const questions = JSON.parse(response.data.application_questions);
-        const initialAnswers = {};
-        questions.forEach(q => {
-          initialAnswers[q.id] = '';
+      // Check for existing draft application
+      const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+      const existingDraft = existingApplications.find(app => 
+        app.clubId === parseInt(id) && app.status === 'Incomplete'
+      );
+
+      if (existingDraft) {
+        // Load existing draft data
+        setApplicationForm({
+          resume: null, // Resume file can't be restored from localStorage
+          email: existingDraft.email || '',
+          phone: existingDraft.phone || '',
+          year: existingDraft.year || '',
+          program: existingDraft.program || '',
+          position: existingDraft.position || '',
+          answers: existingDraft.answers || {},
+          resumeFileName: existingDraft.resumeFileName || null // Store resume filename for display
         });
-        setApplicationForm(prev => ({
-          ...prev,
-          answers: initialAnswers
-        }));
+      } else {
+        // Initialize answers object with club's application questions
+        if (response.data.application_questions) {
+          try {
+            const questions = JSON.parse(response.data.application_questions);
+            if (Array.isArray(questions)) {
+              const initialAnswers = {};
+              questions.forEach(q => {
+                initialAnswers[q.id] = '';
+              });
+              setApplicationForm(prev => ({
+                ...prev,
+                answers: initialAnswers
+              }));
+            }
+          } catch (error) {
+            console.log('Error parsing application_questions in fetch:', error);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching club details:', error);
@@ -45,40 +75,15 @@ const ClubApplication = () => {
     }
   };
 
-  const checkFavoriteStatus = () => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    setIsFavorite(favorites.some(fav => fav.id === parseInt(id)));
-  };
 
-  const handleFavorite = () => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    
-    if (isFavorite) {
-      const updatedFavorites = favorites.filter(fav => fav.id !== club.id);
-      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-      setIsFavorite(false);
-    } else {
-      const newFavorite = {
-        id: club.id,
-        name: club.name,
-        description: club.description,
-        category: club.category,
-        rating: club.rating,
-        review_count: club.review_count,
-        member_count: club.member_count
-      };
-      favorites.push(newFavorite);
-      localStorage.setItem('favorites', JSON.stringify(favorites));
-      setIsFavorite(true);
-    }
-  };
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/pdf') {
       setApplicationForm(prev => ({
         ...prev,
-        resume: file
+        resume: file,
+        resumeFileName: null // Clear saved filename when new file is uploaded
       }));
     } else {
       alert('Please upload a PDF file for your resume.');
@@ -112,8 +117,16 @@ const ClubApplication = () => {
         id: Date.now(),
         clubId: club.id,
         clubName: club.name,
+        clubLogo: club.logo || null,
         clubIcon: club.name.split(' ').map(word => word[0]).join('').substring(0, 4),
         clubIconBg: "bg-blue-600",
+        position: applicationForm.position,
+        year: applicationForm.year,
+        program: applicationForm.program,
+        email: applicationForm.email,
+        phone: applicationForm.phone,
+        answers: applicationForm.answers, // Save the application question answers
+        resumeFileName: applicationForm.resume ? applicationForm.resume.name : null, // Save resume filename
         status: "Incomplete",
         statusColor: "bg-yellow-100 text-yellow-600",
         dateSubmitted: new Date().toLocaleDateString('en-US', { 
@@ -124,7 +137,22 @@ const ClubApplication = () => {
       };
 
       const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
-      const updatedApplications = [...existingApplications, newApplication];
+      
+      // Check if there's already a draft for this club
+      const existingDraftIndex = existingApplications.findIndex(app => 
+        app.clubId === club.id && app.status === 'Incomplete'
+      );
+      
+      let updatedApplications;
+      if (existingDraftIndex >= 0) {
+        // Update existing draft
+        updatedApplications = [...existingApplications];
+        updatedApplications[existingDraftIndex] = newApplication;
+      } else {
+        // Add new draft
+        updatedApplications = [...existingApplications, newApplication];
+      }
+      
       localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
 
       // Trigger custom event for HiringDashboard
@@ -147,8 +175,42 @@ const ClubApplication = () => {
       return;
     }
 
+    if (!applicationForm.email || !applicationForm.phone || !applicationForm.year || !applicationForm.program) {
+      alert('Please fill in all required fields (email, phone, year, and program).');
+      return;
+    }
+
+    // Check if club has positions and if position is required
+    let hasPositions = false;
+    try {
+      if (club.open_positions) {
+        const positions = JSON.parse(club.open_positions);
+        hasPositions = Array.isArray(positions) && positions.length > 0;
+      }
+    } catch (error) {
+      console.log('Error parsing open_positions:', error);
+      hasPositions = false;
+    }
+
+    if (hasPositions && !applicationForm.position) {
+      alert('Please select a position.');
+      return;
+    }
+
     // Check if all questions are answered
-    const questions = club.application_questions ? JSON.parse(club.application_questions) : [];
+    let questions = [];
+    try {
+      if (club.application_questions) {
+        questions = JSON.parse(club.application_questions);
+        if (!Array.isArray(questions)) {
+          questions = [];
+        }
+      }
+    } catch (error) {
+      console.log('Error parsing application_questions:', error);
+      questions = [];
+    }
+    
     const unansweredQuestions = questions.filter(q => !applicationForm.answers[q.id]?.trim());
     
     if (unansweredQuestions.length > 0) {
@@ -168,8 +230,16 @@ const ClubApplication = () => {
         id: Date.now(),
         clubId: club.id,
         clubName: club.name,
+        clubLogo: club.logo || null,
         clubIcon: club.name.split(' ').map(word => word[0]).join('').substring(0, 4),
         clubIconBg: "bg-blue-600",
+        position: applicationForm.position,
+        year: applicationForm.year,
+        program: applicationForm.program,
+        email: applicationForm.email,
+        phone: applicationForm.phone,
+        answers: applicationForm.answers, // Save the application question answers
+        resumeFileName: applicationForm.resume ? applicationForm.resume.name : null, // Save resume filename
         status: "Submitted",
         statusColor: "bg-green-100 text-green-600",
         dateSubmitted: new Date().toLocaleDateString('en-US', { 
@@ -180,7 +250,22 @@ const ClubApplication = () => {
       };
 
       const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
-      const updatedApplications = [...existingApplications, newApplication];
+      
+      // Check if there's already a draft for this club
+      const existingDraftIndex = existingApplications.findIndex(app => 
+        app.clubId === club.id && app.status === 'Incomplete'
+      );
+      
+      let updatedApplications;
+      if (existingDraftIndex >= 0) {
+        // Update existing draft to submitted
+        updatedApplications = [...existingApplications];
+        updatedApplications[existingDraftIndex] = newApplication;
+      } else {
+        // Add new submitted application
+        updatedApplications = [...existingApplications, newApplication];
+      }
+      
       localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
 
       // Trigger custom event for HiringDashboard
@@ -213,45 +298,25 @@ const ClubApplication = () => {
     );
   }
 
-  const questions = club.application_questions ? JSON.parse(club.application_questions) : [];
+  // Parse application questions safely
+  let questions = [];
+  try {
+    if (club.application_questions) {
+      questions = JSON.parse(club.application_questions);
+      if (!Array.isArray(questions)) {
+        questions = [];
+      }
+    }
+  } catch (error) {
+    console.log('Error parsing application_questions in render:', error);
+    questions = [];
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50">
         
-        {/* Club Header Card */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="relative">
-            {/* Blue Header Section */}
-            <div className="bg-blue-600 h-32 relative z-0">
-              <button
-                onClick={handleFavorite}
-                className="absolute top-4 left-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all z-10"
-              >
-                <Heart 
-                  size={20} 
-                  className={`${isFavorite ? 'text-red-500 fill-current' : 'text-white'}`} 
-                />
-              </button>
-            </div>
-            
-            {/* Club Avatar and Info - Positioned above the blue background */}
-            <div className="px-6 pb-6 relative z-10">
-              <div className="flex items-start space-x-4 -mt-16">
-                <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg relative z-20">
-                  {club.name.split(' ').map(word => word[0]).join('').substring(0, 4)}
-                </div>
-                <div className="flex-1 pt-2">
-                  <h2 className="text-2xl font-bold text-gray-900">{club.name}</h2>
-                  {club.slogan && (
-                    <p className="text-gray-600 mt-1">{club.slogan}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Application Form */}
         <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -271,6 +336,101 @@ const ClubApplication = () => {
             <p className="text-gray-600">Complete your application for {club.name}</p>
           </div>
 
+          {/* Contact Information */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                <input
+                  type="email"
+                  value={applicationForm.email}
+                  onChange={(e) => setApplicationForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="your.email@queensu.ca"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                <input
+                  type="tel"
+                  value={applicationForm.phone}
+                  onChange={(e) => setApplicationForm(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="(555) 123-4567"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Year *</label>
+                <select
+                  value={applicationForm.year}
+                  onChange={(e) => setApplicationForm(prev => ({ ...prev, year: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select your current year</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                  <option value="5th Year">5th Year</option>
+                  <option value="Graduate">Graduate</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Program *</label>
+                <input
+                  type="text"
+                  value={applicationForm.program}
+                  onChange={(e) => setApplicationForm(prev => ({ ...prev, program: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Computer Science"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Position Selection */}
+          {(() => {
+            let positions = [];
+            try {
+              if (club && club.open_positions) {
+                positions = JSON.parse(club.open_positions);
+                if (!Array.isArray(positions)) {
+                  positions = [];
+                }
+              }
+            } catch (error) {
+              console.log('Error parsing open_positions:', error);
+              positions = [];
+            }
+
+            return positions.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Position Selection</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Position *</label>
+                  <select
+                    value={applicationForm.position}
+                    onChange={(e) => setApplicationForm(prev => ({ ...prev, position: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Choose a position...</option>
+                    {positions.map((position, index) => (
+                      <option key={index} value={position}>
+                        {position}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Resume Upload */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Resume Upload</h3>
@@ -286,10 +446,12 @@ const ClubApplication = () => {
                 <label htmlFor="resume-upload" className="cursor-pointer">
                   <Upload size={48} className="mx-auto text-gray-400 mb-4" />
                   <p className="text-lg font-medium text-gray-900 mb-2">
-                    {applicationForm.resume ? applicationForm.resume.name : 'Upload Resume'}
+                    {applicationForm.resume ? applicationForm.resume.name : 
+                     applicationForm.resumeFileName ? applicationForm.resumeFileName : 'Upload Resume'}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {applicationForm.resume ? 'Click to change file' : 'PDF files only, max 5MB'}
+                    {applicationForm.resume ? 'Click to change file' : 
+                     applicationForm.resumeFileName ? 'Resume saved in draft - click to re-upload' : 'PDF files only, max 5MB'}
                   </p>
                 </label>
               </div>

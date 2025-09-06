@@ -275,7 +275,10 @@ const ClubDetail = () => {
         review_count: club.review_count,
         member_count: club.member_count,
         meeting_time: club.meeting_time,
-        meeting_location: club.meeting_location
+        meeting_location: club.meeting_location,
+        logo: club.logo,
+        isHiring: club.isHiring,
+        application_deadline: club.application_deadline
       };
       favorites.push(newFavorite);
       localStorage.setItem('favorites', JSON.stringify(favorites));
@@ -394,7 +397,7 @@ const ClubDetail = () => {
                   {/* Overview Stats - Completely underneath icon and club info */}
                   <div className="mt-6">
                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Overview</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-2 gap-2 mb-6">
                       <div className="flex items-center space-x-2">
                         <Users size={20} className="text-gray-500" />
                         <span className="text-gray-700">Active Members: <span className="font-bold">{club.member_count}</span></span>
@@ -609,21 +612,67 @@ const ClubDetail = () => {
 
             {/* Open Positions */}
             <div className="bg-white rounded-xl shadow-sm p-6">
-              {club.open_positions ? (
-                <div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-3">Open Positions</h4>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    {club.open_positions.split(', ').map((position, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span>{position.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
-                        <span className="text-gray-500">x{Math.ceil(club.available_spots / club.open_positions.split(', ').length)}</span>
-                      </div>
-                    ))}
+              {(() => {
+                let positions = [];
+                let spots = [];
+                try {
+                  if (club.open_positions) {
+                    // Try to parse as JSON array first
+                    try {
+                      positions = JSON.parse(club.open_positions);
+                      if (!Array.isArray(positions)) {
+                        positions = [];
+                      }
+                    } catch (jsonError) {
+                      // If JSON parsing fails, treat as comma-separated string
+                      positions = club.open_positions.split(',').map(pos => pos.trim()).filter(pos => pos);
+                    }
+                  }
+                  
+                  // Handle available_spots
+                  if (club.available_spots) {
+                    // Try to parse as JSON array first
+                    try {
+                      spots = JSON.parse(club.available_spots);
+                      if (!Array.isArray(spots)) {
+                        spots = [];
+                      }
+                    } catch (jsonError) {
+                      // If JSON parsing fails, use the total number for all positions
+                      const totalSpots = parseInt(club.available_spots) || 0;
+                      spots = positions.map(() => Math.ceil(totalSpots / positions.length));
+                    }
+                  } else {
+                    // If no spots data, default to 1 for each position
+                    spots = positions.map(() => 1);
+                  }
+                  
+                  // Ensure spots array has same length as positions array
+                  while (spots.length < positions.length) {
+                    spots.push(1);
+                  }
+                } catch (error) {
+                  console.log('Error parsing positions/spots:', error);
+                  positions = [];
+                  spots = [];
+                }
+
+                return positions.length > 0 ? (
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-900 mb-3">Open Positions</h4>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      {positions.map((position, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <span>{position.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
+                          <span className="text-gray-500">x{spots[index]}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-600">No positions currently open</p>
-              )}
+                ) : (
+                  <p className="text-sm text-gray-600">No positions currently open</p>
+                );
+              })()}
             </div>
 
             {/* Hiring Timeline */}

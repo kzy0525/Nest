@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Eye, Plus, ChevronDown, Trash2, Upload, FileText } from 'lucide-react';
+import axios from 'axios';
 
 const HiringDashboard = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -18,6 +19,7 @@ const HiringDashboard = () => {
   const [viewingApplication, setViewingApplication] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [applicationToDelete, setApplicationToDelete] = useState(null);
+  const [clubData, setClubData] = useState({});
   const [deleteAction, setDeleteAction] = useState(''); // 'delete' or 'withdraw'
   const navigate = useNavigate();
   const fileInputRefs = useRef({});
@@ -49,6 +51,9 @@ const HiringDashboard = () => {
       clubLogo: clubData.logo || null,
       clubIcon: clubData.name.split(' ').map(word => word[0]).join('').substring(0, 4),
       clubIconBg: "bg-blue-600",
+      position: '', // Will be set when application is created through the form
+      year: '', // Will be set when application is created through the form
+      program: '', // Will be set when application is created through the form
       status: "Submitted",
       statusColor: "bg-green-100 text-green-600",
       dateSubmitted: new Date().toLocaleDateString('en-US', { 
@@ -128,10 +133,19 @@ const HiringDashboard = () => {
     navigate(`/club/${application.clubId}`);
   };
 
-  const handleViewApplication = (app) => {
+  const handleViewApplication = async (app) => {
     setViewingApplication(app);
     setShowApplicationViewer(true);
     setSelectedApplication(null);
+    
+    // Fetch club data to get application questions
+    try {
+      const response = await axios.get(`/api/clubs/${app.clubId}`);
+      setClubData(response.data);
+    } catch (error) {
+      console.error('Error fetching club data:', error);
+      setClubData({});
+    }
   };
 
   const handleDeleteClick = (app, action) => {
@@ -277,7 +291,12 @@ const HiringDashboard = () => {
                               {app.clubIcon}
                             </div>
                           )}
-                          <span className="font-medium text-gray-900">{app.clubName}</span>
+                          <span 
+                            className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                            onClick={() => navigate(`/club/${app.clubId}`)}
+                          >
+                            {app.clubName}
+                          </span>
                         </div>
                       </td>
                       <td className="py-4 px-4">
@@ -506,72 +525,74 @@ const HiringDashboard = () => {
                   <div className="p-4 space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm text-gray-600">Legal Name</label>
-                        <p className="text-gray-900 font-medium">John Doe</p>
+                        <label className="text-sm text-gray-600">Email</label>
+                        <p className="text-gray-900">{viewingApplication.email || 'Not provided'}</p>
                       </div>
                       <div>
-                        <label className="text-sm text-gray-600">Address</label>
-                        <p className="text-gray-900">Kingston, ON, Canada</p>
+                        <label className="text-sm text-gray-600">Phone</label>
+                        <p className="text-gray-900">{viewingApplication.phone || 'Not provided'}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm text-gray-600">Email</label>
-                        <p className="text-gray-900">john.doe@queensu.ca</p>
+                        <label className="text-sm text-gray-600">Year</label>
+                        <p className="text-gray-900">{viewingApplication.year || 'Not provided'}</p>
                       </div>
                       <div>
-                        <label className="text-sm text-gray-600">Phone</label>
-                        <p className="text-gray-900">(555) 123-4567 (Mobile)</p>
+                        <label className="text-sm text-gray-600">Program</label>
+                        <p className="text-gray-900">{viewingApplication.program || 'Not provided'}</p>
                       </div>
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-600">How Did You Hear About Us?</label>
-                      <p className="text-gray-900">Campus Event</p>
-                    </div>
+                    {viewingApplication.position && (
+                      <div>
+                        <label className="text-sm text-gray-600">Applied Position</label>
+                        <p className="text-gray-900 font-medium">{viewingApplication.position}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Work Experience */}
-                <div className="border border-gray-200 rounded-lg">
-                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                      <ChevronDown size={20} className="text-blue-600 mr-2" />
-                      Work Experience
-                    </h3>
-                  </div>
-                  <div className="p-4">
-                    <div className="space-y-4">
-                      <div className="border-l-4 border-blue-500 pl-4">
-                        <h4 className="font-semibold text-gray-900">Technical Consultant</h4>
-                        <p className="text-gray-600">Queen's Startup Consulting</p>
-                        <p className="text-gray-500 text-sm">Kingston, ON • 03/2025 - Present</p>
-                        <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-                          Collaborating with high-growth startups to design and implement technical solutions tailored to their unique business challenges, leveraging coding and analytical skills to drive product optimization. Assisted in building a scalable API for a startup that web-scraped pricing data from 6 major e-commerce platforms, enabling real-time comparison of secondhand product values based on condition and brand.
-                        </p>
+                {/* Application Questions */}
+                {viewingApplication.answers && Object.keys(viewingApplication.answers).length > 0 && (
+                  <div className="border border-gray-200 rounded-lg">
+                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <ChevronDown size={20} className="text-blue-600 mr-2" />
+                        Application Questions
+                      </h3>
+                    </div>
+                    <div className="p-4">
+                      <div className="space-y-4">
+                        {Object.entries(viewingApplication.answers).map(([questionId, answer]) => {
+                          // Get the question text from the club's application questions
+                          let questionText = `Question ${questionId}`;
+                          try {
+                            if (clubData.application_questions) {
+                              const questions = JSON.parse(clubData.application_questions);
+                              if (Array.isArray(questions)) {
+                                const question = questions.find(q => q.id.toString() === questionId.toString());
+                                if (question) {
+                                  questionText = question.text;
+                                }
+                              }
+                            }
+                          } catch (error) {
+                            console.log('Error getting question text:', error);
+                          }
+                          
+                          return (
+                            <div key={questionId} className="border-l-4 border-blue-500 pl-4">
+                              <h4 className="font-semibold text-gray-900 mb-2">{questionText}</h4>
+                              <p className="text-gray-700 text-sm leading-relaxed">
+                                {answer || 'No answer provided'}
+                              </p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Education */}
-                <div className="border border-gray-200 rounded-lg">
-                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                      <ChevronDown size={20} className="text-blue-600 mr-2" />
-                      Education
-                    </h3>
-                  </div>
-                  <div className="p-4">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold text-gray-900">Bachelor of Science in Computer Science</h4>
-                        <p className="text-gray-600">Queen's University</p>
-                        <p className="text-gray-500 text-sm">Kingston, ON • 2022 - 2026</p>
-                        <p className="text-gray-700 mt-1 text-sm">GPA: 3.8/4.0</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {/* Documents */}
                 <div className="border border-gray-200 rounded-lg">
@@ -583,7 +604,24 @@ const HiringDashboard = () => {
                   </div>
                   <div className="p-4">
                     <div className="space-y-3">
-                      {documents.map((doc) => (
+                      {/* Resume */}
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText size={16} className="text-gray-400" />
+                          <span className="text-gray-700">Resume</span>
+                          {(viewingApplication.resumeFileName || viewingApplication.resume) && (
+                            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                              ✓ Uploaded
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {viewingApplication.resumeFileName || (viewingApplication.resume ? viewingApplication.resume.name : 'No resume uploaded')}
+                        </div>
+                      </div>
+                      
+                      {/* Other documents from the documents state */}
+                      {documents.filter(doc => doc.name !== 'Resume').map((doc) => (
                         <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center space-x-3">
                             <FileText size={16} className="text-gray-400" />

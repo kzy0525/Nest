@@ -135,7 +135,10 @@ const SearchPage = () => {
         review_count: club.review_count,
         member_count: club.member_count,
         meeting_time: club.meeting_time,
-        meeting_location: club.meeting_location
+        meeting_location: club.meeting_location,
+        logo: club.logo,
+        isHiring: club.isHiring,
+        application_deadline: club.application_deadline
       };
       updatedFavorites.push(newFavorite);
     }

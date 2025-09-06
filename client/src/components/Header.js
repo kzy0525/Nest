@@ -133,7 +133,6 @@ const Header = () => {
               <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
               <div className="hidden md:block">
                 <div className="text-sm font-medium text-gray-900">William Smith</div>
-                <div className="text-xs text-gray-500">williamsmith@gmail.com</div>
               </div>
               <ChevronDown size={16} className={`text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
             </div>

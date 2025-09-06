@@ -99,9 +99,17 @@ const Favorites = () => {
   };
 
   const isClubRecruiting = (club) => {
+    // First check if the club is hiring
+    if (club.isHiring === 'false' || club.isHiring === false) {
+      return false;
+    }
+    
+    // If no deadline, assume not recruiting
     if (!club.application_deadline) {
       return false;
     }
+    
+    // Check if deadline has passed
     const deadline = new Date(club.application_deadline);
     const now = new Date();
     return deadline > now;

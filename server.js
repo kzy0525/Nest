@@ -115,8 +115,8 @@ function createTables() {
     else console.log('Reviews table created or already exists');
   });
 
-  // Insert sample data
-  insertSampleData();
+  // Insert sample data - commented out for clean start
+  // insertSampleData();
 }
 
 // Insert sample club data

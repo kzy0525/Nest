@@ -5,48 +5,56 @@ import { Edit, Camera, MapPin, GraduationCap, Calendar, User, Target, Users, Clo
 const UserProfile = () => {
   const navigate = useNavigate();
   
-  // Mock user data - in a real app this would come from a database
-  const [userProfile, setUserProfile] = useState({
-    name: "William Smith",
-    program: "Computer Science",
-    year: "3rd Year",
-    faculty: "Faculty of Engineering and Applied Science",
-    pronouns: "He/Him",
-    avatar: null, // URL to avatar image
-    bio: "Passionate about technology and innovation, with a focus on software development and product design.",
-    goals: "Looking for design + consulting roles in tech companies and startups.",
-    currentClubs: [
-      {
-        id: 1,
-        name: "Queen's Tech and Media Association (QTMA)",
-        role: "Software Developer",
-        joinDate: "September 2023"
-      },
-      {
-        id: 2,
-        name: "Queen's Startup Consulting",
-        role: "Business Analyst",
-        joinDate: "January 2024"
-      }
-    ],
-    applyingClubs: [
-      {
-        id: 3,
-        name: "Environmental Sustainability Group",
-        status: "Application Submitted",
-        date: "March 15, 2024"
-      },
-      {
-        id: 4,
-        name: "Political Science Society",
-        status: "Interview Scheduled",
-        date: "March 20, 2024"
-      }
-    ]
+  // Load user data from localStorage or use default
+  const [userProfile, setUserProfile] = useState(() => {
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      return JSON.parse(savedProfile);
+    }
+    // Default user data - in a real app this would come from a database
+    return {
+      name: "William Smith",
+      program: "Computer Science",
+      year: "3rd Year",
+      faculty: "Faculty of Engineering and Applied Science",
+      pronouns: "He/Him",
+      avatar: null, // URL to avatar image
+      bio: "Passionate about technology and innovation, with a focus on software development and product design.",
+      goals: "Looking for design + consulting roles in tech companies and startups.",
+      currentClubs: [
+        {
+          id: 1,
+          name: "Queen's Tech and Media Association (QTMA)",
+          role: "Software Developer",
+          joinDate: "September 2023"
+        },
+        {
+          id: 2,
+          name: "Queen's Startup Consulting",
+          role: "Business Analyst",
+          joinDate: "January 2024"
+        }
+      ],
+      applyingClubs: [
+        {
+          id: 3,
+          name: "Environmental Sustainability Group",
+          status: "Application Submitted",
+          date: "March 15, 2024"
+        },
+        {
+          id: 4,
+          name: "Political Science Society",
+          status: "Interview Scheduled",
+          date: "March 20, 2024"
+        }
+      ]
+    };
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ ...userProfile });
+  const [editingSection, setEditingSection] = useState(null); // 'basic', 'about', 'clubs'
   const [showAddClubModal, setShowAddClubModal] = useState(false);
   const [availableClubs, setAvailableClubs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,9 +76,21 @@ const UserProfile = () => {
     setIsEditing(false);
   };
 
-  const handleCancel = () => {
+  const handleEditSection = (section) => {
+    setEditingSection(section);
     setEditForm({ ...userProfile });
-    setIsEditing(false);
+  };
+
+  const handleSaveSection = () => {
+    setUserProfile(editForm);
+    // Save to localStorage to make changes permanent
+    localStorage.setItem('userProfile', JSON.stringify(editForm));
+    setEditingSection(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditForm({ ...userProfile });
+    setEditingSection(null);
   };
 
   const handleInputChange = (field, value) => {
@@ -78,6 +98,11 @@ const UserProfile = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleCancel = () => {
+    setEditForm({ ...userProfile });
+    setIsEditing(false);
   };
 
   // Fetch available clubs from the database
@@ -120,10 +145,12 @@ const UserProfile = () => {
         joinDate: newClubForm.joinDate
       };
       
-      setUserProfile(prev => ({
-        ...prev,
-        currentClubs: [...prev.currentClubs, newClub]
-      }));
+      const updatedProfile = {
+        ...userProfile,
+        currentClubs: [...userProfile.currentClubs, newClub]
+      };
+      setUserProfile(updatedProfile);
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
       
       setShowAddClubModal(false);
       setSearchQuery('');
@@ -133,10 +160,12 @@ const UserProfile = () => {
   };
 
   const handleRemoveClub = (clubId) => {
-    setUserProfile(prev => ({
-      ...prev,
-      currentClubs: prev.currentClubs.filter(club => club.id !== clubId)
-    }));
+    const updatedProfile = {
+      ...userProfile,
+      currentClubs: userProfile.currentClubs.filter(club => club.id !== clubId)
+    };
+    setUserProfile(updatedProfile);
+    localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
     setShowDropdown(null);
   };
 
@@ -148,20 +177,22 @@ const UserProfile = () => {
 
   const handleUpdateClub = () => {
     if (editingClub && newClubForm.role && newClubForm.joinDate) {
-      setUserProfile(prev => ({
-        ...prev,
-        currentClubs: prev.currentClubs.map(club => 
+      const updatedProfile = {
+        ...userProfile,
+        currentClubs: userProfile.currentClubs.map(club => 
           club.id === editingClub.id 
             ? { ...club, role: newClubForm.role, joinDate: newClubForm.joinDate }
             : club
         )
-      }));
+      };
+      setUserProfile(updatedProfile);
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
       setEditingClub(null);
       setNewClubForm({ role: '', joinDate: '' });
     }
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelClubEdit = () => {
     setEditingClub(null);
     setNewClubForm({ role: '', joinDate: '' });
   };
@@ -236,35 +267,115 @@ const UserProfile = () => {
                     <div className="space-y-4">
                       {/* Name and Pronouns */}
                       <div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-1">{userProfile.name}</h2>
-                        <span className="text-lg text-gray-700">{userProfile.pronouns}</span>
+                        {editingSection === 'basic' ? (
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              value={editForm.name}
+                              onChange={(e) => handleInputChange('name', e.target.value)}
+                              className="text-3xl font-bold text-gray-900 bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
+                              placeholder="Full Name"
+                            />
+                            <input
+                              type="text"
+                              value={editForm.pronouns}
+                              onChange={(e) => handleInputChange('pronouns', e.target.value)}
+                              className="text-lg text-gray-700 bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
+                              placeholder="Pronouns (optional)"
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <h2 className="text-3xl font-bold text-gray-900 mb-1">{userProfile.name}</h2>
+                            <span className="text-lg text-gray-700">{userProfile.pronouns}</span>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Academic Details with Icons */}
                       <div className="space-y-3">
-                        <div className="flex items-center space-x-3 text-gray-800">
-                          <Calendar size={18} className="text-gray-700" />
-                          <span className="text-lg">{userProfile.year}</span>
-                        </div>
-                        <div className="flex items-center space-x-3 text-gray-800">
-                          <GraduationCap size={18} className="text-gray-700" />
-                          <span className="text-lg">{userProfile.program}</span>
-                        </div>
-                        <div className="flex items-center space-x-3 text-gray-800">
-                          <MapPin size={18} className="text-gray-700" />
-                          <span className="text-lg">{userProfile.faculty}</span>
-                        </div>
+                        {editingSection === 'basic' ? (
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-3 text-gray-800">
+                              <Calendar size={18} className="text-gray-700" />
+                              <select
+                                value={editForm.year}
+                                onChange={(e) => handleInputChange('year', e.target.value)}
+                                className="text-lg bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
+                              >
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                                <option value="5th Year">5th Year</option>
+                                <option value="Graduate">Graduate</option>
+                              </select>
+                            </div>
+                            <div className="flex items-center space-x-3 text-gray-800">
+                              <GraduationCap size={18} className="text-gray-700" />
+                              <input
+                                type="text"
+                                value={editForm.program}
+                                onChange={(e) => handleInputChange('program', e.target.value)}
+                                className="text-lg bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
+                                placeholder="Program"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-3 text-gray-800">
+                              <MapPin size={18} className="text-gray-700" />
+                              <input
+                                type="text"
+                                value={editForm.faculty}
+                                onChange={(e) => handleInputChange('faculty', e.target.value)}
+                                className="text-lg bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
+                                placeholder="Faculty"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-3 text-gray-800">
+                              <Calendar size={18} className="text-gray-700" />
+                              <span className="text-lg">{userProfile.year}</span>
+                            </div>
+                            <div className="flex items-center space-x-3 text-gray-800">
+                              <GraduationCap size={18} className="text-gray-700" />
+                              <span className="text-lg">{userProfile.program}</span>
+                            </div>
+                            <div className="flex items-center space-x-3 text-gray-800">
+                              <MapPin size={18} className="text-gray-700" />
+                              <span className="text-lg">{userProfile.faculty}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
                     {/* Edit Button */}
-                    <button
-                      onClick={handleEdit}
-                      className="p-3 text-gray-800 hover:text-gray-600 transition-colors"
-                      title="Edit Profile"
-                    >
-                      <Edit size={20} />
-                    </button>
+                    {editingSection === 'basic' ? (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleSaveSection}
+                          className="px-4 py-2 bg-white bg-opacity-80 text-gray-800 rounded-lg hover:bg-opacity-100 transition-colors font-medium"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelClubEdit}
+                          className="px-4 py-2 bg-white bg-opacity-60 text-gray-600 rounded-lg hover:bg-opacity-80 transition-colors font-medium"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleEditSection('basic')}
+                        className="p-3 text-gray-800 hover:text-gray-600 transition-colors"
+                        title="Edit Basic Info"
+                      >
+                        <Edit size={20} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -277,12 +388,23 @@ const UserProfile = () => {
 
           {/* About Me Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <User size={20} className="text-blue-600" />
-              <h3 className="text-xl font-semibold text-gray-900">About Me</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <User size={20} className="text-blue-600" />
+                <h3 className="text-xl font-semibold text-gray-900">About Me</h3>
+              </div>
+              {editingSection !== 'about' && (
+                <button
+                  onClick={() => handleEditSection('about')}
+                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Edit About Me"
+                >
+                  <Edit size={16} />
+                </button>
+              )}
             </div>
             
-            {isEditing ? (
+            {editingSection === 'about' ? (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
@@ -290,7 +412,7 @@ const UserProfile = () => {
                     value={editForm.bio}
                     onChange={(e) => handleInputChange('bio', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    rows={2}
+                    rows={3}
                     placeholder="Tell us about yourself..."
                   />
                 </div>
@@ -306,13 +428,13 @@ const UserProfile = () => {
                 </div>
                 <div className="flex space-x-3">
                   <button
-                    onClick={handleSave}
+                    onClick={handleSaveSection}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Save Changes
                   </button>
                   <button
-                    onClick={handleCancel}
+                    onClick={handleCancelClubEdit}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                   >
                     Cancel
@@ -531,7 +653,7 @@ const UserProfile = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold text-gray-900">Edit Club</h3>
               <button
-                onClick={handleCancelEdit}
+                onClick={handleCancelClubEdit}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X size={20} />
@@ -573,7 +695,7 @@ const UserProfile = () => {
                   Update Club
                 </button>
                 <button
-                  onClick={handleCancelEdit}
+                  onClick={handleCancelClubEdit}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                 >
                   Cancel

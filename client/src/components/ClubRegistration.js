@@ -196,8 +196,8 @@ const ClubRegistration = () => {
       // Add hiring-related fields
       formDataToSend.append('isHiring', formData.isHiring.toString());
       if (formData.isHiring) {
-        formDataToSend.append('open_positions', formData.positions.map(p => p.title).join(', '));
-        formDataToSend.append('available_spots', formData.positions.reduce((total, p) => total + parseInt(p.spots || 0), 0).toString());
+        formDataToSend.append('open_positions', JSON.stringify(formData.positions.map(p => p.title)));
+        formDataToSend.append('available_spots', JSON.stringify(formData.positions.map(p => parseInt(p.spots || 0))));
         formDataToSend.append('applications_open', formData.applications_open || '');
         formDataToSend.append('application_deadline', formData.applications_close || '');
         formDataToSend.append('hasInterviews', formData.hasInterviews.toString());

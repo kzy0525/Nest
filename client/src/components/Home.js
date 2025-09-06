@@ -236,7 +236,10 @@ const Home = () => {
         category: club.category,
         rating: club.rating,
         review_count: club.review_count,
-        member_count: club.member_count
+        member_count: club.member_count,
+        logo: club.logo,
+        isHiring: club.isHiring,
+        application_deadline: club.application_deadline
       };
       favorites.push(newFavorite);
       localStorage.setItem('favorites', JSON.stringify(favorites));
