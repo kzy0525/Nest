@@ -17,6 +17,10 @@ const HiringDashboard = () => {
   // Load applications from localStorage on component mount
   useEffect(() => {
     const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+    console.log('Loaded applications:', savedApplications);
+    savedApplications.forEach((app, index) => {
+      console.log(`Application ${index}:`, app.clubName, 'Status:', app.status);
+    });
     setApplications(savedApplications);
 
     // Listen for new applications
@@ -41,18 +45,51 @@ const HiringDashboard = () => {
     localStorage.setItem('clubApplications', JSON.stringify(savedApplications));
   };
 
-  // Function to update application status
+  // Function to update application status (for future use if needed)
   const updateApplicationStatus = (applicationId, newStatus) => {
-    setApplications(prev => prev.map(app => 
-      app.id === applicationId ? { ...app, status: newStatus } : app
-    ));
+    console.log('Updating application status:', applicationId, 'to:', newStatus);
+    
+    // Define status colors
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'Submitted':
+          return 'bg-blue-100 text-blue-600';
+        case 'Interview':
+          return 'bg-purple-100 text-purple-600';
+        case 'Accepted':
+          return 'bg-green-100 text-green-600';
+        case 'Rejected':
+          return 'bg-red-100 text-red-600';
+        case 'Incomplete':
+          return 'bg-yellow-100 text-yellow-600';
+        default:
+          return 'bg-gray-100 text-gray-600';
+      }
+    };
+    
+    setApplications(prev => {
+      const updated = prev.map(app => 
+        app.id === applicationId ? { 
+          ...app, 
+          status: newStatus,
+          statusColor: getStatusColor(newStatus)
+        } : app
+      );
+      console.log('Updated applications state:', updated);
+      return updated;
+    });
     
     // Also update localStorage
     const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
     const updatedApplications = savedApplications.map(app =>
-      app.id === applicationId ? { ...app, status: newStatus } : app
+      app.id === applicationId ? { 
+        ...app, 
+        status: newStatus,
+        statusColor: getStatusColor(newStatus)
+      } : app
     );
     localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
+    console.log('Updated localStorage applications:', updatedApplications);
   };
 
   // Function to delete an application
@@ -78,7 +115,7 @@ const HiringDashboard = () => {
   // Function to fetch club data
   const fetchClubData = async (clubId) => {
     try {
-      const response = await axios.get(`http://localhost:3001/api/clubs/${clubId}`);
+      const response = await axios.get(`/api/clubs/${clubId}`);
       setClubData(prev => ({
         ...prev,
         [clubId]: response.data
@@ -95,6 +132,7 @@ const HiringDashboard = () => {
 
   // Function to handle delete/withdraw click
   const handleDeleteClick = (application, action) => {
+    console.log('Delete/Withdraw clicked:', action, 'for application:', application);
     setApplicationToDelete(application);
     setDeleteAction(action);
     setShowDeleteModal(true);
@@ -103,12 +141,15 @@ const HiringDashboard = () => {
   // Function to confirm delete/withdraw
   const confirmDelete = () => {
     if (applicationToDelete) {
+      console.log('Confirming action:', deleteAction, 'for application:', applicationToDelete);
       if (deleteAction === 'delete') {
         // For incomplete applications, delete them
+        console.log('Deleting application:', applicationToDelete.id);
         deleteApplication(applicationToDelete.id);
       } else if (deleteAction === 'withdraw') {
-        // For submitted applications, update status to withdrawn
-        updateApplicationStatus(applicationToDelete.id, 'Withdrawn');
+        // For submitted applications, delete them completely when withdrawn
+        console.log('Withdrawing application:', applicationToDelete.id);
+        deleteApplication(applicationToDelete.id);
       }
     }
     
@@ -348,9 +389,9 @@ const HiringDashboard = () => {
       {/* Application Viewer Modal */}
       {showApplicationViewer && viewingApplication && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
-          <div className="bg-white w-2/3 h-full shadow-xl overflow-hidden">
+          <div className="bg-white w-2/3 h-full shadow-xl flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{viewingApplication.clubName}</h2>
                 <div className="mt-2">
@@ -369,7 +410,7 @@ const HiringDashboard = () => {
             </div>
 
             {/* Content */}
-            <div className="p-6 overflow-y-auto h-full">
+            <div className="p-6 overflow-y-auto flex-1">
               <div className="space-y-6">
                 {/* Personal Information */}
                 <div className="border border-gray-200 rounded-lg">
@@ -472,8 +513,8 @@ const HiringDashboard = () => {
                               const question = questions.find(q => q.id === parseInt(questionId));
                               console.log('Found question:', question);
                               
-                              if (question && question.question) {
-                                questionText = question.question;
+                              if (question && question.text) {
+                                questionText = question.text;
                                 console.log('Using question text:', questionText);
                               }
                             }

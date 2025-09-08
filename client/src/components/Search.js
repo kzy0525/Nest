@@ -12,7 +12,15 @@ const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name-asc');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState({
+    hiringNow: false,
+    ratingRange: '',
+    memberCountRange: '',
+    acceptanceRateRange: ''
+  });
   const sortDropdownRef = useRef(null);
+  const filterDropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,13 +38,16 @@ const SearchPage = () => {
 
   useEffect(() => {
     filterClubs();
-  }, [clubs, selectedCategory, searchTerm, sortBy]);
+  }, [clubs, selectedCategory, searchTerm, sortBy, selectedFilters]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
         setShowSortDropdown(false);
+      }
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+        setShowFilterDropdown(false);
       }
     };
 
@@ -91,6 +102,43 @@ const SearchPage = () => {
       });
     }
 
+    // Apply additional filters
+    if (selectedFilters.hiringNow) {
+      filtered = filtered.filter(club => {
+        if (!club.application_deadline) return false;
+        const deadline = new Date(club.application_deadline);
+        const now = new Date();
+        return deadline > now;
+      });
+    }
+
+    // Rating range filter
+    if (selectedFilters.ratingRange) {
+      const [min, max] = selectedFilters.ratingRange.split('-').map(Number);
+      filtered = filtered.filter(club => {
+        const rating = club.rating || 0;
+        return rating >= min && rating <= max;
+      });
+    }
+
+    // Member count range filter
+    if (selectedFilters.memberCountRange) {
+      const [min, max] = selectedFilters.memberCountRange.split('-').map(Number);
+      filtered = filtered.filter(club => {
+        const memberCount = club.member_count || 0;
+        return memberCount >= min && memberCount <= max;
+      });
+    }
+
+    // Acceptance rate range filter
+    if (selectedFilters.acceptanceRateRange) {
+      const [min, max] = selectedFilters.acceptanceRateRange.split('-').map(Number);
+      filtered = filtered.filter(club => {
+        const acceptanceRate = club.acceptance_rate || 100;
+        return acceptanceRate >= min && acceptanceRate <= max;
+      });
+    }
+
     // Sort clubs
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -102,9 +150,6 @@ const SearchPage = () => {
           return (b.member_count || 0) - (a.member_count || 0);
         case 'members-low-high':
           return (a.member_count || 0) - (b.member_count || 0);
-        case 'hiring-now':
-          // For now, we'll assume all clubs are hiring. You can add a hiring field to your database later
-          return 0;
         case 'name-a-z':
           return a.name.localeCompare(b.name);
         case 'name-z-a':
@@ -261,8 +306,6 @@ const SearchPage = () => {
         return 'Members (High to Low)';
       case 'members-low-high':
         return 'Members (Low to High)';
-      case 'hiring-now':
-        return 'Hiring Now';
       case 'name-a-z':
         return 'Name (A to Z)';
       case 'name-z-a':
@@ -270,6 +313,29 @@ const SearchPage = () => {
       default:
         return 'Sort';
     }
+  };
+
+  const handleFilterToggle = (filterKey) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [filterKey]: !prev[filterKey]
+    }));
+  };
+
+  const handleRangeFilterChange = (filterKey, value) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [filterKey]: value
+    }));
+  };
+
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (selectedFilters.hiringNow) count++;
+    if (selectedFilters.ratingRange) count++;
+    if (selectedFilters.memberCountRange) count++;
+    if (selectedFilters.acceptanceRateRange) count++;
+    return count;
   };
 
   if (loading) {
@@ -376,26 +442,113 @@ const SearchPage = () => {
                     >
                       Z to A
                     </button>
-                    
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">Status</div>
-                    <button
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => {
-                        setSortBy('hiring-now');
-                        setShowSortDropdown(false);
-                      }}
-                    >
-                      Hiring Now
-                    </button>
                   </div>
                 </div>
               )}
             </div>
             
-            <button className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
-              <Filter size={16} />
-              <span className="text-lg">Filter</span>
-            </button>
+            {/* Filter Dropdown */}
+            <div className="relative" ref={filterDropdownRef}>
+              <button 
+                className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              >
+                <Filter size={16} />
+                <span className="text-lg">Filter</span>
+                {getActiveFiltersCount() > 0 && (
+                  <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] h-5 flex items-center justify-center">
+                    {getActiveFiltersCount()}
+                  </span>
+                )}
+                {showFilterDropdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              
+              {showFilterDropdown && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                  <div className="p-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Filter Options</h3>
+                    
+                    <div className="space-y-4">
+                      {/* Hiring Now */}
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedFilters.hiringNow}
+                          onChange={() => handleFilterToggle('hiringNow')}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">Hiring Now</span>
+                      </label>
+                      
+                      {/* Rating Range */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                        <select
+                          value={selectedFilters.ratingRange}
+                          onChange={(e) => handleRangeFilterChange('ratingRange', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Any Rating</option>
+                          <option value="0-1">0.0 - 1.0</option>
+                          <option value="1-2">1.1 - 2.0</option>
+                          <option value="2-3">2.1 - 3.0</option>
+                          <option value="3-4">3.1 - 4.0</option>
+                          <option value="4-5">4.1 - 5.0</option>
+                        </select>
+                      </div>
+                      
+                      {/* Member Count Range */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Member Count</label>
+                        <select
+                          value={selectedFilters.memberCountRange}
+                          onChange={(e) => handleRangeFilterChange('memberCountRange', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Any Size</option>
+                          <option value="0-25">0 - 25 members</option>
+                          <option value="26-50">26 - 50 members</option>
+                          <option value="51-100">51 - 100 members</option>
+                          <option value="101-1000">100+ members</option>
+                        </select>
+                      </div>
+                      
+                      {/* Acceptance Rate Range */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Acceptance Rate</label>
+                        <select
+                          value={selectedFilters.acceptanceRateRange}
+                          onChange={(e) => handleRangeFilterChange('acceptanceRateRange', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Any Rate</option>
+                          <option value="1-25">1% - 25%</option>
+                          <option value="26-50">26% - 50%</option>
+                          <option value="51-75">51% - 75%</option>
+                          <option value="76-100">76% - 100%</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    {getActiveFiltersCount() > 0 && (
+                      <div className="mt-4 pt-3 border-t border-gray-200">
+                        <button
+                          onClick={() => setSelectedFilters({
+                            hiringNow: false,
+                            ratingRange: '',
+                            memberCountRange: '',
+                            acceptanceRateRange: ''
+                          })}
+                          className="text-sm text-blue-600 hover:text-blue-700"
+                        >
+                          Clear all filters
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

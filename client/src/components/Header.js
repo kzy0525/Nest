@@ -141,7 +141,7 @@ const Header = () => {
               className="relative cursor-pointer hover:text-gray-800 p-2 rounded-lg"
               onClick={() => setShowNotifications(!showNotifications)}
             >
-              <Bell size={20} className="text-gray-600" />
+              <Bell size={24} className="text-gray-600" />
               {notifications.filter(n => !n.read).length > 0 && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-xs text-white font-bold">
@@ -231,9 +231,9 @@ const Header = () => {
               className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg"
               onClick={() => setShowDropdown(!showDropdown)}
             >
-              <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+              <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
               <div className="hidden md:block">
-                <div className="text-sm font-medium text-gray-900">Kevin Ye</div>
+                <div className="text-base font-medium text-gray-900">Kevin Ye</div>
               </div>
               <ChevronDown size={16} className={`text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
             </div>

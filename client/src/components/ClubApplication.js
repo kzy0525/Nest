@@ -339,8 +339,10 @@ const ClubApplication = () => {
   let questions = [];
   try {
     if (club.application_questions) {
-      questions = JSON.parse(club.application_questions);
-      if (!Array.isArray(questions)) {
+      const parsed = JSON.parse(club.application_questions);
+      if (Array.isArray(parsed)) {
+        questions = parsed;
+      } else {
         questions = [];
       }
     }
@@ -526,10 +528,14 @@ const ClubApplication = () => {
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Application Questions</h3>
               <div className="space-y-6">
-                {questions.map((question, index) => (
+                {questions.map((question, index) => {
+                  // Ensure we have the correct question text
+                  const questionText = question.text || question.question || question.content || 'Question';
+                  
+                  return (
                   <div key={question.id} className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">
-                      {index + 1}. {question.text}
+                      {index + 1}. {questionText}
                     </label>
                     {question.type === 'short' ? (
                       <input
@@ -548,7 +554,8 @@ const ClubApplication = () => {
                       />
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
