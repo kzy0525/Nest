@@ -226,7 +226,6 @@ const ClubRegistration = () => {
     if (!formData.name.trim()) newErrors.name = 'Club name is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (formData.category.length === 0) newErrors.category = 'Please select at least one category';
-    if (!formData.contact_email.trim()) newErrors.contact_email = 'Contact email is required';
     if (!formData.member_count) newErrors.member_count = 'Member count is required';
     
     // Validate positions if hiring is enabled
@@ -680,18 +679,15 @@ const ClubRegistration = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Email *
+                    Instagram
                   </label>
                   <input
-                    type="email"
-                    value={formData.contact_email}
-                    onChange={(e) => handleInputChange('contact_email', e.target.value)}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.contact_email ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="club@university.edu"
+                    type="text"
+                    value={formData.instagram}
+                    onChange={(e) => handleInputChange('instagram', e.target.value)}
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="@yourclub"
                   />
-                  {errors.contact_email && <p className="mt-1 text-sm text-red-600">{errors.contact_email}</p>}
                 </div>
 
                 <div>
@@ -709,14 +705,14 @@ const ClubRegistration = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Instagram
+                    Contact Email
                   </label>
                   <input
-                    type="text"
-                    value={formData.instagram}
-                    onChange={(e) => handleInputChange('instagram', e.target.value)}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="@yourclub"
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="club@university.edu"
                   />
                 </div>
               </div>

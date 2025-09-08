@@ -307,7 +307,7 @@ const Home = () => {
             {clubs.slice(currentCarouselIndex, currentCarouselIndex + 3).map((club) => (
               <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
                 {/* Club Logo/Image Section */}
-                <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
+                <div className={`h-40 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
                   {club.logo ? (
                     <img 
                       src={club.logo} 

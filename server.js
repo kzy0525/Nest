@@ -557,13 +557,12 @@ app.post('/api/clubs', upload.fields([
     categoryIsValid = false;
   }
   
-  if (!clubData.name || !clubData.description || !clubData.contact_email || !clubData.member_count || !categoryIsValid) {
+  if (!clubData.name || !clubData.description || !clubData.member_count || !categoryIsValid) {
     console.log('Missing required fields:', { 
       name: !!clubData.name, 
       description: !!clubData.description, 
       category: !!clubData.category,
       categoryValid: categoryIsValid,
-      contact_email: !!clubData.contact_email, 
       member_count: !!clubData.member_count 
     });
     res.status(400).json({ error: 'Missing required fields' });
