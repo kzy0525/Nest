@@ -553,7 +553,9 @@ const UserProfile = () => {
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
                             {application.status}
                           </span>
-                          <span className="text-sm text-gray-500">{application.dateSubmitted}</span>
+                          <span className="text-sm text-gray-500">
+                            {application.status !== 'Incomplete' ? application.dateSubmitted : 'Draft'}
+                          </span>
                         </div>
                         {application.position && (
                           <div className="mt-2">

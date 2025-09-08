@@ -114,7 +114,7 @@ const ClubApplication = () => {
   };
 
   const saveDraft = async () => {
-    if (!applicationForm.resume) {
+    if (!applicationForm.resume && !applicationForm.resumeFileName) {
       showCustomModal('Resume Required', 'Please upload your resume before saving a draft.', 'error');
       return;
     }
@@ -140,7 +140,7 @@ const ClubApplication = () => {
         email: applicationForm.email,
         phone: applicationForm.phone,
         answers: applicationForm.answers, // Save the application question answers
-        resumeFileName: applicationForm.resume ? applicationForm.resume.name : null, // Save resume filename
+        resumeFileName: applicationForm.resume ? applicationForm.resume.name : applicationForm.resumeFileName, // Save resume filename
         status: "Incomplete",
         statusColor: "bg-yellow-100 text-yellow-600",
         dateSubmitted: new Date().toLocaleDateString('en-US', { 
@@ -191,7 +191,7 @@ const ClubApplication = () => {
   };
 
   const handleSubmit = async () => {
-    if (!applicationForm.resume) {
+    if (!applicationForm.resume && !applicationForm.resumeFileName) {
       showCustomModal('Resume Required', 'Please upload your resume before submitting.', 'error');
       return;
     }
@@ -261,7 +261,7 @@ const ClubApplication = () => {
         email: applicationForm.email,
         phone: applicationForm.phone,
         answers: applicationForm.answers, // Save the application question answers
-        resumeFileName: applicationForm.resume ? applicationForm.resume.name : null, // Save resume filename
+        resumeFileName: applicationForm.resume ? applicationForm.resume.name : applicationForm.resumeFileName, // Save resume filename
         status: "Submitted",
         statusColor: "bg-green-100 text-green-600",
         dateSubmitted: new Date().toLocaleDateString('en-US', { 

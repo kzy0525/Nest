@@ -99,29 +99,77 @@ const HiringDashboard = () => {
     setSelectedApplication(null);
   };
 
-  // Generate calendar events based on applications
-  const calendarEvents = applications.map(app => {
-    const today = new Date();
-    const applicationDate = new Date(app.dateSubmitted);
-    const daysDiff = Math.floor((today - applicationDate) / (1000 * 60 * 60 * 24));
+  // Generate calendar events based on hiring timeline
+  const today = new Date();
+  const calendarEvents = [];
+  
+  applications.forEach(app => {
+    // Only include hiring timeline events, skip incomplete applications
+    if (app.status === "Incomplete") return;
     
-    let eventText = "Application Submitted";
-    if (app.status === "Interview") {
-      eventText = "Interview";
-    } else if (app.status === "Incomplete") {
-      eventText = "Draft Saved";
+    // Add application deadline if it exists and is in the next 7 days
+    if (app.applicationDeadline) {
+      const deadlineDate = new Date(app.applicationDeadline);
+      const daysDiff = Math.floor((deadlineDate - today) / (1000 * 60 * 60 * 24));
+      if (daysDiff >= 0 && daysDiff <= 6) {
+        calendarEvents.push({
+          day: deadlineDate.getDate(),
+          club: app.clubIcon,
+          event: "Application Due",
+          clubIcon: app.clubIcon,
+          clubIconBg: app.clubIconBg,
+          clubLogo: app.clubLogo,
+          clubName: app.clubName
+        });
+      }
     }
     
+    // Add interview dates if they exist and are in the next 7 days
+    if (app.interviewStartDate) {
+      const interviewDate = new Date(app.interviewStartDate);
+      const daysDiff = Math.floor((interviewDate - today) / (1000 * 60 * 60 * 24));
+      if (daysDiff >= 0 && daysDiff <= 6) {
+        calendarEvents.push({
+          day: interviewDate.getDate(),
+          club: app.clubIcon,
+          event: "Interview",
+          clubIcon: app.clubIcon,
+          clubIconBg: app.clubIconBg,
+          clubLogo: app.clubLogo,
+          clubName: app.clubName
+        });
+      }
+    }
+    
+    // Add results release date if it exists and is in the next 7 days
+    if (app.resultsReleased) {
+      const resultsDate = new Date(app.resultsReleased);
+      const daysDiff = Math.floor((resultsDate - today) / (1000 * 60 * 60 * 24));
+      if (daysDiff >= 0 && daysDiff <= 6) {
+        calendarEvents.push({
+          day: resultsDate.getDate(),
+          club: app.clubIcon,
+          event: "Results Released",
+          clubIcon: app.clubIcon,
+          clubIconBg: app.clubIconBg,
+          clubLogo: app.clubLogo,
+          clubName: app.clubName
+        });
+      }
+    }
+  });
+
+  // Generate calendar days (current day + next 6 days)
+  const calendarDays = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
     return {
-      day: today.getDate() + daysDiff + 1,
-      club: app.clubIcon,
-      event: eventText,
-      clubIcon: app.clubIcon,
-      clubIconBg: app.clubIconBg,
-      clubLogo: app.clubLogo,
-      clubName: app.clubName
+      day: date.getDate(),
+      month: date.getMonth(),
+      year: date.getFullYear(),
+      isToday: i === 0
     };
-  }).slice(0, 4); // Limit to 4 events
+  });
 
 
 
@@ -304,7 +352,9 @@ const HiringDashboard = () => {
                           {app.status}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-gray-600">{app.dateSubmitted}</td>
+                      <td className="py-4 px-4 text-gray-600">
+                        {app.status !== 'Incomplete' ? app.dateSubmitted : '-'}
+                      </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-2">
                           {/* Conditional Icons based on Status */}
@@ -364,18 +414,19 @@ const HiringDashboard = () => {
           {/* Timeline - Takes up 7/10 of the width */}
           <div className="col-span-7 bg-white rounded-xl shadow-sm p-6">
             <div className="grid grid-cols-7 gap-2">
-              {Array.from({ length: 7 }, (_, i) => {
-                const day = 12 + i;
-                const event = calendarEvents.find(e => e.day === day);
+              {calendarDays.map((calendarDay, i) => {
+                const event = calendarEvents.find(e => e.day === calendarDay.day);
                 
                 return (
-                  <div key={day} className="text-center relative">
+                  <div key={`${calendarDay.year}-${calendarDay.month}-${calendarDay.day}`} className="text-center relative">
                     {/* Vertical grey line between dates (except for the last one) */}
                     {i < 6 && (
-                      <div className="absolute top-0 left-full w-px h-5/6 bg-gray-100 transform -translate-x-1/2"></div>
+                      <div className="absolute top-0 left-full w-px h-full bg-gray-100 transform -translate-x-1/2"></div>
                     )}
                     
-                    <div className="text-sm font-medium text-gray-900 mb-2">{day}</div>
+                    <div className={`text-sm font-medium mb-2 ${calendarDay.isToday ? 'text-blue-600 font-bold' : 'text-gray-900'}`}>
+                      {calendarDay.day}
+                    </div>
                     {event && (
                       <div className="text-center">
                         {event.clubLogo ? (
