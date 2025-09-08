@@ -545,8 +545,14 @@ const HiringDashboard = () => {
                     </div>
                     {viewingApplication.position && (
                       <div>
-                        <label className="text-sm text-gray-600">Applied Position</label>
+                        <label className="text-sm text-gray-600">Applied Role</label>
                         <p className="text-gray-900 font-medium">{viewingApplication.position}</p>
+                      </div>
+                    )}
+                    {viewingApplication.secondRole && (
+                      <div>
+                        <label className="text-sm text-gray-600">Second Role</label>
+                        <p className="text-gray-900 font-medium">{viewingApplication.secondRole}</p>
                       </div>
                     )}
                   </div>

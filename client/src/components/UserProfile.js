@@ -557,8 +557,11 @@ const UserProfile = () => {
                         </div>
                         {application.position && (
                           <div className="mt-2">
-                            <span className="text-xs text-gray-500">Position: </span>
+                            <span className="text-xs text-gray-500">Role: </span>
                             <span className="text-xs font-medium text-gray-700">{application.position}</span>
+                            {application.secondRole && (
+                              <span className="text-xs text-gray-500 ml-2">, {application.secondRole}</span>
+                            )}
                           </div>
                         )}
                       </div>

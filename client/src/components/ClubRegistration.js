@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Save, X, CheckCircle } from 'lucide-react';
+import axios from 'axios';
 
 const ClubRegistration = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editClubId = searchParams.get('edit');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -20,6 +25,7 @@ const ClubRegistration = () => {
     acceptance_rate: '',
     logo: null,
     backdrop: null,
+    hiringPackage: null,
     isHiring: false,
     applications_open: '',
     applications_close: '',
@@ -33,6 +39,85 @@ const ClubRegistration = () => {
   });
 
   const [errors, setErrors] = useState({});
+
+  // Load club data for editing
+  useEffect(() => {
+    if (editClubId) {
+      setIsEditMode(true);
+      setLoading(true);
+      loadClubForEdit(editClubId);
+    }
+  }, [editClubId]);
+
+  const loadClubForEdit = async (clubId) => {
+    try {
+      const response = await axios.get(`/api/clubs/${clubId}`);
+      const club = response.data;
+      
+      // Parse categories
+      let categories = [];
+      try {
+        categories = club.category ? JSON.parse(club.category) : [];
+      } catch (e) {
+        categories = [];
+      }
+
+      // Parse positions
+      let positions = [{ title: '', spots: '' }];
+      try {
+        if (club.open_positions) {
+          const positionTitles = JSON.parse(club.open_positions);
+          const positionSpots = club.available_spots ? JSON.parse(club.available_spots) : [];
+          positions = positionTitles.map((title, index) => ({
+            title,
+            spots: positionSpots[index] || '1'
+          }));
+        }
+      } catch (e) {
+        positions = [{ title: '', spots: '' }];
+      }
+
+      // Parse application questions
+      let applicationQuestions = [];
+      try {
+        if (club.application_questions) {
+          applicationQuestions = JSON.parse(club.application_questions);
+        }
+      } catch (e) {
+        applicationQuestions = [];
+      }
+
+      setFormData({
+        name: club.name || '',
+        description: club.description || '',
+        category: categories,
+        contact_email: club.contact_email || '',
+        website: club.website || '',
+        instagram: club.instagram || '',
+        slogan: club.slogan || '',
+        member_count: club.member_count || '',
+        acceptance_rate: club.acceptance_rate || '',
+        logo: null, // Files can't be loaded from server
+        backdrop: null,
+        hiringPackage: null,
+        isHiring: club.isHiring === 'true' || club.isHiring === true,
+        applications_open: club.applications_open || '',
+        applications_close: club.application_deadline || '',
+        hasInterviews: club.hasInterviews === 'true' || club.hasInterviews === true,
+        first_round_interviews: club.interview_start_date || '',
+        second_round_interviews: club.interview_end_date || '',
+        results_released: club.results_released || '',
+        positions: positions,
+        hasApplicationQuestions: applicationQuestions.length > 0,
+        applicationQuestions: applicationQuestions
+      });
+    } catch (error) {
+      console.error('Error loading club for edit:', error);
+      alert('Error loading club data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = [
     'Academic', 'Arts', 'Business', 'Culture', 'Community', 
@@ -192,6 +277,9 @@ const ClubRegistration = () => {
       if (formData.backdrop) {
         formDataToSend.append('backdrop', formData.backdrop);
       }
+      if (formData.hiringPackage) {
+        formDataToSend.append('hiringPackage', formData.hiringPackage);
+      }
       
       // Add hiring-related fields
       formDataToSend.append('isHiring', formData.isHiring.toString());
@@ -287,27 +375,34 @@ const ClubRegistration = () => {
         console.error('Test endpoint error:', testError);
       }
       
-      const response = await fetch('/api/clubs', {
-        method: 'POST',
+      const url = isEditMode ? `/api/clubs/${editClubId}` : '/api/clubs';
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
         body: formDataToSend, // Don't set Content-Type header for FormData
         // The browser will automatically set the correct Content-Type for FormData
       });
       
       if (response.ok) {
         const result = await response.json();
-        console.log('Club created successfully:', result);
+        console.log(isEditMode ? 'Club updated successfully:' : 'Club created successfully:', result);
         setSubmitSuccess(true);
         setTimeout(() => {
-          navigate('/search');
+          if (isEditMode) {
+            navigate(`/club/${editClubId}`);
+          } else {
+            navigate('/search');
+          }
         }, 2000);
       } else {
         const errorData = await response.json();
         console.error('Server error:', errorData);
-        throw new Error(errorData.error || 'Failed to create club');
+        throw new Error(errorData.error || `Failed to ${isEditMode ? 'update' : 'create'} club`);
       }
     } catch (error) {
-      console.error('Error creating club:', error);
-      setErrors({ submit: error.message || 'Failed to create club. Please try again.' });
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} club:`, error);
+      setErrors({ submit: error.message || `Failed to ${isEditMode ? 'update' : 'create'} club. Please try again.` });
     } finally {
       setIsSubmitting(false);
     }
@@ -334,14 +429,38 @@ const ClubRegistration = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-auto bg-gray-50 p-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm p-8">
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading club data...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Register Your Club</h1>
-            <p className="text-gray-600">Create a profile for your club to help students discover and join your organization.</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {isEditMode ? 'Edit Club' : 'Register Your Club'}
+            </h1>
+            <p className="text-gray-600">
+              {isEditMode 
+                ? 'Update your club information and settings.' 
+                : 'Create a profile for your club to help students discover and join your organization.'
+              }
+            </p>
           </div>
 
           {/* Form */}
@@ -798,6 +917,59 @@ const ClubRegistration = () => {
                     </div>
                   </div>
 
+                  {/* Hiring Package PDF Upload */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="mb-4">
+                      <h4 className="text-lg font-medium text-gray-900">Hiring Package (Optional)</h4>
+                      <p className="text-sm text-gray-600">Upload a PDF with detailed information about the roles, requirements, and application process</p>
+                    </div>
+                    
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                      <div className="flex flex-col items-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">Upload hiring package PDF</p>
+                        <p className="text-xs text-gray-500 mb-3">PDF up to 10MB</p>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => handleFileUpload('hiringPackage', e.target.files[0])}
+                          className="hidden"
+                          id="hiring-package-upload"
+                        />
+                        <label
+                          htmlFor="hiring-package-upload"
+                          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+                        >
+                          Choose PDF
+                        </label>
+                      </div>
+                      
+                      {formData.hiringPackage && (
+                        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-sm font-medium text-green-800">{formData.hiringPackage.name}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleFileRemove('hiringPackage')}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Application Questions Section */}
                   <div className="border-t border-gray-200 pt-6">
                     <div className="flex items-center justify-between mb-4">
@@ -916,7 +1088,12 @@ const ClubRegistration = () => {
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                 >
                   <Save size={16} />
-                  <span>{isSubmitting ? 'Creating...' : 'Create Club'}</span>
+                  <span>
+                    {isSubmitting 
+                      ? (isEditMode ? 'Updating...' : 'Creating...') 
+                      : (isEditMode ? 'Update Club' : 'Create Club')
+                    }
+                  </span>
                 </button>
               </div>
             </form>

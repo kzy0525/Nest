@@ -31,10 +31,10 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
   fileFilter: function (req, file, cb) {
-    if (file.mimetype.startsWith('image/')) {
+    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('Only image files and PDFs are allowed'));
     }
   }
 });
@@ -88,7 +88,8 @@ function createTables() {
       available_spots INTEGER DEFAULT 0,
       application_questions TEXT,
       logo TEXT,
-      backdrop TEXT
+      backdrop TEXT,
+      hiring_package TEXT
     )
   `;
 
@@ -520,7 +521,8 @@ app.post('/api/test-club', (req, res) => {
 // Create a new club
 app.post('/api/clubs', upload.fields([
   { name: 'logo', maxCount: 1 },
-  { name: 'backdrop', maxCount: 1 }
+  { name: 'backdrop', maxCount: 1 },
+  { name: 'hiringPackage', maxCount: 1 }
 ]), (req, res) => {
   const clubData = req.body;
   const files = req.files;
@@ -576,6 +578,7 @@ app.post('/api/clubs', upload.fields([
   // Handle file paths - files might be undefined if no files uploaded
   let logoPath = null;
   let backdropPath = null;
+  let hiringPackagePath = null;
   
   try {
     if (files && files.logo && files.logo.length > 0) {
@@ -584,10 +587,14 @@ app.post('/api/clubs', upload.fields([
     if (files && files.backdrop && files.backdrop.length > 0) {
       backdropPath = `/uploads/${files.backdrop[0].filename}`;
     }
+    if (files && files.hiringPackage && files.hiringPackage.length > 0) {
+      hiringPackagePath = `/uploads/${files.hiringPackage[0].filename}`;
+    }
   } catch (error) {
     console.log('Error handling files:', error);
     logoPath = null;
     backdropPath = null;
+    hiringPackagePath = null;
   }
   
   console.log('Final logo path:', logoPath);
@@ -600,8 +607,8 @@ app.post('/api/clubs', upload.fields([
       twitter, facebook, application_deadline, interview_start_date, interview_end_date,
       member_count, rating, review_count, created_at, slogan, acceptance_rate,
       applications_open, results_released, open_positions, available_spots, application_questions,
-      logo, backdrop
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      logo, backdrop, hiring_package
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   try {
@@ -632,7 +639,8 @@ app.post('/api/clubs', upload.fields([
       clubData.available_spots || 0,
       clubData.application_questions || '',
       logoPath,
-      backdropPath
+      backdropPath,
+      hiringPackagePath
     );
     
     res.json({ 
@@ -643,6 +651,94 @@ app.post('/api/clubs', upload.fields([
   } catch (error) {
     console.error('Error creating club:', error);
     res.status(500).json({ success: false, message: 'Error creating club' });
+  }
+});
+
+// Update an existing club
+app.put('/api/clubs/:id', upload.fields([
+  { name: 'logo', maxCount: 1 },
+  { name: 'backdrop', maxCount: 1 },
+  { name: 'hiringPackage', maxCount: 1 }
+]), (req, res) => {
+  const { id } = req.params;
+  const clubData = req.body;
+  const files = req.files;
+  
+  console.log('Updating club with ID:', id);
+  console.log('Club data:', clubData);
+  
+  // Handle file paths - files might be undefined if no files uploaded
+  let logoPath = null;
+  let backdropPath = null;
+  let hiringPackagePath = null;
+  
+  try {
+    if (files && files.logo && files.logo.length > 0) {
+      logoPath = `/uploads/${files.logo[0].filename}`;
+    }
+    if (files && files.backdrop && files.backdrop.length > 0) {
+      backdropPath = `/uploads/${files.backdrop[0].filename}`;
+    }
+    if (files && files.hiringPackage && files.hiringPackage.length > 0) {
+      hiringPackagePath = `/uploads/${files.hiringPackage[0].filename}`;
+    }
+  } catch (error) {
+    console.log('Error handling files:', error);
+  }
+  
+  // Build the update query dynamically based on what fields are provided
+  let updateFields = [];
+  let updateValues = [];
+  
+  // Always update these fields
+  updateFields.push('name = ?', 'description = ?', 'category = ?', 'contact_email = ?', 
+                   'website = ?', 'instagram = ?', 'slogan = ?', 'member_count = ?', 
+                   'acceptance_rate = ?', 'isHiring = ?', 'applications_open = ?', 
+                   'application_deadline = ?', 'hasInterviews = ?', 'interview_start_date = ?', 
+                   'interview_end_date = ?', 'results_released = ?', 'open_positions = ?', 
+                   'available_spots = ?', 'application_questions = ?');
+  
+  updateValues.push(
+    clubData.name, clubData.description, clubData.category, clubData.contact_email,
+    clubData.website || '', clubData.instagram || '', clubData.slogan || '', 
+    clubData.member_count || '0', clubData.acceptance_rate || '', 
+    clubData.isHiring || 'false', clubData.applications_open || '', 
+    clubData.application_deadline || '', clubData.hasInterviews || 'false',
+    clubData.interview_start_date || '', clubData.interview_end_date || '', 
+    clubData.results_released || '', clubData.open_positions || '', 
+    clubData.available_spots || '0', clubData.application_questions || ''
+  );
+  
+  // Only update file paths if new files are uploaded
+  if (logoPath) {
+    updateFields.push('logo = ?');
+    updateValues.push(logoPath);
+  }
+  if (backdropPath) {
+    updateFields.push('backdrop = ?');
+    updateValues.push(backdropPath);
+  }
+  if (hiringPackagePath) {
+    updateFields.push('hiring_package = ?');
+    updateValues.push(hiringPackagePath);
+  }
+  
+  // Add the club ID at the end for the WHERE clause
+  updateValues.push(id);
+  
+  const updateQuery = `UPDATE clubs SET ${updateFields.join(', ')} WHERE id = ?`;
+  
+  try {
+    const result = db.run(updateQuery, updateValues);
+    
+    res.json({ 
+      success: true, 
+      message: 'Club updated successfully',
+      clubId: id 
+    });
+  } catch (error) {
+    console.error('Error updating club:', error);
+    res.status(500).json({ success: false, message: 'Error updating club' });
   }
 });
 

@@ -680,6 +680,32 @@ const ClubDetail = () => {
               })()}
             </div>
 
+            {/* Hiring Package PDF */}
+            {club.hiring_package && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Hiring Package</h3>
+                <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-gray-900">Hiring Package</h4>
+                    <p className="text-xs text-gray-500">Detailed information about roles and requirements</p>
+                  </div>
+                  <a
+                    href={club.hiring_package}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    View PDF
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Hiring Timeline */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Hiring Timeline</h3>
@@ -771,7 +797,13 @@ const ClubDetail = () => {
         </div>
         
         {/* Temporary Delete Button - Bottom Right Corner */}
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col space-y-3">
+          <button 
+            onClick={() => navigate(`/register-club?edit=${club.id}`)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
+          >
+            ✏️ Edit Club (Test)
+          </button>
           <button 
             onClick={async () => {
               if (window.confirm('Are you sure you want to delete this club? This action cannot be undone.')) {

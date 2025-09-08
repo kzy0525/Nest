@@ -15,15 +15,27 @@ const ClubApplication = () => {
     year: '',
     program: '',
     position: '',
+    secondRole: '',
     answers: {},
     resumeFileName: null
   });
   const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: '', message: '', type: 'info' });
 
   useEffect(() => {
     fetchClubDetails();
   }, [id]);
+
+  const showCustomModal = (title, message, type = 'info') => {
+    setModalContent({ title, message, type });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+  };
 
   const fetchClubDetails = async () => {
     try {
@@ -46,6 +58,7 @@ const ClubApplication = () => {
           year: existingDraft.year || '',
           program: existingDraft.program || '',
           position: existingDraft.position || '',
+          secondRole: existingDraft.secondRole || '',
           answers: existingDraft.answers || {},
           resumeFileName: existingDraft.resumeFileName || null // Store resume filename for display
         });
@@ -86,7 +99,7 @@ const ClubApplication = () => {
         resumeFileName: null // Clear saved filename when new file is uploaded
       }));
     } else {
-      alert('Please upload a PDF file for your resume.');
+      showCustomModal('Invalid File Type', 'Please upload a PDF file for your resume.', 'error');
     }
   };
 
@@ -102,7 +115,7 @@ const ClubApplication = () => {
 
   const saveDraft = async () => {
     if (!applicationForm.resume) {
-      alert('Please upload your resume.');
+      showCustomModal('Resume Required', 'Please upload your resume before saving a draft.', 'error');
       return;
     }
 
@@ -121,6 +134,7 @@ const ClubApplication = () => {
         clubIcon: club.name.split(' ').map(word => word[0]).join('').substring(0, 4),
         clubIconBg: "bg-blue-600",
         position: applicationForm.position,
+        secondRole: applicationForm.secondRole,
         year: applicationForm.year,
         program: applicationForm.program,
         email: applicationForm.email,
@@ -165,10 +179,12 @@ const ClubApplication = () => {
         detail: { application: newApplication } 
       }));
 
-      alert('Draft saved successfully! You can complete and submit it later from the Hiring Dashboard.');
-      navigate('/hiring');
+      showCustomModal('Draft Saved', 'Draft saved successfully! You can complete and submit it later from the Hiring Dashboard.', 'success');
+      setTimeout(() => {
+        navigate('/hiring');
+      }, 2000);
     } catch (error) {
-      alert('Error saving draft. Please try again.');
+      showCustomModal('Save Error', 'Error saving draft. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -176,12 +192,12 @@ const ClubApplication = () => {
 
   const handleSubmit = async () => {
     if (!applicationForm.resume) {
-      alert('Please upload your resume.');
+      showCustomModal('Resume Required', 'Please upload your resume before submitting.', 'error');
       return;
     }
 
     if (!applicationForm.email || !applicationForm.phone || !applicationForm.year || !applicationForm.program) {
-      alert('Please fill in all required fields (email, phone, year, and program).');
+      showCustomModal('Missing Information', 'Please fill in all required fields (email, phone, year, and program).', 'error');
       return;
     }
 
@@ -198,7 +214,7 @@ const ClubApplication = () => {
     }
 
     if (hasPositions && !applicationForm.position) {
-      alert('Please select a position.');
+      showCustomModal('Position Required', 'Please select a position before submitting.', 'error');
       return;
     }
 
@@ -219,7 +235,7 @@ const ClubApplication = () => {
     const unansweredQuestions = questions.filter(q => !applicationForm.answers[q.id]?.trim());
     
     if (unansweredQuestions.length > 0) {
-      alert('Please answer all application questions.');
+      showCustomModal('Incomplete Application', 'Please answer all application questions before submitting.', 'error');
       return;
     }
 
@@ -239,6 +255,7 @@ const ClubApplication = () => {
         clubIcon: club.name.split(' ').map(word => word[0]).join('').substring(0, 4),
         clubIconBg: "bg-blue-600",
         position: applicationForm.position,
+        secondRole: applicationForm.secondRole,
         year: applicationForm.year,
         program: applicationForm.program,
         email: applicationForm.email,
@@ -283,10 +300,12 @@ const ClubApplication = () => {
         detail: { application: newApplication } 
       }));
 
-      alert('Application submitted successfully! You can track your application in the Hiring Dashboard.');
-      navigate('/hiring');
+      showCustomModal('Application Submitted', 'Application submitted successfully! You can track your application in the Hiring Dashboard.', 'success');
+      setTimeout(() => {
+        navigate('/hiring');
+      }, 2000);
     } catch (error) {
-      alert('Error submitting application. Please try again.');
+      showCustomModal('Submission Error', 'Error submitting application. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -403,7 +422,7 @@ const ClubApplication = () => {
             </div>
           </div>
 
-          {/* Position Selection */}
+          {/* Role Selection */}
           {(() => {
             let positions = [];
             try {
@@ -420,22 +439,40 @@ const ClubApplication = () => {
 
             return positions.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Position Selection</h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Position *</label>
-                  <select
-                    value={applicationForm.position}
-                    onChange={(e) => setApplicationForm(prev => ({ ...prev, position: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Choose a position...</option>
-                    {positions.map((position, index) => (
-                      <option key={index} value={position}>
-                        {position}
-                      </option>
-                    ))}
-                  </select>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Role Selection</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select role *</label>
+                    <select
+                      value={applicationForm.position}
+                      onChange={(e) => setApplicationForm(prev => ({ ...prev, position: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    >
+                      <option value="">Select role</option>
+                      {positions.map((position, index) => (
+                        <option key={index} value={position}>
+                          {position}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select 2nd role (optional)</label>
+                    <select
+                      value={applicationForm.secondRole}
+                      onChange={(e) => setApplicationForm(prev => ({ ...prev, secondRole: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select 2nd role</option>
+                      {positions.map((position, index) => (
+                        <option key={index} value={position}>
+                          {position}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             );
@@ -551,6 +588,51 @@ const ClubApplication = () => {
           </div>
         </div>
       </div>
+
+      {/* Custom Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-gray-100">
+                {modalContent.type === 'success' ? (
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : modalContent.type === 'error' ? (
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                {modalContent.title}
+              </h3>
+              <p className="text-gray-600 text-center mb-6">
+                {modalContent.message}
+              </p>
+              <div className="flex justify-center">
+                <button
+                  onClick={closeModal}
+                  className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                    modalContent.type === 'success' 
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : modalContent.type === 'error'
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -23,11 +23,11 @@ const Home = () => {
   };
 
   const nextCarousel = () => {
-    setCurrentCarouselIndex((prev) => (prev + 1) % Math.min(clubs.length, 6));
+    setCurrentCarouselIndex((prev) => (prev + 1) % Math.min(clubs.length, 3));
   };
 
   const prevCarousel = () => {
-    setCurrentCarouselIndex((prev) => (prev - 1 + Math.min(clubs.length, 6)) % Math.min(clubs.length, 6));
+    setCurrentCarouselIndex((prev) => (prev - 1 + Math.min(clubs.length, 3)) % Math.min(clubs.length, 3));
   };
 
   const handleQuickSearch = (e) => {
@@ -303,8 +303,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {clubs.slice(currentCarouselIndex, currentCarouselIndex + 4).map((club) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {clubs.slice(currentCarouselIndex, currentCarouselIndex + 3).map((club) => (
               <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
                 {/* Club Logo/Image Section */}
                 <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
