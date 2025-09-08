@@ -747,6 +747,37 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
+// Global error handler to ensure all errors return JSON
+app.use((error, req, res, next) => {
+  console.error('Global error handler:', error);
+  
+  // Handle Multer errors
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'File too large. Maximum size is 10MB.' 
+      });
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Too many files uploaded.' 
+      });
+    }
+    return res.status(400).json({ 
+      success: false, 
+      error: 'File upload error: ' + error.message 
+    });
+  }
+  
+  // Handle other errors
+  res.status(500).json({ 
+    success: false, 
+    error: error.message || 'Internal server error' 
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 }); 

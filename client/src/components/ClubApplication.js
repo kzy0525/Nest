@@ -196,8 +196,8 @@ const ClubApplication = () => {
       return;
     }
 
-    if (!applicationForm.email || !applicationForm.phone || !applicationForm.year || !applicationForm.program) {
-      showCustomModal('Missing Information', 'Please fill in all required fields (email, phone, year, and program).', 'error');
+    if (!applicationForm.phone || !applicationForm.year || !applicationForm.program) {
+      showCustomModal('Missing Information', 'Please fill in all required fields (phone, year, and program).', 'error');
       return;
     }
 
@@ -370,7 +370,7 @@ const ClubApplication = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                 <input
                   type="email"
                   value={applicationForm.email}

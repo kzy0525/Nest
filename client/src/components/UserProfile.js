@@ -13,7 +13,7 @@ const UserProfile = () => {
     }
     // Default user data - in a real app this would come from a database
     return {
-      name: "William Smith",
+      name: "Kevin Ye",
       program: "Computer Science",
       year: "3rd Year",
       faculty: "Faculty of Engineering and Applied Science",

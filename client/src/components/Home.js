@@ -262,7 +262,7 @@ const Home = () => {
       <div className="flex-1 overflow-auto bg-gray-50 p-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome back, William!</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome back, Kevin!</h1>
           <p className="text-lg text-gray-600">Discover amazing opportunities and track your applications</p>
         </div>
 
