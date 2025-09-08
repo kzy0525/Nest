@@ -142,6 +142,10 @@ const ClubApplication = () => {
         answers: applicationForm.answers, // Save the application question answers
         resumeFileName: applicationForm.resume ? applicationForm.resume.name : applicationForm.resumeFileName, // Save resume filename
         status: "Incomplete",
+        // Include club timeline information for calendar
+        applicationDeadline: club.application_deadline,
+        interviewStartDate: club.interview_start_date,
+        resultsReleased: club.results_released,
         statusColor: "bg-yellow-100 text-yellow-600",
         dateSubmitted: new Date().toLocaleDateString('en-US', { 
           month: 'long', 
@@ -196,8 +200,8 @@ const ClubApplication = () => {
       return;
     }
 
-    if (!applicationForm.phone || !applicationForm.year || !applicationForm.program) {
-      showCustomModal('Missing Information', 'Please fill in all required fields (phone, year, and program).', 'error');
+    if (!applicationForm.email || !applicationForm.phone || !applicationForm.year || !applicationForm.program) {
+      showCustomModal('Missing Information', 'Please fill in all required fields (email, phone, year, and program).', 'error');
       return;
     }
 
@@ -263,6 +267,10 @@ const ClubApplication = () => {
         answers: applicationForm.answers, // Save the application question answers
         resumeFileName: applicationForm.resume ? applicationForm.resume.name : applicationForm.resumeFileName, // Save resume filename
         status: "Submitted",
+        // Include club timeline information for calendar
+        applicationDeadline: club.application_deadline,
+        interviewStartDate: club.interview_start_date,
+        resultsReleased: club.results_released,
         statusColor: "bg-green-100 text-green-600",
         dateSubmitted: new Date().toLocaleDateString('en-US', { 
           month: 'long', 
@@ -370,7 +378,7 @@ const ClubApplication = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
                 <input
                   type="email"
                   value={applicationForm.email}

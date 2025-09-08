@@ -424,23 +424,25 @@ const HiringDashboard = () => {
                       <div className="absolute top-0 left-full w-px h-full bg-gray-100 transform -translate-x-1/2"></div>
                     )}
                     
-                    <div className={`text-sm font-medium mb-2 ${calendarDay.isToday ? 'text-blue-600 font-bold' : 'text-gray-900'}`}>
+                    <div className={`text-sm font-medium mb-6 ${calendarDay.isToday ? 'text-blue-600 font-bold' : 'text-gray-900'}`}>
                       {calendarDay.day}
                     </div>
                     {event && (
-                      <div className="text-center">
-                        {event.clubLogo ? (
-                          <img 
-                            src={event.clubLogo} 
-                            alt={`${event.clubName} logo`}
-                            className="w-6 h-6 rounded-full object-cover mx-auto mb-1"
-                          />
-                        ) : (
-                          <div className={`w-6 h-6 ${event.clubIconBg} rounded-full flex items-center justify-center text-white text-xs font-semibold mx-auto mb-1`}>
-                            {event.clubIcon}
-                          </div>
-                        )}
-                        <div className="text-xs text-gray-600 leading-tight">{event.event}</div>
+                      <div className="flex justify-center">
+                        <div className="text-center bg-gray-50 rounded-lg border border-gray-200 w-20" style={{ padding: '2.5px' }}>
+                          {event.clubLogo ? (
+                            <img 
+                              src={event.clubLogo} 
+                              alt={`${event.clubName} logo`}
+                              className="w-5 h-5 rounded-full object-cover mx-auto mb-1"
+                            />
+                          ) : (
+                            <div className={`w-5 h-5 ${event.clubIconBg} rounded-full flex items-center justify-center text-white text-xs font-semibold mx-auto mb-1`}>
+                              {event.clubIcon}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-700 leading-tight font-medium">{event.event}</div>
+                        </div>
                       </div>
                     )}
                   </div>
