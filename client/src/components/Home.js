@@ -23,11 +23,13 @@ const Home = () => {
   };
 
   const nextCarousel = () => {
-    setCurrentCarouselIndex((prev) => (prev + 1) % Math.min(clubs.length, 3));
+    const hiringClubs = clubs.filter(club => isClubRecruiting(club));
+    setCurrentCarouselIndex((prev) => (prev + 1) % Math.min(hiringClubs.length, 3));
   };
 
   const prevCarousel = () => {
-    setCurrentCarouselIndex((prev) => (prev - 1 + Math.min(clubs.length, 3)) % Math.min(clubs.length, 3));
+    const hiringClubs = clubs.filter(club => isClubRecruiting(club));
+    setCurrentCarouselIndex((prev) => (prev - 1 + Math.min(hiringClubs.length, 3)) % Math.min(hiringClubs.length, 3));
   };
 
   const handleQuickSearch = (e) => {
@@ -304,7 +306,16 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clubs.slice(currentCarouselIndex, currentCarouselIndex + 3).map((club) => (
+            {clubs.filter(club => isClubRecruiting(club)).length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <Clock size={48} className="mx-auto" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No clubs are currently hiring</h3>
+                <p className="text-gray-500">Check back later for new opportunities!</p>
+              </div>
+            ) : (
+              clubs.filter(club => isClubRecruiting(club)).slice(currentCarouselIndex, currentCarouselIndex + 3).map((club) => (
               <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
                 {/* Club Logo/Image Section */}
                 <div className={`h-40 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
@@ -375,7 +386,8 @@ const Home = () => {
                   </button>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
