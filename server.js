@@ -471,7 +471,7 @@ app.post('/api/clubs/:id/reviews', (req, res) => {
   const { id } = req.params;
   const { student_name, club_position, rating, review_text } = req.body;
   
-  if (!student_name || !rating || !review_text) {
+  if (!student_name || !rating) {
     res.status(400).json({ error: 'Missing required fields' });
     return;
   }
@@ -774,6 +774,57 @@ app.use((error, req, res, next) => {
   res.status(500).json({ 
     success: false, 
     error: error.message || 'Internal server error' 
+  });
+});
+
+// User Profile Endpoints
+
+// Get user profile
+app.get('/api/user/profile', (req, res) => {
+  // For now, return a default user profile
+  // In a real app, this would get the user ID from authentication
+  const defaultUser = {
+    id: 1,
+    name: "Kevin Ye",
+    email: "kevin.ye@queensu.ca",
+    program: "Computer Science",
+    year: "3rd Year",
+    faculty: "Faculty of Engineering and Applied Science",
+    pronouns: "He/Him",
+    bio: "Passionate about technology and innovation, with a focus on software development and product design.",
+    goals: "Looking for design + consulting roles in tech companies and startups.",
+    profile_picture: null
+  };
+  
+  res.json(defaultUser);
+});
+
+// Update user profile
+app.put('/api/user/profile', upload.single('profile_picture'), (req, res) => {
+  const { name, email, program, year, faculty, pronouns, bio, goals } = req.body;
+  const profilePicture = req.file ? `/uploads/${req.file.filename}` : null;
+  
+  // For now, just return success
+  // In a real app, this would update the database
+  res.json({ 
+    success: true, 
+    message: 'Profile updated successfully',
+    profile_picture: profilePicture
+  });
+});
+
+// Upload profile picture
+app.post('/api/user/profile-picture', upload.single('profile_picture'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+  
+  const profilePicturePath = `/uploads/${req.file.filename}`;
+  
+  res.json({ 
+    success: true, 
+    message: 'Profile picture uploaded successfully',
+    profile_picture: profilePicturePath
   });
 });
 

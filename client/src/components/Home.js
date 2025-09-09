@@ -45,12 +45,12 @@ const Home = () => {
 
   const getClubBackground = (clubName) => {
     const backgrounds = [
-      'bg-black',
-      'bg-blue-600',
-      'bg-white',
-      'bg-blue-800',
-      'bg-white',
-      'bg-gray-900'
+      'bg-gray-300',
+      'bg-gray-400',
+      'bg-gray-200',
+      'bg-gray-500',
+      'bg-gray-300',
+      'bg-gray-400'
     ];
     const index = clubName.length % backgrounds.length;
     return backgrounds[index];
@@ -58,12 +58,12 @@ const Home = () => {
 
   const getClubTextColor = (clubName) => {
     const backgrounds = [
-      'text-white',
-      'text-white',
+      'text-gray-700',
       'text-gray-800',
-      'text-white',
-      'text-blue-800',
-      'text-white'
+      'text-gray-600',
+      'text-gray-900',
+      'text-gray-700',
+      'text-gray-800'
     ];
     const index = clubName.length % backgrounds.length;
     return backgrounds[index];

@@ -29,12 +29,36 @@ const SearchPage = () => {
     loadFavorites();
   }, []);
 
+  // Refetch clubs when the page becomes visible (e.g., when navigating back from club update)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchClubs();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchClubs();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   useEffect(() => {
     // Handle search term passed from home page
     if (location.state?.searchTerm) {
       setSearchTerm(location.state.searchTerm);
     }
-  }, [location.state]);
+    
+    // Refetch clubs when navigating to search page (e.g., after updating a club)
+    fetchClubs();
+  }, [location.pathname]);
 
   useEffect(() => {
     filterClubs();
@@ -209,12 +233,12 @@ const SearchPage = () => {
 
   const getClubBackground = (clubName) => {
     const backgrounds = [
-      'bg-black',
-      'bg-blue-600',
-      'bg-white',
-      'bg-blue-800',
-      'bg-white',
-      'bg-gray-900',
+      'bg-gray-300',
+      'bg-gray-400',
+      'bg-gray-200',
+      'bg-gray-500',
+      'bg-gray-300',
+      'bg-gray-400',
       'bg-gradient-to-br from-orange-400 to-pink-500',
       'bg-gradient-to-br from-yellow-400 to-orange-500'
     ];
@@ -224,12 +248,12 @@ const SearchPage = () => {
 
   const getClubTextColor = (clubName) => {
     const backgrounds = [
-      'text-white',
-      'text-white',
+      'text-gray-700',
       'text-gray-800',
-      'text-white',
-      'text-blue-800',
-      'text-white',
+      'text-gray-600',
+      'text-gray-900',
+      'text-gray-700',
+      'text-gray-800',
       'text-white',
       'text-gray-800'
     ];

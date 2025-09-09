@@ -177,15 +177,14 @@ const RatingForm = ({ clubId, onRatingAdded, existingReviews, onClose }) => {
       {/* Review Text */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Your Review *
+          Your Review (Optional)
         </label>
         <textarea
           value={reviewText}
           onChange={(e) => setReviewText(e.target.value)}
           rows={3}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="Share your experience with this club..."
-          required
+          placeholder="Share your experience with this club... (optional)"
         />
       </div>
 
@@ -206,7 +205,7 @@ const RatingForm = ({ clubId, onRatingAdded, existingReviews, onClose }) => {
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={isSubmitting || !rating || !studentName || !reviewText || isSubmitted}
+        disabled={isSubmitting || !rating || !studentName || isSubmitted}
         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
       >
         {isSubmitting ? 'Submitting...' : isSubmitted ? 'Rating Submitted!' : 'Submit Rating'}
@@ -362,7 +361,7 @@ const ClubDetail = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="bg-blue-600 w-full h-full"></div>
+                    <div className="bg-gray-300 w-full h-full"></div>
                   )}
                   <button
                     onClick={handleFavorite}

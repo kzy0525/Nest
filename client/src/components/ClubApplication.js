@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Upload, FileText, Send, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 
 const ClubApplication = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isEditMode = searchParams.get('edit') === 'true';
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applicationForm, setApplicationForm] = useState({
@@ -62,6 +64,40 @@ const ClubApplication = () => {
           answers: existingDraft.answers || {},
           resumeFileName: existingDraft.resumeFileName || null // Store resume filename for display
         });
+      } else if (isEditMode) {
+        // In edit mode but no existing draft found - this shouldn't happen
+        console.warn('Edit mode requested but no existing draft found for club:', id);
+        // Initialize with empty form
+        setApplicationForm({
+          resume: null,
+          email: '',
+          phone: '',
+          year: '',
+          program: '',
+          position: '',
+          secondRole: '',
+          answers: {},
+          resumeFileName: null
+        });
+        
+        // Initialize answers object with club's application questions
+        if (response.data.application_questions) {
+          try {
+            const questions = JSON.parse(response.data.application_questions);
+            if (Array.isArray(questions)) {
+              const initialAnswers = {};
+              questions.forEach(q => {
+                initialAnswers[q.id] = '';
+              });
+              setApplicationForm(prev => ({
+                ...prev,
+                answers: initialAnswers
+              }));
+            }
+          } catch (error) {
+            console.log('Error parsing application_questions in edit mode:', error);
+          }
+        }
       } else {
         // Initialize answers object with club's application questions
         if (response.data.application_questions) {
@@ -371,8 +407,12 @@ const ClubApplication = () => {
 
           {/* Application Header */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Application Form</h1>
-            <p className="text-gray-600">Complete your application for {club.name}</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {isEditMode ? 'Edit Application' : 'Application Form'}
+            </h1>
+            <p className="text-gray-600">
+              {isEditMode ? 'Edit your application for' : 'Complete your application for'} {club.name}
+            </p>
           </div>
 
           {/* Contact Information */}

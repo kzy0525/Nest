@@ -6,6 +6,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
 
@@ -14,6 +15,50 @@ const Header = () => {
     const savedNotifications = localStorage.getItem('notifications');
     return savedNotifications ? JSON.parse(savedNotifications) : [];
   });
+
+  // Load user profile from localStorage
+  useEffect(() => {
+    const loadProfile = () => {
+      const savedProfile = localStorage.getItem('userProfile');
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        console.log('Loading profile in Header:', profile);
+        setUserProfile(profile);
+      }
+    };
+
+    // Load profile on mount
+    loadProfile();
+
+    // Listen for profile updates from other tabs/windows
+    const handleStorageChange = (e) => {
+      if (e.key === 'userProfile') {
+        loadProfile();
+      }
+    };
+
+    // Listen for custom profile update events
+    const handleProfileUpdate = () => {
+      loadProfile();
+    };
+
+    // Also check for profile updates when the page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadProfile();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const handleLogout = () => {
     // TODO: Implement actual logout logic (clear tokens, etc.)
@@ -143,7 +188,7 @@ const Header = () => {
             >
               <Bell size={24} className="text-gray-600" />
               {notifications.filter(n => !n.read).length > 0 && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-xs text-white font-bold">
                     {notifications.filter(n => !n.read).length > 9 ? '9+' : notifications.filter(n => !n.read).length}
                   </span>
@@ -231,9 +276,29 @@ const Header = () => {
               className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg"
               onClick={() => setShowDropdown(!showDropdown)}
             >
-              <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
+              <div className="w-12 h-12 bg-gray-300 rounded-lg overflow-hidden">
+                {userProfile?.avatar ? (
+                  <img 
+                    src={userProfile.avatar} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log('Profile image failed to load:', userProfile.avatar);
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className={`w-full h-full bg-gray-300 rounded-lg flex items-center justify-center text-gray-600 font-semibold ${userProfile?.avatar ? 'hidden' : ''}`}
+                >
+                  {userProfile?.name ? userProfile.name.split(' ').map(word => word[0]).join('') : 'KY'}
+                </div>
+              </div>
               <div className="hidden md:block">
-                <div className="text-base font-medium text-gray-900">Kevin Ye</div>
+                <div className="text-base font-medium text-gray-900">
+                  {userProfile?.name || 'Kevin Ye'}
+                </div>
               </div>
               <ChevronDown size={16} className={`text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
             </div>

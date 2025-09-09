@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Camera, MapPin, GraduationCap, Calendar, User, Target, Users, Clock, CheckCircle, Plus, Search, X, MoreVertical } from 'lucide-react';
+import { Edit, Camera, MapPin, GraduationCap, Calendar, User, Target, Users, Clock, CheckCircle, Plus, Search, X, MoreVertical, Upload } from 'lucide-react';
+import axios from 'axios';
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ const UserProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ ...userProfile });
   const [editingSection, setEditingSection] = useState(null); // 'basic', 'about', 'clubs'
+  const [isUploadingProfilePicture, setIsUploadingProfilePicture] = useState(false);
   const [showAddClubModal, setShowAddClubModal] = useState(false);
   const [availableClubs, setAvailableClubs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,6 +95,56 @@ const UserProfile = () => {
   const handleEditSection = (section) => {
     setEditingSection(section);
     setEditForm({ ...userProfile });
+  };
+
+  const handleProfilePictureUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingProfilePicture(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('profile_picture', file);
+
+      const response = await axios.post('/api/user/profile-picture', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        const newProfilePicture = response.data.profile_picture;
+        const updatedProfile = { ...userProfile, avatar: newProfilePicture };
+        setUserProfile(updatedProfile);
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+        
+        // Update edit form if it's open
+        if (isEditing) {
+          setEditForm({ ...editForm, avatar: newProfilePicture });
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      alert('Failed to upload profile picture. Please try again.');
+    } finally {
+      setIsUploadingProfilePicture(false);
+    }
   };
 
   const handleSaveSection = () => {
@@ -233,14 +285,18 @@ const UserProfile = () => {
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
+      case 'submitted':
+        return 'bg-green-100 text-green-800';
       case 'application submitted':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-green-100 text-green-800';
       case 'interview scheduled':
         return 'bg-yellow-100 text-yellow-800';
       case 'accepted':
         return 'bg-green-100 text-green-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
+      case 'incomplete':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -272,6 +328,26 @@ const UserProfile = () => {
                     ) : (
                       userProfile.name.split(' ').map(word => word[0]).join('')
                     )}
+                  </div>
+                  
+                  {/* Profile Picture Upload Button */}
+                  <div className="absolute bottom-0 right-0">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePictureUpload}
+                        className="hidden"
+                        disabled={isUploadingProfilePicture}
+                      />
+                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-lg">
+                        {isUploadingProfilePicture ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <Camera size={16} />
+                        )}
+                      </div>
+                    </label>
                   </div>
                 </div>
                 
@@ -559,10 +635,9 @@ const UserProfile = () => {
                         </div>
                         {application.position && (
                           <div className="mt-2">
-                            <span className="text-xs text-gray-500">Role: </span>
-                            <span className="text-xs font-medium text-gray-700">{application.position}</span>
+                            <span className="text-xs font-medium text-blue-600">{application.position}</span>
                             {application.secondRole && (
-                              <span className="text-xs text-gray-500 ml-2">, {application.secondRole}</span>
+                              <span className="text-xs font-medium text-blue-600 ml-2">, {application.secondRole}</span>
                             )}
                           </div>
                         )}

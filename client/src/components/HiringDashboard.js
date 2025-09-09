@@ -127,7 +127,7 @@ const HiringDashboard = () => {
 
   // Function to handle edit application
   const handleEditApplication = (application) => {
-    navigate(`/apply/${application.clubId}?edit=true`);
+    navigate(`/club/${application.clubId}/apply?edit=true`);
   };
 
   // Function to handle delete/withdraw click
