@@ -15,6 +15,7 @@ import UserProfile from './components/UserProfile';
 import ClubRegistration from './components/ClubRegistration';
 import ClubApplication from './components/ClubApplication';
 import ClubDashboard from './components/ClubDashboard';
+import ClubAnalytics from './components/ClubAnalytics';
 import AdminDashboard from './components/AdminDashboard';
 
 function App() {
@@ -90,7 +91,25 @@ function App() {
 
         <Route path="/club/register" element={
           <ProtectedRoute>
-            <ClubRegistration />
+            <div className="App flex h-screen bg-gray-100">
+              <Sidebar />
+              <div className="flex-1 flex flex-col overflow-y-auto">
+                <Header />
+                <ClubRegistration />
+              </div>
+            </div>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/club/analytics" element={
+          <ProtectedRoute>
+            <div className="App flex h-screen bg-gray-100">
+              <Sidebar />
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <Header />
+                <ClubAnalytics />
+              </div>
+            </div>
           </ProtectedRoute>
         } />
 
@@ -134,7 +153,7 @@ function App() {
           <ProtectedRoute requireAdmin={true}>
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
-              <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 flex flex-col overflow-y-auto">
                 <Header />
                 <ClubRegistration />
               </div>
@@ -144,7 +163,13 @@ function App() {
 
         <Route path="/admin" element={
           <ProtectedRoute requireAdmin={true}>
-            <AdminDashboard />
+            <div className="App flex h-screen bg-gray-100">
+              <Sidebar />
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <Header />
+                <AdminDashboard />
+              </div>
+            </div>
           </ProtectedRoute>
         } />
         </Routes>

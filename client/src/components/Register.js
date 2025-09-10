@@ -33,7 +33,7 @@ const Register = () => {
     
     // Basic validation
     if (!formData.name || !formData.email || !formData.password || 
-        !formData.confirmPassword || !formData.program) {
+        !formData.confirmPassword || !formData.school) {
       setError('Please fill in all required fields');
       return;
     }

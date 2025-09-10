@@ -469,11 +469,15 @@ app.delete('/api/admin/clubs/:id', authenticateToken, requireAdmin, (req, res) =
   });
 });
 
-// Create a new club (Admin only)
-app.post('/api/admin/clubs', authenticateToken, requireAdmin, upload.fields([
+// Create a new club (Admin or Club users)
+app.post('/api/admin/clubs', authenticateToken, upload.fields([
   { name: 'logo', maxCount: 1 },
   { name: 'backdrop', maxCount: 1 }
 ]), (req, res) => {
+  // Check if user is admin or club
+  if (req.user.role !== 'admin' && req.user.user_type !== 'club') {
+    return res.status(403).json({ error: 'Admin or club access required' });
+  }
   const clubData = req.body;
   const files = req.files;
   

@@ -182,8 +182,9 @@ const Header = () => {
 
         {/* Right Side */}
         <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <div className="relative" ref={notificationsRef}>
+          {/* Notifications - Hidden for admin users */}
+          {user?.role !== 'admin' && (
+            <div className="relative" ref={notificationsRef}>
             <div 
               className="relative cursor-pointer hover:text-gray-800 p-2 rounded-lg"
               onClick={() => setShowNotifications(!showNotifications)}
@@ -269,11 +270,11 @@ const Header = () => {
               </div>
             )}
           </div>
+          )}
 
-
-
-          {/* User Profile */}
-          <div className="relative" ref={dropdownRef}>
+          {/* User Profile - Hidden for admin users */}
+          {user?.role !== 'admin' && (
+            <div className="relative" ref={dropdownRef}>
             <div 
               className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg"
               onClick={() => setShowDropdown(!showDropdown)}
@@ -338,6 +339,7 @@ const Header = () => {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>

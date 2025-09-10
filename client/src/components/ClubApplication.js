@@ -30,7 +30,7 @@ const ClubApplication = () => {
 
   useEffect(() => {
     fetchClubDetails();
-  }, [id]);
+  }, [id, fetchClubDetails]);
 
   const showCustomModal = (title, message, type = 'info') => {
     setModalContent({ title, message, type });

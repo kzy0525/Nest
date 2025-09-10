@@ -1,12 +1,17 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Heart, Edit, Plus, Settings } from 'lucide-react';
+import { Home, Compass, Heart, Edit, Plus, Settings, Users, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -16,12 +21,19 @@ const Sidebar = () => {
   // Different navigation based on user type
   let navItems = [];
   
-  if (user?.user_type === 'club') {
+  if (user?.role === 'admin') {
+    // Admin navigation
+    navItems = [
+      { path: '/admin', icon: Home, label: 'Admin Dashboard' },
+      { path: '/register-club', icon: Plus, label: 'Register Club' },
+      { path: 'logout', icon: LogOut, label: 'Logout', action: handleLogout }
+    ];
+  } else if (user?.user_type === 'club') {
     // Club navigation
     navItems = [
       { path: '/club/dashboard', icon: Home, label: 'Dashboard' },
       { path: '/search', icon: Compass, label: 'Browse Clubs' },
-      { path: '/profile', icon: Settings, label: 'Club Profile' }
+      { path: '/club/analytics', icon: Users, label: 'Analytics' }
     ];
   } else {
     // Student navigation
@@ -32,14 +44,6 @@ const Sidebar = () => {
       { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' },
       { path: '/profile', icon: Settings, label: 'Profile' }
     ];
-  }
-
-  // Add admin-only items
-  if (user?.role === 'admin') {
-    navItems.push(
-      { path: '/register-club', icon: Plus, label: 'Register Club' },
-      { path: '/admin', icon: Settings, label: 'Admin' }
-    );
   }
 
   return (
@@ -56,7 +60,7 @@ const Sidebar = () => {
                 ? 'bg-gradient-to-b from-[#3D5CF5]/60 to-[#3DB8F5]/60'
                 : 'hover:scale-110'
             }`}
-            onClick={() => navigate(item.path)}
+            onClick={() => item.action ? item.action() : navigate(item.path)}
             title={item.label}
           >
             <item.icon
