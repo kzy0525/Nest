@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, ChevronDown, LogOut, User, Settings, CheckCircle, Heart, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -61,7 +63,7 @@ const Header = () => {
   }, []);
 
   const handleLogout = () => {
-    // TODO: Implement actual logout logic (clear tokens, etc.)
+    logout();
     navigate('/login');
   };
 
@@ -292,12 +294,12 @@ const Header = () => {
                 <div 
                   className={`w-full h-full bg-gray-300 rounded-lg flex items-center justify-center text-gray-600 font-semibold ${userProfile?.avatar ? 'hidden' : ''}`}
                 >
-                  {userProfile?.name ? userProfile.name.split(' ').map(word => word[0]).join('') : 'KY'}
+                  {user?.name ? user.name.split(' ').map(word => word[0]).join('') : 'U'}
                 </div>
               </div>
               <div className="hidden md:block">
                 <div className="text-base font-medium text-gray-900">
-                  {userProfile?.name || 'Kevin Ye'}
+                  {user?.name || 'User'}
                 </div>
               </div>
               <ChevronDown size={16} className={`text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />

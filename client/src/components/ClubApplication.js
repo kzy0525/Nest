@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Upload, FileText, Send, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import { useUserStorage } from '../utils/userStorage';
 
 const ClubApplication = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isEditMode = searchParams.get('edit') === 'true';
+  const userStorage = useUserStorage();
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applicationForm, setApplicationForm] = useState({
@@ -46,7 +48,7 @@ const ClubApplication = () => {
       setLoading(false);
       
       // Check for existing draft application
-      const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+      const existingApplications = userStorage.getJSON('clubApplications') || [];
       const existingDraft = existingApplications.find(app => 
         app.clubId === parseInt(id) && app.status === 'Incomplete'
       );
@@ -190,7 +192,7 @@ const ClubApplication = () => {
         })
       };
 
-      const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+      const existingApplications = userStorage.getJSON('clubApplications') || [];
       
       // Check if there's already a draft for this club
       const existingDraftIndex = existingApplications.findIndex(app => 
@@ -207,7 +209,7 @@ const ClubApplication = () => {
         updatedApplications = [...existingApplications, newApplication];
       }
       
-      localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
+      userStorage.setJSON('clubApplications', updatedApplications);
 
       // Trigger custom event for HiringDashboard
       window.dispatchEvent(new CustomEvent('clubApplicationAdded', { 
@@ -315,7 +317,7 @@ const ClubApplication = () => {
         })
       };
 
-      const existingApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+      const existingApplications = userStorage.getJSON('clubApplications') || [];
       
       // Check if there's already a draft for this club
       const existingDraftIndex = existingApplications.findIndex(app => 
@@ -332,7 +334,7 @@ const ClubApplication = () => {
         updatedApplications = [...existingApplications, newApplication];
       }
       
-      localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
+      userStorage.setJSON('clubApplications', updatedApplications);
 
       // Trigger custom event for HiringDashboard
       window.dispatchEvent(new CustomEvent('clubApplicationAdded', { 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Heart, Star, Search, Filter, SortAsc, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
+import { useUserStorage } from '../utils/userStorage';
 
 const SearchPage = () => {
   const [clubs, setClubs] = useState([]);
@@ -23,6 +24,7 @@ const SearchPage = () => {
   const filterDropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const userStorage = useUserStorage();
 
   useEffect(() => {
     fetchClubs();
@@ -91,7 +93,7 @@ const SearchPage = () => {
   };
 
   const loadFavorites = () => {
-    const savedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const savedFavorites = userStorage.getJSON('favorites') || [];
     setFavorites(savedFavorites);
   };
 
@@ -213,7 +215,7 @@ const SearchPage = () => {
     }
     
     setFavorites(updatedFavorites);
-    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+    userStorage.setJSON('favorites', updatedFavorites);
 
     // Trigger notification event for liking a club
     if (existingIndex < 0) {

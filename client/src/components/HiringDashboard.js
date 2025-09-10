@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Eye, ChevronDown, Trash2, FileText } from 'lucide-react';
 import axios from 'axios';
+import { useUserStorage } from '../utils/userStorage';
 
 const HiringDashboard = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -13,10 +14,11 @@ const HiringDashboard = () => {
   const [clubData, setClubData] = useState({});
   const [deleteAction, setDeleteAction] = useState(''); // 'delete' or 'withdraw'
   const navigate = useNavigate();
+  const userStorage = useUserStorage();
 
-  // Load applications from localStorage on component mount
+  // Load applications from user-specific storage on component mount
   useEffect(() => {
-    const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+    const savedApplications = userStorage.getJSON('clubApplications') || [];
     console.log('Loaded applications:', savedApplications);
     savedApplications.forEach((app, index) => {
       console.log(`Application ${index}:`, app.clubName, 'Status:', app.status);
@@ -39,10 +41,10 @@ const HiringDashboard = () => {
   // Function to add a new application
   const addApplication = (application) => {
     setApplications(prev => [...prev, application]);
-    // Also save to localStorage
-    const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+    // Also save to user-specific storage
+    const savedApplications = userStorage.getJSON('clubApplications') || [];
     savedApplications.push(application);
-    localStorage.setItem('clubApplications', JSON.stringify(savedApplications));
+    userStorage.setJSON('clubApplications', savedApplications);
   };
 
   // Function to update application status (for future use if needed)
@@ -79,8 +81,8 @@ const HiringDashboard = () => {
       return updated;
     });
     
-    // Also update localStorage
-    const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+    // Also update user-specific storage
+    const savedApplications = userStorage.getJSON('clubApplications') || [];
     const updatedApplications = savedApplications.map(app =>
       app.id === applicationId ? { 
         ...app, 
@@ -88,7 +90,7 @@ const HiringDashboard = () => {
         statusColor: getStatusColor(newStatus)
       } : app
     );
-    localStorage.setItem('clubApplications', JSON.stringify(updatedApplications));
+    userStorage.setJSON('clubApplications', updatedApplications);
     console.log('Updated localStorage applications:', updatedApplications);
   };
 
@@ -96,10 +98,10 @@ const HiringDashboard = () => {
   const deleteApplication = (applicationId) => {
     setApplications(prev => prev.filter(app => app.id !== applicationId));
     
-    // Also remove from localStorage
-    const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+    // Also remove from user-specific storage
+    const savedApplications = userStorage.getJSON('clubApplications') || [];
     const filteredApplications = savedApplications.filter(app => app.id !== applicationId);
-    localStorage.setItem('clubApplications', JSON.stringify(filteredApplications));
+    userStorage.setJSON('clubApplications', filteredApplications);
   };
 
   // Function to handle viewing an application

@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Heart, Star, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import axios from 'axios';
+import { useUserStorage } from '../utils/userStorage';
+import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
   const [clubs, setClubs] = useState([]);
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const userStorage = useUserStorage();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchClubs();
@@ -69,12 +73,18 @@ const Home = () => {
     return backgrounds[index];
   };
 
+  // Get user's first name
+  const getFirstName = () => {
+    if (!user?.name) return 'User';
+    return user.name.split(' ')[0];
+  };
+
   // Get real application data from localStorage
   const [applications, setApplications] = useState([]);
 
   useEffect(() => {
-    // Load applications from localStorage
-    const savedApplications = JSON.parse(localStorage.getItem('clubApplications') || '[]');
+    // Load applications from user-specific storage
+    const savedApplications = userStorage.getJSON('clubApplications') || [];
     
     // Enhance applications with club data from the clubs list
     const enhancedApplications = savedApplications.map(app => {
@@ -88,6 +98,20 @@ const Home = () => {
     
     setApplications(enhancedApplications);
     
+    // Listen for application updates
+    const handleApplicationUpdate = () => {
+      const savedApplications = userStorage.getJSON('clubApplications') || [];
+      const enhancedApplications = savedApplications.map(app => {
+        const clubData = clubs.find(club => club.id === app.clubId);
+        return {
+          ...app,
+          clubLogo: clubData?.logo || null,
+          clubName: clubData?.name || app.clubName
+        };
+      });
+      setApplications(enhancedApplications);
+    };
+
     // Listen for new applications
     const handleNewApplication = (event) => {
       const { application } = event.detail;
@@ -101,11 +125,15 @@ const Home = () => {
     };
 
     window.addEventListener('clubApplicationAdded', handleNewApplication);
+    window.addEventListener('applicationSaved', handleApplicationUpdate);
+    window.addEventListener('applicationSubmitted', handleApplicationUpdate);
 
     return () => {
       window.removeEventListener('clubApplicationAdded', handleNewApplication);
+      window.removeEventListener('applicationSaved', handleApplicationUpdate);
+      window.removeEventListener('applicationSubmitted', handleApplicationUpdate);
     };
-  }, [clubs]);
+  }, [clubs, userStorage]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -218,17 +246,17 @@ const Home = () => {
   };
 
   const isFavorite = (clubId) => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const favorites = userStorage.getJSON('favorites') || [];
     return favorites.some(fav => fav.id === clubId);
   };
 
   const handleFavorite = (club) => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const favorites = userStorage.getJSON('favorites') || [];
     
     if (isFavorite(club.id)) {
       // Remove from favorites
       const updatedFavorites = favorites.filter(fav => fav.id !== club.id);
-      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+      userStorage.setJSON('favorites', updatedFavorites);
     } else {
       // Add to favorites
       const newFavorite = {
@@ -244,7 +272,7 @@ const Home = () => {
         application_deadline: club.application_deadline
       };
       favorites.push(newFavorite);
-      localStorage.setItem('favorites', JSON.stringify(favorites));
+      userStorage.setJSON('favorites', favorites);
 
       // Trigger notification event for liking a club
       window.dispatchEvent(new CustomEvent('clubLiked', { 
@@ -264,7 +292,7 @@ const Home = () => {
       <div className="flex-1 overflow-auto bg-gray-50 p-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome back, Kevin!</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome back, {getFirstName()}!</h1>
           <p className="text-lg text-gray-600">Discover amazing opportunities and track your applications</p>
         </div>
 

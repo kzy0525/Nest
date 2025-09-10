@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, Star, Instagram, Globe, Users, TrendingUp } from 'lucide-react';
 import axios from 'axios';
+import { useUserStorage } from '../utils/userStorage';
 
 // Rating Form Component
 const RatingForm = ({ clubId, onRatingAdded, existingReviews, onClose }) => {
@@ -217,6 +218,7 @@ const RatingForm = ({ clubId, onRatingAdded, existingReviews, onClose }) => {
 const ClubDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const userStorage = useUserStorage();
   const [club, setClub] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -251,17 +253,17 @@ const ClubDetail = () => {
   };
 
   const checkFavoriteStatus = () => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const favorites = userStorage.getJSON('favorites') || [];
     setIsFavorite(favorites.some(fav => fav.id === parseInt(id)));
   };
 
   const handleFavorite = () => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const favorites = userStorage.getJSON('favorites') || [];
     
     if (isFavorite) {
       // Remove from favorites
       const updatedFavorites = favorites.filter(fav => fav.id !== club.id);
-      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+      userStorage.setJSON('favorites', updatedFavorites);
       setIsFavorite(false);
     } else {
       // Add to favorites
@@ -280,7 +282,7 @@ const ClubDetail = () => {
         application_deadline: club.application_deadline
       };
       favorites.push(newFavorite);
-      localStorage.setItem('favorites', JSON.stringify(favorites));
+      userStorage.setJSON('favorites', favorites);
       setIsFavorite(true);
 
       // Trigger notification event for liking a club

@@ -1,20 +1,58 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [userType, setUserType] = useState('student');
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
-    console.log('Login attempt:', { email, password, rememberMe });
-    navigate('/');
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      console.log('Attempting login with:', { email, password: '***' });
+      const response = await axios.post('/api/auth/login', {
+        email,
+        password
+      });
+
+      console.log('Login response:', response.data);
+
+      if (response.data.success) {
+        // Use AuthContext login function
+        login(response.data.user, response.data.token);
+        
+        console.log('Login successful, navigating...');
+        
+        // Navigate based on user role and type
+        if (response.data.user.role === 'admin') {
+          navigate('/admin');
+        } else if (response.data.user.user_type === 'club') {
+          navigate('/club/dashboard');
+        } else {
+          navigate('/');
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error.response?.data?.error || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,6 +87,44 @@ const Login = () => {
           <h2 className="text-4xl font-bold text-white mb-8 text-center">Welcome</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
+            {/* User Type Selection */}
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">
+                I am a:
+              </label>
+              <div className="flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="student"
+                    checked={userType === 'student'}
+                    onChange={(e) => setUserType(e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-white">Student</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="club"
+                    checked={userType === 'club'}
+                    onChange={(e) => setUserType(e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-white">Club</span>
+                </label>
+              </div>
+            </div>
+
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-white text-sm font-medium mb-2">
@@ -103,9 +179,10 @@ const Login = () => {
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full bg-white text-[#3D5CF5] py-3 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors duration-200"
+              disabled={isLoading}
+              className="w-full bg-white text-[#3D5CF5] py-3 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Login
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
 
             {/* Register Link */}

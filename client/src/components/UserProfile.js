@@ -2,40 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Camera, MapPin, GraduationCap, Calendar, User, Target, Users, Clock, CheckCircle, Plus, Search, X, MoreVertical, Upload } from 'lucide-react';
 import axios from 'axios';
+import { useUserStorage } from '../utils/userStorage';
+import { useAuth } from '../contexts/AuthContext';
 
 const UserProfile = () => {
   const navigate = useNavigate();
+  const userStorage = useUserStorage();
+  const { user } = useAuth();
   
-  // Load user data from localStorage or use default
+  // Load user data from user-specific storage or use default
   const [userProfile, setUserProfile] = useState(() => {
-    const savedProfile = localStorage.getItem('userProfile');
+    const savedProfile = userStorage.getJSON('userProfile');
     if (savedProfile) {
-      return JSON.parse(savedProfile);
+      return savedProfile;
     }
-    // Default user data - in a real app this would come from a database
+    // Default user data based on authenticated user
     return {
-      name: "Kevin Ye",
-      program: "Computer Science",
-      year: "3rd Year",
-      faculty: "Faculty of Engineering and Applied Science",
-      pronouns: "He/Him",
-      avatar: null, // URL to avatar image
-      bio: "Passionate about technology and innovation, with a focus on software development and product design.",
-      goals: "Looking for design + consulting roles in tech companies and startups.",
-      currentClubs: [
-        {
-          id: 1,
-          name: "Queen's Tech and Media Association (QTMA)",
-          role: "Software Developer",
-          joinDate: "September 2023"
-        },
-        {
-          id: 2,
-          name: "Queen's Startup Consulting",
-          role: "Business Analyst",
-          joinDate: "January 2024"
-        }
-      ]
+      name: user?.name || "",
+      program: user?.program || "",
+      year: "",
+      faculty: user?.school || "",
+      pronouns: "",
+      avatar: user?.avatar || null,
+      bio: "",
+      goals: "",
+      currentClubs: []
     };
   });
 
@@ -55,13 +46,11 @@ const UserProfile = () => {
   const [showDropdown, setShowDropdown] = useState(null);
   const [applications, setApplications] = useState([]);
 
-  // Load applications from localStorage
+  // Load applications from user-specific storage
   useEffect(() => {
     const loadApplications = () => {
-      const savedApplications = localStorage.getItem('clubApplications');
-      if (savedApplications) {
-        setApplications(JSON.parse(savedApplications));
-      }
+      const savedApplications = userStorage.getJSON('clubApplications') || [];
+      setApplications(savedApplications);
     };
 
     loadApplications();
@@ -80,7 +69,20 @@ const UserProfile = () => {
       window.removeEventListener('applicationSaved', handleApplicationUpdate);
       window.removeEventListener('applicationSubmitted', handleApplicationUpdate);
     };
-  }, []);
+  }, [userStorage]);
+
+  // Update profile when user changes
+  useEffect(() => {
+    if (user) {
+      setUserProfile(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        program: user.program || prev.program,
+        faculty: user.school || prev.faculty,
+        avatar: user.avatar || prev.avatar
+      }));
+    }
+  }, [user]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -129,7 +131,7 @@ const UserProfile = () => {
         const newProfilePicture = response.data.profile_picture;
         const updatedProfile = { ...userProfile, avatar: newProfilePicture };
         setUserProfile(updatedProfile);
-        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        userStorage.setJSON('userProfile', updatedProfile);
         
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('profileUpdated'));
@@ -150,7 +152,7 @@ const UserProfile = () => {
   const handleSaveSection = () => {
     setUserProfile(editForm);
     // Save to localStorage to make changes permanent
-    localStorage.setItem('userProfile', JSON.stringify(editForm));
+    userStorage.setJSON('userProfile', editForm);
     setEditingSection(null);
   };
 
@@ -216,7 +218,7 @@ const UserProfile = () => {
         currentClubs: [...userProfile.currentClubs, newClub]
       };
       setUserProfile(updatedProfile);
-      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      userStorage.setJSON('userProfile', updatedProfile);
       
       setShowAddClubModal(false);
       setSearchQuery('');
@@ -252,7 +254,7 @@ const UserProfile = () => {
         )
       };
       setUserProfile(updatedProfile);
-      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      userStorage.setJSON('userProfile', updatedProfile);
       setEditingClub(null);
       setNewClubForm({ role: '', joinDate: '' });
     }

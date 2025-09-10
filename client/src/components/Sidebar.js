@@ -1,23 +1,46 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Heart, Edit, Plus } from 'lucide-react';
+import { Home, Compass, Heart, Edit, Plus, Settings } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 
-  const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
-    { path: '/search', icon: Compass, label: 'Search' },
-    { path: '/favorites', icon: Heart, label: 'Favorites' },
-    { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' },
-    { path: '/register-club', icon: Plus, label: 'Register Club' }
-  ];
+  // Different navigation based on user type
+  let navItems = [];
+  
+  if (user?.user_type === 'club') {
+    // Club navigation
+    navItems = [
+      { path: '/club/dashboard', icon: Home, label: 'Dashboard' },
+      { path: '/search', icon: Compass, label: 'Browse Clubs' },
+      { path: '/profile', icon: Settings, label: 'Club Profile' }
+    ];
+  } else {
+    // Student navigation
+    navItems = [
+      { path: '/', icon: Home, label: 'Home' },
+      { path: '/search', icon: Compass, label: 'Search' },
+      { path: '/favorites', icon: Heart, label: 'Favorites' },
+      { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' },
+      { path: '/profile', icon: Settings, label: 'Profile' }
+    ];
+  }
+
+  // Add admin-only items
+  if (user?.role === 'admin') {
+    navItems.push(
+      { path: '/register-club', icon: Plus, label: 'Register Club' },
+      { path: '/admin', icon: Settings, label: 'Admin' }
+    );
+  }
 
   return (
     <div className="w-20 bg-white flex flex-col items-center py-6 h-screen">

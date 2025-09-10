@@ -4,6 +4,8 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -39,12 +41,41 @@ const upload = multer({
   }
 });
 
+// JWT Secret (in production, use environment variable)
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Add this for FormData
 app.use(express.static(path.join(__dirname, 'client/build')));
 app.use('/uploads', express.static(uploadsDir));
+
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Admin middleware
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
 
 // Database setup
 const db = new sqlite3.Database('./clubs.db', (err) => {
@@ -406,8 +437,10 @@ app.get('/api/clubs/:id/reviews', (req, res) => {
   });
 });
 
-// Delete a club (temporary for testing)
-app.delete('/api/clubs/:id', (req, res) => {
+// Admin-only endpoints for club management
+
+// Delete a club (Admin only)
+app.delete('/api/admin/clubs/:id', authenticateToken, requireAdmin, (req, res) => {
   const { id } = req.params;
   
   // First delete all reviews for this club
@@ -432,6 +465,167 @@ app.delete('/api/clubs/:id', (req, res) => {
       }
       
       res.json({ success: true, message: 'Club deleted successfully' });
+    });
+  });
+});
+
+// Create a new club (Admin only)
+app.post('/api/admin/clubs', authenticateToken, requireAdmin, upload.fields([
+  { name: 'logo', maxCount: 1 },
+  { name: 'backdrop', maxCount: 1 }
+]), (req, res) => {
+  const clubData = req.body;
+  const files = req.files;
+  
+  // Handle file paths
+  let logoPath = null;
+  let backdropPath = null;
+  
+  if (files && files.logo && files.logo.length > 0) {
+    logoPath = `/uploads/${files.logo[0].filename}`;
+  }
+  if (files && files.backdrop && files.backdrop.length > 0) {
+    backdropPath = `/uploads/${files.backdrop[0].filename}`;
+  }
+
+  db.run(
+    `INSERT INTO clubs (name, description, category, contact_email, website, instagram, slogan, 
+     member_count, acceptance_rate, applications_open, application_deadline, hasInterviews, 
+     interview_start_date, interview_end_date, results_released, open_positions, available_spots, 
+     application_questions, logo, backdrop, isHiring) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      clubData.name, clubData.description, clubData.category, clubData.contact_email,
+      clubData.website || '', clubData.instagram || '', clubData.slogan || '',
+      clubData.member_count || 0, clubData.acceptance_rate || 0, clubData.applications_open || '',
+      clubData.application_deadline || '', clubData.hasInterviews || 'false',
+      clubData.interview_start_date || '', clubData.interview_end_date || '',
+      clubData.results_released || '', clubData.open_positions || '', clubData.available_spots || 0,
+      clubData.application_questions || '', logoPath, backdropPath, clubData.isHiring || 'false'
+    ],
+    function(err) {
+      if (err) {
+        console.error('Error creating club:', err);
+        res.status(500).json({ success: false, message: 'Error creating club' });
+        return;
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Club created successfully',
+        clubId: this.lastID 
+      });
+    }
+  );
+});
+
+// Update a club (Admin only)
+app.put('/api/admin/clubs/:id', authenticateToken, requireAdmin, upload.fields([
+  { name: 'logo', maxCount: 1 },
+  { name: 'backdrop', maxCount: 1 }
+]), (req, res) => {
+  const { id } = req.params;
+  const clubData = req.body;
+  const files = req.files;
+  
+  // Handle file paths
+  let logoPath = null;
+  let backdropPath = null;
+  
+  if (files && files.logo && files.logo.length > 0) {
+    logoPath = `/uploads/${files.logo[0].filename}`;
+  }
+  if (files && files.backdrop && files.backdrop.length > 0) {
+    backdropPath = `/uploads/${files.backdrop[0].filename}`;
+  }
+
+  // Build update query
+  let updateFields = [];
+  let updateValues = [];
+  
+  updateFields.push('name = ?', 'description = ?', 'category = ?', 'contact_email = ?', 
+                   'website = ?', 'instagram = ?', 'slogan = ?', 'member_count = ?', 
+                   'acceptance_rate = ?', 'isHiring = ?', 'applications_open = ?', 
+                   'application_deadline = ?', 'hasInterviews = ?', 'interview_start_date = ?', 
+                   'interview_end_date = ?', 'results_released = ?', 'open_positions = ?', 
+                   'available_spots = ?', 'application_questions = ?');
+  
+  updateValues.push(
+    clubData.name, clubData.description, clubData.category, clubData.contact_email,
+    clubData.website || '', clubData.instagram || '', clubData.slogan || '', 
+    clubData.member_count || '0', clubData.acceptance_rate || '', 
+    clubData.isHiring || 'false', clubData.applications_open || '', 
+    clubData.application_deadline || '', clubData.hasInterviews || 'false',
+    clubData.interview_start_date || '', clubData.interview_end_date || '', 
+    clubData.results_released || '', clubData.open_positions || '', 
+    clubData.available_spots || '0', clubData.application_questions || ''
+  );
+  
+  // Only update file paths if new files are uploaded
+  if (logoPath) {
+    updateFields.push('logo = ?');
+    updateValues.push(logoPath);
+  }
+  if (backdropPath) {
+    updateFields.push('backdrop = ?');
+    updateValues.push(backdropPath);
+  }
+  
+  updateValues.push(id);
+  
+  const updateQuery = `UPDATE clubs SET ${updateFields.join(', ')} WHERE id = ?`;
+  
+  db.run(updateQuery, updateValues, function(err) {
+    if (err) {
+      console.error('Error updating club:', err);
+      res.status(500).json({ success: false, message: 'Error updating club' });
+      return;
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Club updated successfully',
+      clubId: id 
+    });
+  });
+});
+
+// Get all users (Admin only)
+app.get('/api/admin/users', authenticateToken, requireAdmin, (req, res) => {
+  db.all('SELECT id, name, email, program, year, faculty, pronouns, role, user_type, is_active, created_at FROM users', (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
+// Get applications for a specific club (club users only)
+app.get('/api/club/applications', authenticateToken, (req, res) => {
+  if (req.user.user_type !== 'club') {
+    return res.status(403).json({ error: 'Club access required' });
+  }
+
+  // Get club ID from user's name or email (assuming club name matches club in database)
+  const clubName = req.user.name;
+  
+  db.get('SELECT id FROM clubs WHERE name = ?', [clubName], (err, club) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Get applications for this club from localStorage simulation
+    // In a real app, this would be stored in the database
+    res.json({
+      success: true,
+      club_id: club.id,
+      club_name: clubName,
+      message: 'Applications will be retrieved from user storage in frontend'
     });
   });
 });
@@ -774,6 +968,138 @@ app.use((error, req, res, next) => {
   res.status(500).json({ 
     success: false, 
     error: error.message || 'Internal server error' 
+  });
+});
+
+// Authentication Endpoints
+
+// Register new user
+app.post('/api/auth/register', async (req, res) => {
+  const { name, email, password, school, user_type } = req.body;
+
+  if (!name || !email || !password || !user_type) {
+    return res.status(400).json({ error: 'Name, email, password, and user type are required' });
+  }
+
+  if (!['student', 'club'].includes(user_type)) {
+    return res.status(400).json({ error: 'User type must be either "student" or "club"' });
+  }
+
+  try {
+    // Check if user already exists
+    db.get('SELECT id FROM users WHERE email = ?', [email], async (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (row) {
+        return res.status(400).json({ error: 'User already exists with this email' });
+      }
+
+      // Hash password
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(password, saltRounds);
+
+      // Insert new user
+      const role = user_type === 'club' ? 'club' : 'student';
+      db.run(
+        'INSERT INTO users (name, email, password_hash, school, role, user_type) VALUES (?, ?, ?, ?, ?, ?)',
+        [name, email, passwordHash, school || '', role, user_type],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Failed to create user' });
+          }
+
+          // Generate JWT token
+          const token = jwt.sign(
+            { id: this.lastID, email, role, user_type },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+          );
+
+          res.json({
+            success: true,
+            message: 'User created successfully',
+            token,
+            user: {
+              id: this.lastID,
+              name,
+              email,
+              school,
+              role,
+              user_type
+            }
+          });
+        }
+      );
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Login user
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  db.get(
+    'SELECT * FROM users WHERE email = ? AND is_active = 1',
+    [email],
+    async (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      try {
+        const isValidPassword = await bcrypt.compare(password, user.password_hash);
+        
+        if (!isValidPassword) {
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+          { id: user.id, email: user.email, role: user.role, user_type: user.user_type },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        res.json({
+          success: true,
+          message: 'Login successful',
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            year: user.year,
+            faculty: user.faculty,
+            pronouns: user.pronouns,
+            role: user.role,
+            user_type: user.user_type,
+            profile_picture: user.profile_picture
+          }
+        });
+      } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+      }
+    }
+  );
+});
+
+// Verify token
+app.get('/api/auth/verify', authenticateToken, (req, res) => {
+  res.json({
+    success: true,
+    user: req.user
   });
 });
 

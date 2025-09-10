@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
     school: '',
-    major: ''
+    user_type: 'student'
   });
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -21,32 +26,63 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess(false);
     
     // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.email || 
-        !formData.password || !formData.confirmPassword || !formData.school || !formData.major) {
-      alert('Please fill in all fields');
+    if (!formData.name || !formData.email || !formData.password || 
+        !formData.confirmPassword || !formData.program) {
+      setError('Please fill in all required fields');
       return;
     }
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
       return;
     }
     
     if (!agreeToTerms) {
-      alert('Please agree to the terms and conditions');
+      setError('Please agree to the terms and conditions');
       return;
     }
     
-    // TODO: Implement actual registration logic with backend API
-    console.log('Registration attempt:', formData);
+    setIsLoading(true);
     
-    // For now, just navigate to login
-    // In a real app, you'd send the data to the backend
-    navigate('/login');
+    try {
+      const response = await axios.post('/api/auth/register', {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        school: formData.school,
+        user_type: formData.user_type
+      });
+
+      if (response.data.success) {
+        setSuccess(true);
+        // Auto-login after successful registration
+        login(response.data.user, response.data.token);
+        
+        // Show success message for 2 seconds, then navigate based on user type
+        setTimeout(() => {
+          if (response.data.user.user_type === 'club') {
+            navigate('/club/dashboard');
+          } else {
+            navigate('/');
+          }
+        }, 2000);
+      }
+    } catch (error) {
+      setError(error.response?.data?.error || 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -81,36 +117,65 @@ const Register = () => {
           <h2 className="text-4xl font-bold text-white mb-8 text-center">Create Account</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  First Name:
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                  placeholder="First name"
-                  required
-                />
+            {/* Success Message */}
+            {success && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                Registration successful! Redirecting to dashboard...
               </div>
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  Last Name:
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                  placeholder="Last name"
-                  required
-                />
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {error}
               </div>
+            )}
+
+            {/* User Type Selection */}
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">
+                I am a:
+              </label>
+              <div className="flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="user_type"
+                    value="student"
+                    checked={formData.user_type === 'student'}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  <span className="text-white">Student</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="user_type"
+                    value="club"
+                    checked={formData.user_type === 'club'}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  <span className="text-white">Club</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Name Field */}
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">
+                {formData.user_type === 'club' ? 'Club Name:' : 'Full Name:'}
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                placeholder={formData.user_type === 'club' ? 'Your club name' : 'Your full name'}
+                required
+              />
             </div>
 
             {/* Email Field */}
@@ -124,73 +189,59 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                placeholder="Enter your email"
+                placeholder="your.email@queensu.ca"
                 required
               />
-            </div>
-
-            {/* School and Major */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  School:
-                </label>
-                <input
-                  type="text"
-                  name="school"
-                  value={formData.school}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                  placeholder="Your school"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  Major:
-                </label>
-                <input
-                  type="text"
-                  name="major"
-                  value={formData.major}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                  placeholder="Your major"
-                  required
-                />
-              </div>
             </div>
 
             {/* Password Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">
+                  Password:
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                  placeholder="Password"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">
+                  Confirm Password:
+                </label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
+                  placeholder="Confirm password"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* School */}
             <div>
               <label className="block text-white text-sm font-medium mb-2">
-                Password:
+                School:
               </label>
               <input
-                type="password"
-                name="password"
-                value={formData.password}
+                type="text"
+                name="school"
+                value={formData.school}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                placeholder="Create a password"
+                placeholder="e.g., Queen's University"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                Confirm Password:
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                placeholder="Confirm your password"
-                required
-              />
-            </div>
 
             {/* Terms Agreement */}
             <div className="flex items-center space-x-2">
@@ -216,9 +267,10 @@ const Register = () => {
             {/* Register Button */}
             <button
               type="submit"
-              className="w-full bg-white text-[#3D5CF5] py-3 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors duration-200"
+              disabled={isLoading}
+              className="w-full bg-white text-[#3D5CF5] py-3 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Account
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
 
             {/* Login Link */}

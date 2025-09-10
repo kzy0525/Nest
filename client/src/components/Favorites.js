@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Star, MapPin, Users, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUserStorage } from '../utils/userStorage';
 
 const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
   const navigate = useNavigate();
+  const userStorage = useUserStorage();
 
   useEffect(() => {
-    // Load favorites from localStorage
-    const savedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    // Load favorites from user-specific storage
+    const savedFavorites = userStorage.getJSON('favorites') || [];
     setFavorites(savedFavorites);
-  }, []);
+  }, [userStorage]);
 
   const handleUnlike = (clubId) => {
     const updatedFavorites = favorites.filter(club => club.id !== clubId);
     setFavorites(updatedFavorites);
-    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+    userStorage.setJSON('favorites', updatedFavorites);
   };
 
   const getClubInitials = (clubName) => {
