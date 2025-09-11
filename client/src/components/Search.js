@@ -377,7 +377,7 @@ const SearchPage = () => {
 
 
       {/* Search and Filter Section */}
-      <div className="px-8 py-8" style={{ backgroundColor: '#F5F6FA' }}>
+      <div className="px-8 py-6" style={{ backgroundColor: '#F5F6FA' }}>
         <div className="flex items-center justify-between">
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl">
@@ -586,9 +586,9 @@ const SearchPage = () => {
           <div className="border-b border-gray-200"></div>
         </div>
         
-        <div className="p-8">
+        <div className="p-6">
           {/* Search Results Title and Category Filters */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Search Results</h1>
           
                       {/* Category Filters */}
@@ -631,9 +631,21 @@ const SearchPage = () => {
         {/* Clubs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredClubs.map((club) => (
-            <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+            <div 
+              key={club.id} 
+              className="bg-white rounded-xl shadow-sm hover:scale-105 transition-all duration-300 group relative"
+              style={{
+                '--tw-shadow': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.boxShadow = '0 20px 40px -12px rgba(61, 122, 245, 0.15), 0 8px 16px -8px rgba(13, 204, 242, 0.15), 0 0 0 1px rgba(61, 122, 245, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
+              }}
+            >
               {/* Club Logo/Image Section */}
-              <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
+              <div className={`h-32 ${getClubBackground(club.name)} flex items-center justify-center relative rounded-t-xl overflow-hidden`}>
                 {club.logo ? (
                   <img 
                     src={club.logo} 
@@ -690,11 +702,18 @@ const SearchPage = () => {
                 
                 {/* Recruiting Button - Clickable */}
                 <button 
-                  className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isClubRecruiting(club) 
-                      ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                      : 'bg-gray-400 text-white cursor-default'
+                      ? 'bg-white border border-gradient-to-r from-[#3D7AF5] to-[#0DCCF2] hover:shadow-md' 
+                      : 'bg-white border border-gray-400 text-gray-600 cursor-default'
                   }`}
+                  style={isClubRecruiting(club) ? {
+                    borderImage: 'linear-gradient(to right, #3D7AF5, #0DCCF2) 1',
+                    background: 'linear-gradient(to bottom, #3D7AF5, #0DCCF2)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  } : {}}
                   onClick={() => navigate(`/club/${club.id}`)}
                 >
                   {isClubRecruiting(club) ? 'Recruiting Open' : 'Recruiting Closed'}

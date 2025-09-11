@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Heart, Edit, Plus, Settings, Users, LogOut } from 'lucide-react';
+import { Home, Compass, Heart, Edit, Plus, Users, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -41,8 +41,7 @@ const Sidebar = () => {
       { path: '/', icon: Home, label: 'Home' },
       { path: '/search', icon: Compass, label: 'Search' },
       { path: '/favorites', icon: Heart, label: 'Favorites' },
-      { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' },
-      { path: '/profile', icon: Settings, label: 'Profile' }
+      { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' }
     ];
   }
 

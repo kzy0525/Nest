@@ -344,9 +344,21 @@ const Home = () => {
               </div>
             ) : (
               clubs.filter(club => isClubRecruiting(club)).slice(currentCarouselIndex, currentCarouselIndex + 3).map((club) => (
-              <div key={club.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+              <div 
+                key={club.id} 
+                className="bg-white rounded-xl shadow-sm hover:scale-105 transition-all duration-300 group relative"
+                style={{
+                  '--tw-shadow': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.boxShadow = '0 20px 40px -12px rgba(61, 122, 245, 0.15), 0 8px 16px -8px rgba(13, 204, 242, 0.15), 0 0 0 1px rgba(61, 122, 245, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
+                }}
+              >
                 {/* Club Logo/Image Section */}
-                <div className={`h-40 ${getClubBackground(club.name)} flex items-center justify-center relative`}>
+                <div className={`h-40 ${getClubBackground(club.name)} flex items-center justify-center relative rounded-t-xl overflow-hidden`}>
                   {club.logo ? (
                     <img 
                       src={club.logo} 
@@ -403,11 +415,18 @@ const Home = () => {
                   
                   {/* Recruiting Button - Clickable */}
                   <button 
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       isClubRecruiting(club) 
-                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                        : 'bg-gray-400 text-white cursor-default'
+                        ? 'bg-white border border-gradient-to-r from-[#3D7AF5] to-[#0DCCF2] hover:shadow-md' 
+                        : 'bg-white border border-gray-400 text-gray-600 cursor-default'
                     }`}
+                    style={isClubRecruiting(club) ? {
+                      borderImage: 'linear-gradient(to right, #3D7AF5, #0DCCF2) 1',
+                      background: 'linear-gradient(to bottom, #3D7AF5, #0DCCF2)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    } : {}}
                     onClick={() => navigate(`/club/${club.id}`)}
                   >
                     {isClubRecruiting(club) ? 'Recruiting Open' : 'Recruiting Closed'}
