@@ -346,15 +346,9 @@ const Home = () => {
               clubs.filter(club => isClubRecruiting(club)).slice(currentCarouselIndex, currentCarouselIndex + 3).map((club) => (
               <div 
                 key={club.id} 
-                className="bg-white rounded-xl shadow-sm hover:scale-105 transition-all duration-300 group relative"
+                className="bg-white rounded-xl shadow-sm hover:scale-105 club-card-hover group relative"
                 style={{
-                  '--tw-shadow': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.boxShadow = '0 20px 40px -12px rgba(61, 122, 245, 0.15), 0 8px 16px -8px rgba(13, 204, 242, 0.15), 0 0 0 1px rgba(61, 122, 245, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
+                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
                 }}
               >
                 {/* Club Logo/Image Section */}

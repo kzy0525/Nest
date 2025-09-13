@@ -252,9 +252,10 @@ const HiringDashboard = () => {
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-6">
+        {/* Page Title */}
+        <h1 className="text-4xl font-bold text-gray-900 mb-8">My Applications</h1>
         {/* My Applications Table - Full Width */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6" style={{ position: 'relative', zIndex: 1 }}>
-          <h2 className="text-xl font-bold text-gray-900 mb-6">My Applications</h2>
           
           <div className="overflow-x-auto">
             <table className="w-full">

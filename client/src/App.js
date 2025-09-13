@@ -6,7 +6,6 @@ import Home from './components/Home';
 import SearchPage from './components/Search';
 import ClubDetail from './components/ClubDetail';
 import Sidebar from './components/Sidebar';
-import Header from './components/Header';
 import Login from './components/Login';
 import Register from './components/Register';
 import HiringDashboard from './components/HiringDashboard';
@@ -33,7 +32,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <Home />
               </div>
             </div>
@@ -45,7 +43,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <SearchPage />
               </div>
             </div>
@@ -57,7 +54,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <ClubDetail />
               </div>
             </div>
@@ -69,7 +65,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <ClubApplication />
               </div>
             </div>
@@ -82,7 +77,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <ClubDashboard />
               </div>
             </div>
@@ -94,7 +88,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-y-auto">
-                <Header />
                 <ClubRegistration />
               </div>
             </div>
@@ -106,7 +99,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <ClubAnalytics />
               </div>
             </div>
@@ -118,7 +110,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <HiringDashboard />
               </div>
             </div>
@@ -130,7 +121,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <Favorites />
               </div>
             </div>
@@ -142,7 +132,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <UserProfile />
               </div>
             </div>
@@ -154,7 +143,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-y-auto">
-                <Header />
                 <ClubRegistration />
               </div>
             </div>
@@ -166,7 +154,6 @@ function App() {
             <div className="App flex h-screen bg-gray-100">
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
                 <AdminDashboard />
               </div>
             </div>

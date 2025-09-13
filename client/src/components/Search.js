@@ -9,7 +9,7 @@ const SearchPage = () => {
   const [filteredClubs, setFilteredClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name-asc');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -64,7 +64,7 @@ const SearchPage = () => {
 
   useEffect(() => {
     filterClubs();
-  }, [clubs, selectedCategory, searchTerm, sortBy, selectedFilters]);
+  }, [clubs, selectedCategories, searchTerm, sortBy, selectedFilters]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -100,17 +100,21 @@ const SearchPage = () => {
   const filterClubs = () => {
     let filtered = [...clubs];
 
-    // Filter by category
-    if (selectedCategory !== 'All') {
+    // Filter by categories
+    if (selectedCategories.length > 0) {
       filtered = filtered.filter(club => {
         // Handle both array and string formats for category
         if (Array.isArray(club.category)) {
           return club.category.some(cat => 
-            cat && cat.toLowerCase() === selectedCategory.toLowerCase()
+            cat && selectedCategories.some(selectedCat => 
+              cat.toLowerCase() === selectedCat.toLowerCase()
+            )
           );
         } else {
           // Fallback for old string format
-          return club.category && club.category.toLowerCase() === selectedCategory.toLowerCase();
+          return club.category && selectedCategories.some(selectedCat => 
+            club.category.toLowerCase() === selectedCat.toLowerCase()
+          );
         }
       });
     }
@@ -364,6 +368,16 @@ const SearchPage = () => {
     return count;
   };
 
+  const handleCategoryToggle = (category) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(category)) {
+        return prev.filter(cat => cat !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -378,9 +392,15 @@ const SearchPage = () => {
 
       {/* Search and Filter Section */}
       <div className="px-8 py-6" style={{ backgroundColor: '#F5F6FA' }}>
-        <div className="flex items-center justify-between">
-          {/* Search Bar */}
-          <div className="flex-1 max-w-2xl">
+        {/* Page Title - Centered */}
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Discover Clubs</h1>
+          <p className="text-lg text-gray-600">Find the perfect clubs for you</p>
+        </div>
+        
+        <div className="flex items-center justify-center mb-6">
+          {/* Search Bar - Centered */}
+          <div className="w-full max-w-2xl">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
               <input
@@ -390,6 +410,56 @@ const SearchPage = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-6 py-4 border border-gray-300 rounded-3xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-lg text-gray-700 placeholder-gray-500 placeholder:text-lg"
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          {/* Category Filters - Left Side */}
+          <div className="flex flex-col space-y-2">
+            {/* First Row */}
+            <div className="flex space-x-4">
+              {['All', 'Academic', 'Arts', 'Business', 'Culture', 'Community', 'Sports'].map((category) => (
+                <button
+                  key={category}
+                  onClick={() => {
+                    if (category === 'All') {
+                      setSelectedCategories([]);
+                    } else {
+                      handleCategoryToggle(category);
+                    }
+                  }}
+                  className={`pb-1 text-sm transition-colors ${
+                    (category === 'All' && selectedCategories.length === 0) || selectedCategories.includes(category)
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            {/* Second Row */}
+            <div className="flex space-x-4">
+              {['Health', 'Environment', 'Innovation', 'Science', 'Technology', 'Politics', 'Media', 'Social'].map((category) => (
+                <button
+                  key={category}
+                  onClick={() => {
+                    if (category === 'All') {
+                      setSelectedCategories([]);
+                    } else {
+                      handleCategoryToggle(category);
+                    }
+                  }}
+                  className={`pb-1 text-sm transition-colors ${
+                    (category === 'All' && selectedCategories.length === 0) || selectedCategories.includes(category)
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
             </div>
           </div>
           
@@ -559,12 +629,14 @@ const SearchPage = () => {
                     {getActiveFiltersCount() > 0 && (
                       <div className="mt-4 pt-3 border-t border-gray-200">
                         <button
-                          onClick={() => setSelectedFilters({
-                            hiringNow: false,
-                            ratingRange: '',
-                            memberCountRange: '',
-                            acceptanceRateRange: ''
-                          })}
+                          onClick={() => {
+                            setSelectedFilters({
+                              hiringNow: false,
+                              ratingRange: '',
+                              memberCountRange: '',
+                              acceptanceRateRange: ''
+                            });
+                          }}
                           className="text-sm text-blue-600 hover:text-blue-700"
                         >
                           Clear all filters
@@ -587,61 +659,15 @@ const SearchPage = () => {
         </div>
         
         <div className="p-6">
-          {/* Search Results Title and Category Filters */}
-          <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Search Results</h1>
-          
-                      {/* Category Filters */}
-            <div className="flex flex-col items-end space-y-2">
-              {/* First Row */}
-              <div className="flex space-x-4">
-                {['All', 'Academic', 'Arts', 'Business', 'Culture', 'Community', 'Sports'].map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`pb-1 text-sm transition-colors ${
-                      selectedCategory === category
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-              {/* Second Row */}
-              <div className="flex space-x-4">
-                {['Health', 'Environment', 'Innovation', 'Science', 'Technology', 'Politics', 'Media', 'Social'].map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`pb-1 text-sm transition-colors ${
-                      selectedCategory === category
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
-        </div>
 
         {/* Clubs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredClubs.map((club) => (
             <div 
               key={club.id} 
-              className="bg-white rounded-xl shadow-sm hover:scale-105 transition-all duration-300 group relative"
+              className="bg-white rounded-xl shadow-sm hover:scale-105 club-card-hover group relative"
               style={{
-                '--tw-shadow': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.boxShadow = '0 20px 40px -12px rgba(61, 122, 245, 0.15), 0 8px 16px -8px rgba(13, 204, 242, 0.15), 0 0 0 1px rgba(61, 122, 245, 0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
+                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
               }}
             >
               {/* Club Logo/Image Section */}

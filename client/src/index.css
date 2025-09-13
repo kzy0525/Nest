@@ -24,4 +24,12 @@
   .btn-outline {
     @apply bg-transparent text-primary-600 border border-primary-600 hover:bg-primary-600 hover:text-white focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
   }
+  
+  .club-card-hover {
+    @apply transition-all duration-300;
+  }
+  
+  .club-card-hover:hover {
+    box-shadow: 0 20px 40px -12px rgba(61, 122, 245, 0.15), 0 8px 16px -8px rgba(13, 204, 242, 0.15), 0 0 0 1px rgba(61, 122, 245, 0.1);
+  }
 } 

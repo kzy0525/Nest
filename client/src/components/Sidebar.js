@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Heart, Edit, Plus, Users, LogOut } from 'lucide-react';
+import { Home, Compass, Heart, Edit, Plus, Users, LogOut, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -25,8 +25,7 @@ const Sidebar = () => {
     // Admin navigation
     navItems = [
       { path: '/admin', icon: Home, label: 'Admin Dashboard' },
-      { path: '/register-club', icon: Plus, label: 'Register Club' },
-      { path: 'logout', icon: LogOut, label: 'Logout', action: handleLogout }
+      { path: '/register-club', icon: Plus, label: 'Register Club' }
     ];
   } else if (user?.user_type === 'club') {
     // Club navigation
@@ -41,16 +40,15 @@ const Sidebar = () => {
       { path: '/', icon: Home, label: 'Home' },
       { path: '/search', icon: Compass, label: 'Search' },
       { path: '/favorites', icon: Heart, label: 'Favorites' },
-      { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' }
+      { path: '/hiring', icon: Edit, label: 'Hiring Dashboard' },
+      { path: '/profile', icon: User, label: 'Profile' }
     ];
   }
 
   return (
     <div className="w-20 bg-white flex flex-col items-center py-6 h-screen">
-
-
-      {/* Navigation Items - Positioned higher */}
-      <div className="flex flex-col items-center space-y-8" style={{ marginTop: 'calc(33vh - 180px)' }}>
+      {/* Centered Navigation Items */}
+      <div className="flex flex-col items-center space-y-8" style={{ marginTop: 'calc(30vh - 120px)' }}>
         {navItems.map((item) => (
           <div
             key={item.path}
@@ -59,7 +57,7 @@ const Sidebar = () => {
                 ? 'bg-gradient-to-b from-[#3D5CF5]/60 to-[#3DB8F5]/60'
                 : 'hover:scale-110'
             }`}
-            onClick={() => item.action ? item.action() : navigate(item.path)}
+            onClick={() => navigate(item.path)}
             title={item.label}
           >
             <item.icon
@@ -70,6 +68,19 @@ const Sidebar = () => {
         ))}
       </div>
 
+      {/* Bottom Logout Button - Only show for non-admin users */}
+      {user?.role !== 'admin' && (
+        <div
+          className="absolute bottom-6 w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer hover:scale-110 hover:bg-red-50"
+          onClick={handleLogout}
+          title="Logout"
+        >
+          <LogOut
+            size={24}
+            className="text-gray-600 hover:text-red-600"
+          />
+        </div>
+      )}
     </div>
   );
 };

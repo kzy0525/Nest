@@ -142,23 +142,17 @@ const Favorites = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-
-
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-6">
+        {/* Page Title */}
+        <h1 className="text-4xl font-bold text-gray-900 mb-8">Liked Clubs</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {favorites.map((club) => (
             <div 
               key={club.id} 
-              className="bg-white rounded-xl shadow-sm hover:scale-105 transition-all duration-300 group relative"
+              className="bg-white rounded-xl shadow-sm hover:scale-105 club-card-hover group relative"
               style={{
-                '--tw-shadow': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.boxShadow = '0 20px 40px -12px rgba(61, 122, 245, 0.15), 0 8px 16px -8px rgba(13, 204, 242, 0.15), 0 0 0 1px rgba(61, 122, 245, 0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
+                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
               }}
             >
               {/* Club Logo/Image Section */}
