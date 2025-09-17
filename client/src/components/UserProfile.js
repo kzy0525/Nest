@@ -21,7 +21,7 @@ const UserProfile = () => {
       name: user?.name || "",
       program: user?.program || "",
       year: "",
-      faculty: user?.school || "",
+      school: user?.school || "",
       pronouns: "",
       avatar: user?.avatar || null,
       bio: "",
@@ -34,6 +34,7 @@ const UserProfile = () => {
   const [editForm, setEditForm] = useState({ ...userProfile });
   const [editingSection, setEditingSection] = useState(null); // 'basic', 'about', 'clubs'
   const [isUploadingProfilePicture, setIsUploadingProfilePicture] = useState(false);
+  const [isUploadingBackdrop, setIsUploadingBackdrop] = useState(false);
   const [showAddClubModal, setShowAddClubModal] = useState(false);
   const [availableClubs, setAvailableClubs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,7 +79,7 @@ const UserProfile = () => {
         ...prev,
         name: user.name || prev.name,
         program: user.program || prev.program,
-        faculty: user.school || prev.faculty,
+        school: user.school || prev.school,
         avatar: user.avatar || prev.avatar
       }));
     }
@@ -146,6 +147,56 @@ const UserProfile = () => {
       alert('Failed to upload profile picture. Please try again.');
     } finally {
       setIsUploadingProfilePicture(false);
+    }
+  };
+
+  const handleBackdropUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingBackdrop(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('backdrop', file);
+
+      const response = await axios.post('/api/user/backdrop', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        const newBackdrop = response.data.backdrop;
+        const updatedProfile = { ...userProfile, backdrop: newBackdrop };
+        setUserProfile(updatedProfile);
+        userStorage.setJSON('userProfile', updatedProfile);
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+        
+        // Update edit form if it's open
+        if (isEditing) {
+          setEditForm({ ...editForm, backdrop: newBackdrop });
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading backdrop:', error);
+      alert('Failed to upload backdrop. Please try again.');
+    } finally {
+      setIsUploadingBackdrop(false);
     }
   };
 
@@ -314,44 +365,74 @@ const UserProfile = () => {
           
           {/* Profile Header Card */}
           <div className="relative">
-            {/* Gradient Background Card */}
-            <div className="bg-gradient-to-r from-purple-200 to-blue-200 rounded-2xl p-6 relative overflow-hidden">
-              {/* Decorative dots */}
-              <div className="absolute top-4 left-4 text-purple-300 text-2xl">•••</div>
-              <div className="absolute top-8 left-8 text-purple-300 text-lg">•••</div>
-              <div className="absolute top-12 left-12 text-purple-300 text-sm">•••</div>
-              
-              <div className="flex items-start space-x-6 relative z-10">
-                {/* Profile Picture - overlapping the card edges */}
-                <div className="relative -ml-4 -mt-4">
-                  <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center text-4xl font-bold text-gray-600 border-4 border-white shadow-lg">
-                    {userProfile.avatar ? (
-                      <img src={userProfile.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      userProfile.name.split(' ').map(word => word[0]).join('')
-                    )}
-                  </div>
-                  
-                  {/* Profile Picture Upload Button */}
-                  <div className="absolute bottom-0 right-0">
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleProfilePictureUpload}
-                        className="hidden"
-                        disabled={isUploadingProfilePicture}
-                      />
-                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-lg">
-                        {isUploadingProfilePicture ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <Camera size={16} />
-                        )}
-                      </div>
-                    </label>
-                  </div>
+            {/* Club-style Background Card with backdrop */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              {/* Backdrop Section - takes up half the card */}
+              <div className="h-32 relative">
+                {userProfile.backdrop ? (
+                  <img 
+                    src={userProfile.backdrop} 
+                    alt="Profile backdrop"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 w-full h-full"></div>
+                )}
+                
+                {/* Backdrop Upload Button */}
+                <div className="absolute top-2 right-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBackdropUpload}
+                      className="hidden"
+                      disabled={isUploadingBackdrop}
+                    />
+                    <div className="w-8 h-8 bg-white bg-opacity-80 rounded-full flex items-center justify-center text-gray-600 hover:bg-opacity-100 transition-colors shadow-lg">
+                      {isUploadingBackdrop ? (
+                        <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Camera size={14} />
+                      )}
+                    </div>
+                  </label>
                 </div>
+              </div>
+              
+              {/* Profile Content Section */}
+              <div className="p-6 relative">
+                <div className="flex items-start space-x-6">
+                  {/* Profile Picture - overlapping the backdrop */}
+                  <div className="relative -ml-4 -mt-16">
+                    <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center text-4xl font-bold text-gray-600 border-4 border-white shadow-lg">
+                      {userProfile.avatar ? (
+                        <img src={userProfile.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        userProfile.name.split(' ').map(word => word[0]).join('')
+                      )}
+                    </div>
+                    
+                    {/* Profile Picture Upload Button */}
+                    <div className="absolute bottom-0 right-0">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProfilePictureUpload}
+                          className="hidden"
+                          disabled={isUploadingProfilePicture}
+                        />
+                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-lg">
+                          {isUploadingProfilePicture ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Camera size={16} />
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
                 
                 {/* User Information */}
                 <div className="flex-1 pt-2">
@@ -361,25 +442,29 @@ const UserProfile = () => {
                       <div>
                         {editingSection === 'basic' ? (
                           <div className="space-y-3">
-                            <input
-                              type="text"
-                              value={editForm.name}
-                              onChange={(e) => handleInputChange('name', e.target.value)}
-                              className="text-3xl font-bold text-gray-900 bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
-                              placeholder="Full Name"
-                            />
-                            <input
-                              type="text"
-                              value={editForm.pronouns}
-                              onChange={(e) => handleInputChange('pronouns', e.target.value)}
-                              className="text-lg text-gray-700 bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
-                              placeholder="Pronouns (optional)"
-                            />
+                            <div className="flex items-center space-x-4">
+                              <input
+                                type="text"
+                                value={editForm.name}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                className="text-3xl font-bold text-gray-900 bg-transparent border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none"
+                                placeholder="Full Name"
+                              />
+                              <input
+                                type="text"
+                                value={editForm.pronouns}
+                                onChange={(e) => handleInputChange('pronouns', e.target.value)}
+                                className="text-lg text-gray-700 bg-transparent border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none"
+                                placeholder="Pronouns (optional)"
+                              />
+                            </div>
                           </div>
                         ) : (
-                          <div>
-                            <h2 className="text-3xl font-bold text-gray-900 mb-1">{userProfile.name}</h2>
-                            <span className="text-lg text-gray-700">{userProfile.pronouns}</span>
+                          <div className="flex items-center space-x-4">
+                            <h2 className="text-3xl font-bold text-gray-900">{userProfile.name}</h2>
+                            {userProfile.pronouns && (
+                              <span className="text-lg text-gray-700">({userProfile.pronouns})</span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -389,11 +474,11 @@ const UserProfile = () => {
                         {editingSection === 'basic' ? (
                           <div className="space-y-3">
                             <div className="flex items-center space-x-3 text-gray-800">
-                              <Calendar size={18} className="text-gray-700" />
+                              <Calendar size={18} className="text-gray-600" />
                               <select
                                 value={editForm.year}
                                 onChange={(e) => handleInputChange('year', e.target.value)}
-                                className="text-lg bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
+                                className="text-lg bg-transparent border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none text-gray-900"
                               >
                                 <option value="1st Year">1st Year</option>
                                 <option value="2nd Year">2nd Year</option>
@@ -404,39 +489,39 @@ const UserProfile = () => {
                               </select>
                             </div>
                             <div className="flex items-center space-x-3 text-gray-800">
-                              <GraduationCap size={18} className="text-gray-700" />
+                              <GraduationCap size={18} className="text-gray-600" />
                               <input
                                 type="text"
                                 value={editForm.program}
                                 onChange={(e) => handleInputChange('program', e.target.value)}
-                                className="text-lg bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
+                                className="text-lg bg-transparent border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none text-gray-900"
                                 placeholder="Program"
                               />
                             </div>
                             <div className="flex items-center space-x-3 text-gray-800">
-                              <MapPin size={18} className="text-gray-700" />
+                              <MapPin size={18} className="text-gray-600" />
                               <input
                                 type="text"
-                                value={editForm.faculty}
-                                onChange={(e) => handleInputChange('faculty', e.target.value)}
-                                className="text-lg bg-transparent border-b-2 border-white border-opacity-50 focus:border-white focus:outline-none"
-                                placeholder="Faculty"
+                                value={editForm.school}
+                                onChange={(e) => handleInputChange('school', e.target.value)}
+                                className="text-lg bg-transparent border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none text-gray-900"
+                                placeholder="School"
                               />
                             </div>
                           </div>
                         ) : (
                           <div className="space-y-3">
                             <div className="flex items-center space-x-3 text-gray-800">
-                              <Calendar size={18} className="text-gray-700" />
+                              <Calendar size={18} className="text-gray-600" />
                               <span className="text-lg">{userProfile.year}</span>
                             </div>
                             <div className="flex items-center space-x-3 text-gray-800">
-                              <GraduationCap size={18} className="text-gray-700" />
+                              <GraduationCap size={18} className="text-gray-600" />
                               <span className="text-lg">{userProfile.program}</span>
                             </div>
                             <div className="flex items-center space-x-3 text-gray-800">
-                              <MapPin size={18} className="text-gray-700" />
-                              <span className="text-lg">{userProfile.faculty}</span>
+                              <MapPin size={18} className="text-gray-600" />
+                              <span className="text-lg">{userProfile.school}</span>
                             </div>
                           </div>
                         )}
@@ -448,13 +533,13 @@ const UserProfile = () => {
                       <div className="flex space-x-2">
                         <button
                           onClick={handleSaveSection}
-                          className="px-4 py-2 bg-white bg-opacity-80 text-gray-800 rounded-lg hover:bg-opacity-100 transition-colors font-medium"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                         >
                           Save
                         </button>
                         <button
                           onClick={handleCancelClubEdit}
-                          className="px-4 py-2 bg-white bg-opacity-60 text-gray-600 rounded-lg hover:bg-opacity-80 transition-colors font-medium"
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                         >
                           Cancel
                         </button>
@@ -462,7 +547,7 @@ const UserProfile = () => {
                     ) : (
                       <button
                         onClick={() => handleEditSection('basic')}
-                        className="p-3 text-gray-800 hover:text-gray-600 transition-colors"
+                        className="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Edit Basic Info"
                       >
                         <Edit size={20} />
@@ -471,10 +556,6 @@ const UserProfile = () => {
                   </div>
                 </div>
               </div>
-              
-              {/* Additional decorative dots */}
-              <div className="absolute bottom-6 right-20 text-purple-300 text-lg">•••</div>
-              <div className="absolute bottom-8 right-16 text-purple-300 text-sm">•••</div>
             </div>
           </div>
 
@@ -820,6 +901,7 @@ const UserProfile = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

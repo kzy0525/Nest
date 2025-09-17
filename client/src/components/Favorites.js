@@ -210,7 +210,7 @@ const Favorites = () => {
                 
                 {/* Recruiting Button - Clickable */}
                 <button 
-                  className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`w-full py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     isClubRecruiting(club) 
                       ? 'bg-white border border-gradient-to-r from-[#3D7AF5] to-[#0DCCF2] hover:shadow-md' 
                       : 'bg-white border border-gray-400 text-gray-600 cursor-default'
