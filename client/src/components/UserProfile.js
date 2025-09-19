@@ -361,7 +361,7 @@ const UserProfile = () => {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-8">
           
           {/* Profile Header Card */}
           <div className="relative">
@@ -562,8 +562,7 @@ const UserProfile = () => {
           {/* About Me Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <User size={20} className="text-blue-600" />
+              <div>
                 <h3 className="text-xl font-semibold text-gray-900">About Me</h3>
               </div>
               {editingSection !== 'about' && (
@@ -628,8 +627,7 @@ const UserProfile = () => {
           {/* Current Clubs Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <Users size={20} className="text-green-600" />
+              <div>
                 <h3 className="text-xl font-semibold text-gray-900">Current Clubs</h3>
               </div>
               <button
@@ -691,8 +689,7 @@ const UserProfile = () => {
 
           {/* Clubs Currently Applying For Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center space-x-2 mb-6">
-              <Clock size={20} className="text-yellow-600" />
+            <div className="mb-6">
               <h3 className="text-xl font-semibold text-gray-900">Clubs Currently Applying For</h3>
             </div>
             
