@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nest — Club Discovery Themes</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0e0e0e; font-family: 'DM Sans', sans-serif; overflow: hidden; }
+
+  .canvas-wrap {
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+    background: #111;
+    overflow: hidden;
+  }
+  .canvas-header {
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid #222;
+    background: #0e0e0e;
+  }
+  .canvas-header .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; color: #fff; letter-spacing: -0.5px;
+  }
+  .canvas-header .logo span { color: oklch(0.72 0.18 150); }
+  .theme-labels {
+    display: flex; gap: 8px;
+  }
+  .theme-label-pill {
+    font-size: 11px; color: #777; background: #1a1a1a; border: 1px solid #2a2a2a;
+    padding: 4px 10px; border-radius: 20px; cursor: pointer; transition: all 0.15s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .theme-label-pill.active { color: #fff; background: #2a2a2a; border-color: #3a3a3a; }
+
+  .canvas-scroll {
+    flex: 1; overflow: auto;
+    padding: 40px 40px 60px;
+    display: flex; flex-direction: column; gap: 60px;
+  }
+
+  .theme-section { display: flex; flex-direction: column; gap: 12px; }
+  .theme-section-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px; color: #444; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0 2px;
+  }
+  .theme-section-label strong { color: #888; }
+
+  .artboard-frame {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #222;
+    width: 1100px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  /* TWEAKS PANEL */
+  .tweaks-panel {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px;
+    padding: 16px 18px; width: 220px; z-index: 1000;
+    display: none;
+  }
+  .tweaks-panel.open { display: block; }
+  .tweaks-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; font-family: 'Space Grotesk', sans-serif; }
+  .tweak-row { margin-bottom: 12px; }
+  .tweak-label { font-size: 12px; color: #666; margin-bottom: 6px; }
+  .tweak-options { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tweak-opt {
+    font-size: 11px; padding: 4px 8px; border-radius: 6px;
+    border: 1px solid #2a2a2a; background: #111; color: #888;
+    cursor: pointer; transition: all 0.12s; font-family: 'Space Grotesk', sans-serif;
+  }
+  .tweak-opt.sel { background: #2a2a2a; border-color: #3a3a3a; color: #eee; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+const CLUBS = [
+  { id:1, name:"Canadian Undergrad Conference on Healthcare", short:"CUCOH", tags:["Health","Innovation"], members:100, open:false, color:"#8B1A1A", initial:"CU" },
+  { id:2, name:"CREO Solutions", short:"CREO", tags:["Business","Innovation"], members:35, open:false, color:"#7B1D1D", initial:"CR" },
+  { id:3, name:"Queen's Musical Theatre", short:"QMT", tags:["Arts","Community"], members:39, open:false, color:"#1a3a6e", initial:"QM" },
+  { id:4, name:"Queen's Startup Consulting", short:"QSC", tags:["Business","Innovation"], members:45, open:true, color:"#111", initial:"QS" },
+  { id:5, name:"Queen's Tech & Media Association", short:"QTMA", tags:["Innovation","Technology"], members:65, open:true, color:"#1565C0", initial:"QT" },
+  { id:6, name:"Queen's Vietnamese Student Association", short:"QVSA", tags:["Culture","Social"], members:20, open:true, color:"#4a3728", initial:"QV" },
+  { id:7, name:"Smith Engineering Hyperloop", short:"SEH", tags:["Technology","Innovation"], members:120, open:false, color:"#1a2a3a", initial:"SE" },
+  { id:8, name:"Tri-Colour Classic", short:"TCC", tags:["Sports","Community"], members:65, open:false, color:"#8B0000", initial:"TC" },
+];
+
+const CATS = ["All","Academic","Arts","Business","Culture","Community","Sports","Health","Technology","Social"];
+
+/* ──────────────── THEME 1: DARK IMMERSIVE ──────────────── */
+function DarkTheme() {
+  const [active, setActive] = useState("All");
+  const [search, setSearch] = useState("");
+  const accent = "oklch(0.72 0.22 150)";
+
+  const NavIcon = ({icon, sel}) => (
+    <div style={{
+      width:38, height:38, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center",
+      background: sel ? "oklch(0.72 0.22 150 / 0.15)" : "transparent",
+      color: sel ? accent : "#444", fontSize:16, cursor:"pointer",
+      transition:"all 0.15s"
+    }}>{icon}</div>
+  );
+
+  const ClubCard = ({club}) => (
+    <div style={{
+      background:"#151515", borderRadius:14, overflow:"hidden",
+      border:"1px solid #1e1e1e", transition:"all 0.2s", cursor:"pointer",
+      position:"relative",
+    }}
+    onMouseEnter={e=>{e.currentTarget.style.border="1px solid oklch(0.72 0.22 150 / 0.4)"; e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 12px 40px oklch(0.72 0.22 150 / 0.12)";}}
+    onMouseLeave={e=>{e.currentTarget.style.border="1px solid #1e1e1e"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="none";}}>
+      {/* image */}
+      <div style={{
+        height:120, background:club.color, display:"flex", alignItems:"center", justifyContent:"center",
+        position:"relative", overflow:"hidden"
+      }}>
+        <span style={{fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:28, color:"rgba(255,255,255,0.15)", letterSpacing:-1}}>{club.short}</span>
+        {club.open && <div style={{position:"absolute", top:10, right:10, background:"oklch(0.72 0.22 150)", color:"#000", fontSize:9, fontWeight:700, padding:"3px 8px", borderRadius:20, fontFamily:"'Space Grotesk',sans-serif", letterSpacing:"0.05em"}}>OPEN</div>}
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:40,background:"linear-gradient(transparent,#151515)"}}/>
+      </div>
+      <div style={{padding:"12px 14px 14px"}}>
+        <div style={{display:"flex", gap:5, marginBottom:8, flexWrap:"wrap"}}>
+          {club.tags.map(t=>(
+            <span key={t} style={{fontSize:10, color:"#666", background:"#1e1e1e", padding:"2px 7px", borderRadius:4, fontFamily:"'Space Grotesk',sans-serif"}}>{t}</span>
+          ))}
+          <span style={{fontSize:10, color:"#444", marginLeft:"auto"}}>{club.members} members</span>
+        </div>
+        <div style={{fontWeight:500, fontSize:13, color:"#d0d0d0", lineHeight:1.35, marginBottom:12, fontFamily:"'DM Sans',sans-serif"}}>{club.name}</div>
+        <button style={{
+          width:"100%", padding:"8px", borderRadius:8, fontSize:11, fontWeight:600,
+          border: club.open ? "1px solid oklch(0.72 0.22 150 / 0.5)" : "1px solid #222",
+          background: club.open ? "oklch(0.72 0.22 150 / 0.08)" : "transparent",
+          color: club.open ? accent : "#333",
+          cursor: club.open ? "pointer" : "default",
+          fontFamily:"'Space Grotesk',sans-serif", letterSpacing:"0.03em"
+        }}>
+          {club.open ? "Apply Now →" : "Recruiting Closed"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex", height:680, background:"#0d0d0d", fontFamily:"'DM Sans',sans-serif"}}>
+      {/* sidebar */}
+      <div style={{width:58, background:"#0a0a0a", borderRight:"1px solid #1a1a1a", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:18, gap:8, flexShrink:0}}>
+        {[["🏠",false],["🧭",true],["♡",false],["✏",false],["○",false]].map(([ic,sel],i)=>(
+          <NavIcon key={i} icon={ic} sel={sel}/>
+        ))}
+        <div style={{marginTop:"auto",marginBottom:16}}><NavIcon icon="↗" sel={false}/></div>
+      </div>
+      {/* main */}
+      <div style={{flex:1, display:"flex", flexDirection:"column", overflow:"hidden"}}>
+        {/* topbar */}
+        <div style={{padding:"18px 24px 0", flexShrink:0}}>
+          <div style={{display:"flex", gap:12, alignItems:"center"}}>
+            <div style={{flex:1, display:"flex", alignItems:"center", gap:10, background:"#151515", border:"1px solid #1e1e1e", borderRadius:10, padding:"10px 14px"}}>
+              <span style={{color:"#444", fontSize:14}}>⌕</span>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Discover new clubs and opportunities" style={{flex:1, background:"none", border:"none", outline:"none", color:"#ccc", fontSize:13, fontFamily:"'DM Sans',sans-serif"}}/>
+            </div>
+            <button style={{display:"flex", alignItems:"center", gap:6, background:"#151515", border:"1px solid #1e1e1e", color:"#888", fontSize:12, padding:"10px 14px", borderRadius:10, cursor:"pointer", fontFamily:"'DM Sans',sans-serif"}}>↕ Sort</button>
+            <button style={{display:"flex", alignItems:"center", gap:6, background:"#151515", border:"1px solid #1e1e1e", color:"#888", fontSize:12, padding:"10px 14px", borderRadius:10, cursor:"pointer", fontFamily:"'DM Sans',sans-serif"}}>⋮ Filter</button>
+          </div>
+        </div>
+        {/* categories */}
+        <div style={{padding:"14px 24px 0", flexShrink:0}}>
+          <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+            {CATS.map(c=>(
+              <button key={c} onClick={()=>setActive(c)} style={{
+                fontSize:11, padding:"5px 12px", borderRadius:20, cursor:"pointer",
+                background: active===c ? "oklch(0.72 0.22 150)" : "#151515",
+                color: active===c ? "#000" : "#555",
+                border: active===c ? "none" : "1px solid #1e1e1e",
+                fontWeight: active===c ? 600 : 400,
+                fontFamily:"'Space Grotesk',sans-serif", transition:"all 0.15s"
+              }}>{c}</button>
+            ))}
+          </div>
+        </div>
+        {/* grid */}
+        <div style={{flex:1, overflow:"auto", padding:"18px 24px"}}>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14}}>
+            {CLUBS.map(c=><ClubCard key={c.id} club={c}/>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────── THEME 2: WARM ACADEMIC ──────────────── */
+function WarmTheme() {
+  const [active, setActive] = useState("All");
+  const bg = "#faf7f2";
+  const warm = "#b5451b";
+
+  const NavIcon = ({icon, sel}) => (
+    <div style={{
+      width:36,height:36,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",
+      background: sel ? "#ede8df" : "transparent",
+      color: sel ? warm : "#c4b89e", fontSize:15, cursor:"pointer"
+    }}>{icon}</div>
+  );
+
+  const ClubCard = ({club}) => (
+    <div style={{
+      background:"#fff", borderRadius:16, overflow:"hidden",
+      boxShadow:"0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
+      border:"1px solid #ede8df", cursor:"pointer", transition:"all 0.2s"
+    }}
+    onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 24px rgba(0,0,0,0.1)"; e.currentTarget.style.transform="translateY(-2px)";}}
+    onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)"; e.currentTarget.style.transform="none";}}>
+      <div style={{height:110, background:club.color, display:"flex", alignItems:"center", justifyContent:"center", position:"relative"}}>
+        <span style={{fontFamily:"'Instrument Serif',serif", fontSize:32, color:"rgba(255,255,255,0.18)", fontStyle:"italic"}}>{club.short}</span>
+        {club.open && <div style={{position:"absolute",top:10,right:10,background:warm,color:"#fff",fontSize:9,fontWeight:600,padding:"3px 8px",borderRadius:20,fontFamily:"'DM Sans',sans-serif"}}>Accepting</div>}
+      </div>
+      <div style={{padding:"13px 14px 14px"}}>
+        <div style={{display:"flex",gap:5,marginBottom:7,flexWrap:"wrap",alignItems:"center"}}>
+          {club.tags.map(t=>(
+            <span key={t} style={{fontSize:10,color:"#a0917e",background:"#f5f0e8",padding:"2px 7px",borderRadius:4,fontFamily:"'DM Sans',sans-serif"}}>{t}</span>
+          ))}
+          <span style={{fontSize:10,color:"#c4b89e",marginLeft:"auto"}}>{club.members} members</span>
+        </div>
+        <div style={{fontFamily:"'Instrument Serif',serif",fontSize:14,color:"#2a1f14",lineHeight:1.4,marginBottom:12}}>{club.name}</div>
+        <button style={{
+          width:"100%",padding:"8px",borderRadius:10,fontSize:11,fontWeight:600,
+          background: club.open ? warm : "transparent",
+          color: club.open ? "#fff" : "#c4b89e",
+          border: club.open ? "none" : "1px solid #e8e0d4",
+          cursor: club.open ? "pointer" : "default",
+          fontFamily:"'DM Sans',sans-serif"
+        }}>
+          {club.open ? "Apply Now" : "Recruiting Closed"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex", height:680, background:bg, fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{width:56, background:"#f3ede3", borderRight:"1px solid #e8e0d4", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:18, gap:6, flexShrink:0}}>
+        {[["🏠",false],["🧭",true],["♡",false],["✏",false],["○",false]].map(([ic,sel],i)=>(
+          <NavIcon key={i} icon={ic} sel={sel}/>
+        ))}
+        <div style={{marginTop:"auto",marginBottom:16}}><NavIcon icon="↗" sel={false}/></div>
+      </div>
+      <div style={{flex:1, display:"flex", flexDirection:"column", overflow:"hidden"}}>
+        <div style={{padding:"20px 26px 0", flexShrink:0}}>
+          <div style={{marginBottom:14}}>
+            <span style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#2a1f14",fontStyle:"italic"}}>Discover your community</span>
+          </div>
+          <div style={{display:"flex", gap:10, alignItems:"center"}}>
+            <div style={{flex:1,display:"flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid #e8e0d4",borderRadius:12,padding:"10px 14px",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+              <span style={{color:"#c4b89e",fontSize:14}}>⌕</span>
+              <input placeholder="Search clubs and organizations…" style={{flex:1,background:"none",border:"none",outline:"none",color:"#4a3728",fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+            </div>
+            <button style={{background:"#fff",border:"1px solid #e8e0d4",color:"#a0917e",fontSize:12,padding:"10px 14px",borderRadius:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>↕ Sort</button>
+            <button style={{background:"#fff",border:"1px solid #e8e0d4",color:"#a0917e",fontSize:12,padding:"10px 14px",borderRadius:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>⋮ Filter</button>
+          </div>
+        </div>
+        <div style={{padding:"14px 26px 0",flexShrink:0}}>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {CATS.map(c=>(
+              <button key={c} onClick={()=>setActive(c)} style={{
+                fontSize:11,padding:"5px 13px",borderRadius:20,cursor:"pointer",
+                background: active===c ? warm : "#fff",
+                color: active===c ? "#fff" : "#a0917e",
+                border: active===c ? "none" : "1px solid #e8e0d4",
+                fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s"
+              }}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{flex:1,overflow:"auto",padding:"16px 26px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+            {CLUBS.map(c=><ClubCard key={c.id} club={c}/>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────── THEME 3: EDITORIAL BOLD ──────────────── */
+function EditorialTheme() {
+  const [active, setActive] = useState("All");
+  const accent = "oklch(0.60 0.23 25)"; // deep coral
+
+  const NavIcon = ({icon, sel}) => (
+    <div style={{
+      width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",
+      borderLeft: sel ? "2px solid oklch(0.60 0.23 25)" : "2px solid transparent",
+      color: sel ? "oklch(0.60 0.23 25)" : "#bbb", fontSize:15, cursor:"pointer"
+    }}>{icon}</div>
+  );
+
+  const ClubCard = ({club, featured}) => (
+    <div style={{
+      background:"#fff", borderRadius:0, overflow:"hidden",
+      border:"1px solid #e8e8e8", cursor:"pointer", transition:"all 0.15s",
+      gridColumn: featured ? "span 2" : "span 1",
+      display:"flex", flexDirection: featured ? "row" : "column"
+    }}
+    onMouseEnter={e=>{e.currentTarget.style.borderColor="oklch(0.60 0.23 25)";}}
+    onMouseLeave={e=>{e.currentTarget.style.borderColor="#e8e8e8";}}>
+      <div style={{
+        height: featured ? "100%" : 100,
+        width: featured ? 160 : "100%",
+        background:club.color, display:"flex",alignItems:"center",justifyContent:"center",
+        flexShrink:0, position:"relative"
+      }}>
+        <span style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize: featured ? 26 : 22,color:"rgba(255,255,255,0.2)"}}>{club.short}</span>
+        {club.open && <div style={{position:"absolute",top:8,left:8,background:"oklch(0.60 0.23 25)",color:"#fff",fontSize:8,fontWeight:700,padding:"2px 6px",fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.08em"}}>OPEN</div>}
+      </div>
+      <div style={{padding:featured?"16px 18px":"12px 14px 14px",flex:1}}>
+        <div style={{display:"flex",gap:4,marginBottom:7,flexWrap:"wrap",alignItems:"center"}}>
+          {club.tags.map(t=>(
+            <span key={t} style={{fontSize:9,color:"#999",textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"'Space Grotesk',sans-serif"}}>{t} ·</span>
+          ))}
+          <span style={{fontSize:9,color:"#bbb",marginLeft:"auto",fontFamily:"'Space Grotesk',sans-serif"}}>{club.members}m</span>
+        </div>
+        <div style={{fontFamily:"'DM Serif Display',serif",fontSize: featured ? 18 : 14,color:"#111",lineHeight:1.3,marginBottom:10}}>{club.name}</div>
+        <div style={{
+          fontSize:10,fontWeight:700,color: club.open ? "oklch(0.60 0.23 25)" : "#ccc",
+          fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.05em",
+          borderTop:"1px solid #f0f0f0",paddingTop:8,marginTop:"auto"
+        }}>
+          {club.open ? "APPLY →" : "CLOSED"}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",height:680,background:"#f7f7f5",fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{width:52,background:"#fff",borderRight:"1px solid #e8e8e8",display:"flex",flexDirection:"column",alignItems:"center",paddingTop:18,gap:4,flexShrink:0}}>
+        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:"#111",marginBottom:10,writingMode:"vertical-rl",transform:"rotate(180deg)",letterSpacing:2,textTransform:"uppercase",fontSize:10,fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,color:"#ccc"}}>NEST</div>
+        {[["🏠",false],["🧭",true],["♡",false],["✏",false],["○",false]].map(([ic,sel],i)=>(
+          <NavIcon key={i} icon={ic} sel={sel}/>
+        ))}
+        <div style={{marginTop:"auto",marginBottom:16}}><NavIcon icon="↗" sel={false}/></div>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        {/* editorial header */}
+        <div style={{padding:"20px 28px 0",borderBottom:"2px solid #111",paddingBottom:16,flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:14}}>
+            <div>
+              <div style={{fontFamily:"'DM Serif Display',serif",fontSize:28,color:"#111",letterSpacing:-0.5,lineHeight:1}}>Club Discovery</div>
+              <div style={{fontSize:11,color:"#999",marginTop:4,fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.04em"}}>QUEEN'S UNIVERSITY · SPRING 2025</div>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button style={{background:"#111",color:"#fff",border:"none",fontSize:11,padding:"8px 16px",cursor:"pointer",fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.05em",fontWeight:600}}>FILTER</button>
+              <button style={{background:"transparent",color:"#111",border:"1px solid #e0e0e0",fontSize:11,padding:"8px 16px",cursor:"pointer",fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.05em"}}>SORT</button>
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{flex:1,display:"flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid #e0e0e0",padding:"9px 14px"}}>
+              <span style={{color:"#ccc",fontSize:14}}>⌕</span>
+              <input placeholder="Search organizations…" style={{flex:1,background:"none",border:"none",outline:"none",color:"#333",fontSize:12,fontFamily:"'DM Sans',sans-serif"}}/>
+            </div>
+          </div>
+        </div>
+        {/* cats */}
+        <div style={{padding:"0 28px",flexShrink:0,borderBottom:"1px solid #e8e8e8",background:"#fff",display:"flex",gap:0,overflowX:"auto"}}>
+          {CATS.map(c=>(
+            <button key={c} onClick={()=>setActive(c)} style={{
+              fontSize:11,padding:"12px 14px",cursor:"pointer",whiteSpace:"nowrap",
+              background:"transparent",
+              color: active===c ? "#111" : "#aaa",
+              border:"none",
+              borderBottom: active===c ? "2px solid #111" : "2px solid transparent",
+              fontFamily:"'Space Grotesk',sans-serif",fontWeight: active===c ? 600 : 400,
+              letterSpacing:"0.04em",transition:"all 0.15s"
+            }}>{c.toUpperCase()}</button>
+          ))}
+        </div>
+        <div style={{flex:1,overflow:"auto",padding:"20px 28px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,background:"#e8e8e8"}}>
+            {CLUBS.map((c,i)=><ClubCard key={c.id} club={c} featured={i===0}/>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────── THEME 4: GLASSY / AIRY ──────────────── */
+function GlassTheme() {
+  const [active, setActive] = useState("All");
+  const accent = "oklch(0.55 0.22 260)"; // indigo
+
+  const NavIcon = ({icon, sel}) => (
+    <div style={{
+      width:38,height:38,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",
+      background: sel ? "oklch(0.55 0.22 260 / 0.12)" : "transparent",
+      color: sel ? accent : "oklch(0.55 0.22 260 / 0.35)", fontSize:15, cursor:"pointer"
+    }}>{icon}</div>
+  );
+
+  const ClubCard = ({club}) => (
+    <div style={{
+      background:"rgba(255,255,255,0.65)", backdropFilter:"blur(12px)",
+      borderRadius:20, overflow:"hidden",
+      border:"1px solid rgba(255,255,255,0.9)",
+      boxShadow:"0 2px 16px rgba(100,100,200,0.07)",
+      cursor:"pointer", transition:"all 0.2s"
+    }}
+    onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)"; e.currentTarget.style.boxShadow="0 8px 32px rgba(100,100,200,0.16)";}}
+    onMouseLeave={e=>{e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="0 2px 16px rgba(100,100,200,0.07)";}}>
+      <div style={{height:108,background:`linear-gradient(135deg,${club.color}cc,${club.color}88)`,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+        <span style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:26,color:"rgba(255,255,255,0.2)"}}>{club.short}</span>
+        {club.open && <div style={{position:"absolute",top:10,right:10,background:"rgba(255,255,255,0.9)",color:"oklch(0.55 0.22 260)",fontSize:9,fontWeight:700,padding:"3px 8px",borderRadius:20,fontFamily:"'Space Grotesk',sans-serif"}}>OPEN</div>}
+      </div>
+      <div style={{padding:"12px 14px 14px"}}>
+        <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap",alignItems:"center"}}>
+          {club.tags.map(t=>(
+            <span key={t} style={{fontSize:10,color:"oklch(0.55 0.22 260 / 0.7)",background:"oklch(0.55 0.22 260 / 0.08)",padding:"2px 7px",borderRadius:6,fontFamily:"'Space Grotesk',sans-serif"}}>{t}</span>
+          ))}
+          <span style={{fontSize:10,color:"#aaa",marginLeft:"auto"}}>{club.members}</span>
+        </div>
+        <div style={{fontWeight:500,fontSize:13,color:"#1a1a2e",lineHeight:1.35,marginBottom:12,fontFamily:"'DM Sans',sans-serif"}}>{club.name}</div>
+        <button style={{
+          width:"100%",padding:"8px",borderRadius:10,fontSize:11,fontWeight:600,
+          background: club.open ? "oklch(0.55 0.22 260)" : "transparent",
+          color: club.open ? "#fff" : "#ccc",
+          border: club.open ? "none" : "1px solid #e0e0f0",
+          cursor: club.open ? "pointer" : "default",
+          fontFamily:"'Space Grotesk',sans-serif"
+        }}>
+          {club.open ? "Apply Now" : "Recruiting Closed"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",height:680,background:"linear-gradient(135deg,oklch(0.97 0.02 260),oklch(0.95 0.03 280))",fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{
+        width:58,background:"rgba(255,255,255,0.5)",backdropFilter:"blur(20px)",
+        borderRight:"1px solid rgba(255,255,255,0.8)",
+        display:"flex",flexDirection:"column",alignItems:"center",paddingTop:18,gap:6,flexShrink:0
+      }}>
+        {[["🏠",false],["🧭",true],["♡",false],["✏",false],["○",false]].map(([ic,sel],i)=>(
+          <NavIcon key={i} icon={ic} sel={sel}/>
+        ))}
+        <div style={{marginTop:"auto",marginBottom:16}}><NavIcon icon="↗" sel={false}/></div>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <div style={{padding:"20px 26px 0",flexShrink:0}}>
+          <div style={{display:"flex",gap:12,alignItems:"center"}}>
+            <div style={{
+              flex:1,display:"flex",alignItems:"center",gap:10,
+              background:"rgba(255,255,255,0.7)",backdropFilter:"blur(12px)",
+              border:"1px solid rgba(255,255,255,0.9)",borderRadius:14,
+              padding:"11px 16px",boxShadow:"0 2px 12px rgba(100,100,200,0.08)"
+            }}>
+              <span style={{color:"oklch(0.55 0.22 260 / 0.4)",fontSize:14}}>⌕</span>
+              <input placeholder="Discover clubs and communities…" style={{flex:1,background:"none",border:"none",outline:"none",color:"#333",fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+            </div>
+            {["Sort","Filter"].map(l=>(
+              <button key={l} style={{
+                background:"rgba(255,255,255,0.7)",backdropFilter:"blur(12px)",
+                border:"1px solid rgba(255,255,255,0.9)",color:"#666",fontSize:12,
+                padding:"11px 16px",borderRadius:14,cursor:"pointer",
+                fontFamily:"'DM Sans',sans-serif",boxShadow:"0 2px 12px rgba(100,100,200,0.06)"
+              }}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{padding:"14px 26px 0",flexShrink:0}}>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {CATS.map(c=>(
+              <button key={c} onClick={()=>setActive(c)} style={{
+                fontSize:11,padding:"6px 14px",borderRadius:20,cursor:"pointer",
+                background: active===c ? "oklch(0.55 0.22 260)" : "rgba(255,255,255,0.6)",
+                color: active===c ? "#fff" : "#888",
+                border: active===c ? "none" : "1px solid rgba(255,255,255,0.9)",
+                fontFamily:"'Space Grotesk',sans-serif",
+                backdropFilter:"blur(8px)", transition:"all 0.15s",
+                boxShadow: active===c ? "0 4px 12px oklch(0.55 0.22 260 / 0.3)" : "none"
+              }}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{flex:1,overflow:"auto",padding:"16px 26px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+            {CLUBS.map(c=><ClubCard key={c.id} club={c}/>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────── THEME 5: LIST / FEED ──────────────── */
+function FeedTheme() {
+  const [active, setActive] = useState("All");
+  const accent = "oklch(0.52 0.18 220)";
+
+  return (
+    <div style={{display:"flex",height:680,background:"#f4f4f6",fontFamily:"'DM Sans',sans-serif"}}>
+      {/* sidebar wider */}
+      <div style={{width:200,background:"#fff",borderRight:"1px solid #ebebee",display:"flex",flexDirection:"column",padding:"18px 12px",flexShrink:0}}>
+        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#111",marginBottom:24,paddingLeft:8}}>nest</div>
+        {[["🏠","Home",false],["🧭","Discover",true],["♡","Saved",false],["✏","Applications",false],["○","Profile",false]].map(([ic,label,sel])=>(
+          <div key={label} style={{
+            display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:10,marginBottom:2,
+            background: sel ? "oklch(0.52 0.18 220 / 0.08)" : "transparent",
+            color: sel ? accent : "#888", cursor:"pointer", transition:"all 0.15s"
+          }}>
+            <span style={{fontSize:14}}>{ic}</span>
+            <span style={{fontSize:13,fontWeight: sel ? 600 : 400}}>{label}</span>
+          </div>
+        ))}
+        <div style={{marginTop:"auto"}}>
+          <div style={{borderTop:"1px solid #ebebee",paddingTop:12,marginTop:12}}>
+            <div style={{fontSize:11,color:"#aaa",marginBottom:8,paddingLeft:10,fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.06em"}}>CATEGORIES</div>
+            {["Academic","Arts","Business","Culture","Technology","Sports"].map(c=>(
+              <div key={c} onClick={()=>setActive(c)} style={{
+                fontSize:12,padding:"6px 10px",borderRadius:8,cursor:"pointer",
+                color: active===c ? accent : "#999",
+                background: active===c ? "oklch(0.52 0.18 220 / 0.08)" : "transparent",
+                fontWeight: active===c ? 500 : 400
+              }}>{c}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* main */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <div style={{padding:"20px 24px 16px",background:"#fff",borderBottom:"1px solid #ebebee",flexShrink:0}}>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <div style={{flex:1,display:"flex",alignItems:"center",gap:10,background:"#f4f4f6",border:"1px solid #e8e8eb",borderRadius:12,padding:"10px 14px"}}>
+              <span style={{color:"#ccc",fontSize:14}}>⌕</span>
+              <input placeholder="Search clubs, keywords, categories…" style={{flex:1,background:"none",border:"none",outline:"none",color:"#333",fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+            </div>
+            <button style={{background:accent,color:"#fff",border:"none",fontSize:12,padding:"10px 16px",borderRadius:12,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:500}}>Filter</button>
+          </div>
+        </div>
+        <div style={{flex:1,overflow:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:10}}>
+          {CLUBS.map((club,i)=>(
+            <div key={club.id} style={{
+              background:"#fff",borderRadius:14,display:"flex",alignItems:"center",gap:16,
+              padding:"14px 16px",border:"1px solid #ebebee",cursor:"pointer",transition:"all 0.15s"
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=accent; e.currentTarget.style.boxShadow="0 2px 12px rgba(0,0,0,0.06)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#ebebee"; e.currentTarget.style.boxShadow="none";}}>
+              <div style={{width:52,height:52,borderRadius:12,background:club.color,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <span style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:13,color:"rgba(255,255,255,0.5)"}}>{club.initial}</span>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:500,fontSize:14,color:"#111",marginBottom:4,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{club.name}</div>
+                <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                  {club.tags.map(t=>(
+                    <span key={t} style={{fontSize:10,color:"#aaa",background:"#f4f4f6",padding:"2px 7px",borderRadius:4,fontFamily:"'Space Grotesk',sans-serif"}}>{t}</span>
+                  ))}
+                  <span style={{fontSize:10,color:"#ccc"}}>· {club.members} members</span>
+                </div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+                <span style={{
+                  fontSize:11,fontWeight:600,padding:"6px 14px",borderRadius:8,
+                  background: club.open ? "oklch(0.52 0.18 220 / 0.1)" : "#f4f4f6",
+                  color: club.open ? accent : "#ccc",
+                  fontFamily:"'Space Grotesk',sans-serif"
+                }}>{club.open ? "Apply →" : "Closed"}</span>
+                <span style={{color:"#ddd",fontSize:16}}>♡</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────── CANVAS ──────────────── */
+const THEMES = [
+  { id:"dark", label:"Dark Immersive", sub:"Deep charcoal · electric green accent · hover glow", Component: DarkTheme },
+  { id:"warm", label:"Warm Academic", sub:"Cream tones · terracotta accent · serif type", Component: WarmTheme },
+  { id:"editorial", label:"Editorial Bold", sub:"Stark white · coral accent · DM Serif · grid hairlines", Component: EditorialTheme },
+  { id:"glass", label:"Glass & Airy", sub:"Soft indigo gradient · frosted glass cards", Component: GlassTheme },
+  { id:"feed",  label:"List / Feed View", sub:"Sidebar nav · horizontal list · compact data", Component: FeedTheme },
+];
+
+function App() {
+  const [active, setActive] = useState(null);
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+  const [scroll, setScroll] = useState(null);
+
+  React.useEffect(()=>{
+    window.addEventListener("message", e=>{
+      if(e.data?.type==="__activate_edit_mode") setTweaksOpen(true);
+      if(e.data?.type==="__deactivate_edit_mode") setTweaksOpen(false);
+    });
+    window.parent.postMessage({type:"__edit_mode_available"},"*");
+  },[]);
+
+  return (
+    <div className="canvas-wrap">
+      <div className="canvas-header">
+        <div className="logo">nest <span>·</span> design exploration</div>
+        <div className="theme-labels">
+          <button className="theme-label-pill" onClick={()=>setActive(null)} style={active===null?{color:"#fff",background:"#2a2a2a",borderColor:"#3a3a3a"}:{}}>All themes</button>
+          {THEMES.map(t=>(
+            <button key={t.id} className={`theme-label-pill${active===t.id?" active":""}`} onClick={()=>setActive(active===t.id?null:t.id)}>{t.label}</button>
+          ))}
+        </div>
+      </div>
+      <div className="canvas-scroll">
+        {THEMES.filter(t=>active===null||t.id===active).map(({id,label,sub,Component})=>(
+          <div key={id} className="theme-section">
+            <div className="theme-section-label"><strong>{label}</strong> — {sub}</div>
+            <div className="artboard-frame">
+              <Component/>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`tweaks-panel${tweaksOpen?" open":""}`}>
+        <div className="tweaks-title">Tweaks</div>
+        <div className="tweak-row">
+          <div className="tweak-label">Show theme</div>
+          <div className="tweak-options">
+            <div className={`tweak-opt${active===null?" sel":""}`} onClick={()=>setActive(null)}>All</div>
+            {THEMES.map(t=>(
+              <div key={t.id} className={`tweak-opt${active===t.id?" sel":""}`} onClick={()=>setActive(active===t.id?null:t.id)}>{t.label.split(" ")[0]}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

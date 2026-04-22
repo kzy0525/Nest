@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Nest — Applications Page Themes</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:#1a1410;font-family:'DM Sans',sans-serif;overflow:hidden;}
+.wrap{width:100vw;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+.hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 22px;background:#111009;border-bottom:1px solid #2a2318;}
+.hdr-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:17px;color:#e8dcc8;}
+.hdr-pills{display:flex;gap:6px;}
+.pill{font-size:11px;color:#6b5e4a;background:#1e1a13;border:1px solid #2e2820;padding:4px 10px;border-radius:20px;cursor:pointer;transition:all .14s;font-family:'Space Grotesk',sans-serif;}
+.pill.on{color:#e8dcc8;background:#2e2820;border-color:#3e3428;}
+.scroll{flex:1;overflow:auto;padding:36px 36px 56px;display:flex;flex-direction:column;gap:52px;}
+.sec-lbl{font-family:'Space Grotesk',sans-serif;font-size:10px;color:#3e3428;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.sec-lbl strong{color:#7a6a54;}
+.frame{border-radius:12px;overflow:hidden;border:1px solid #2a2318;width:1100px;height:660px;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+
+// ── Sample data ──────────────────────────────────────────────────
+const APPS = [
+  {id:1, club:"Smith Engineering Hyperloop", short:"SEH", color:"#1a2a3a", tags:["Technology","Innovation"], status:"incomplete", submitted:null, deadline:"Apr 28"},
+  {id:2, club:"Queen's Startup Consulting", short:"QSC", tags:["Business","Innovation"], color:"#111", status:"review", submitted:"Apr 18", deadline:"Apr 30"},
+  {id:3, club:"Queen's Musical Theatre", short:"QMT", tags:["Arts","Community"], color:"#1a3a6e", status:"interview", submitted:"Apr 14", deadline:"Apr 25"},
+  {id:4, club:"CREO Solutions", short:"CREO", tags:["Business","Innovation"], color:"#7B1D1D", status:"accepted", submitted:"Apr 10", deadline:null},
+];
+
+const EVENTS = [
+  {date:"Apr 25", day:"Fri", label:"QMT Interview", type:"interview", color:"#1a3a6e"},
+  {date:"Apr 28", day:"Mon", label:"SEH Deadline", type:"deadline", color:"#1a2a3a"},
+  {date:"Apr 30", day:"Wed", label:"QSC Decision", type:"decision", color:"#111"},
+  {date:"May 3",  day:"Sat", label:"QTMA Info Session", type:"event", color:"#1565C0"},
+  {date:"May 8",  day:"Thu", label:"SEH Interview", type:"interview", color:"#1a2a3a"},
+];
+
+const WEEK = [
+  {d:"22",day:"Tue",today:true,  events:[]},
+  {d:"23",day:"Wed",today:false, events:[]},
+  {d:"24",day:"Thu",today:false, events:[]},
+  {d:"25",day:"Fri",today:false, events:[{label:"QMT Interview",color:"#1a3a6e",type:"interview"}]},
+  {d:"26",day:"Sat",today:false, events:[]},
+  {d:"27",day:"Sun",today:false, events:[]},
+  {d:"28",day:"Mon",today:false, events:[{label:"SEH Deadline",color:"#1a2a3a",type:"deadline"}]},
+];
+
+const STATUS_META = {
+  incomplete: {label:"Incomplete",   bg:"#fef3cd", color:"#8a6200"},
+  review:     {label:"Under Review", bg:"#e8f0fe", color:"#1a56db"},
+  interview:  {label:"Interview",    bg:"#e8f5e9", color:"#2e7d32"},
+  accepted:   {label:"Accepted",     bg:"#f0ebe3", color:"#b5451b"},
+};
+
+const TYPE_META = {
+  interview: {icon:"○", color:"#1a3a6e"},
+  deadline:  {icon:"◆", color:"#b5451b"},
+  decision:  {icon:"◈", color:"#7B1D1D"},
+  event:     {icon:"◇", color:"#1565C0"},
+};
+
+// ── Shared sidebar ──────────────────────────────────────────────
+function Sidebar({active=3}) {
+  const icons = ["🏠","🧭","♡","✏","○"];
+  return (
+    <div style={{width:56,background:"#f3ede3",borderRight:"1px solid #e8e0d4",display:"flex",flexDirection:"column",alignItems:"center",paddingTop:18,gap:6,flexShrink:0}}>
+      {icons.map((ic,i)=>(
+        <div key={i} style={{
+          width:36,height:36,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",
+          background:i===active?"#ede8df":"transparent",
+          color:i===active?"#b5451b":"#c4b89e",fontSize:15,cursor:"pointer"
+        }}>{ic}</div>
+      ))}
+      <div style={{marginTop:"auto",marginBottom:16,color:"#c4b89e",fontSize:15}}>↗</div>
+    </div>
+  );
+}
+
+function StatusBadge({status}) {
+  const m = STATUS_META[status];
+  return (
+    <span style={{
+      fontSize:11,padding:"3px 10px",borderRadius:20,
+      background:m.bg,color:m.color,
+      fontFamily:"'Space Grotesk',sans-serif",fontWeight:500,
+      whiteSpace:"nowrap"
+    }}>{m.label}</span>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// OPTION A: Split — table left, agenda right
+// ══════════════════════════════════════════════════════════════════
+function OptionA() {
+  return (
+    <div style={{display:"flex",height:"100%",background:"#faf7f2"}}>
+      <Sidebar/>
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        {/* left: applications */}
+        <div style={{flex:"0 0 58%",display:"flex",flexDirection:"column",overflow:"hidden",padding:"28px 28px 0"}}>
+          <div style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#2a1f14",marginBottom:4}}>My Applications</div>
+          <div style={{fontSize:12,color:"#a09180",marginBottom:20,fontFamily:"'DM Sans',sans-serif"}}>{APPS.length} active applications</div>
+
+          <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",gap:10,paddingBottom:28}}>
+            {APPS.map(app=>(
+              <div key={app.id} style={{
+                background:"#fff",borderRadius:14,padding:"14px 18px",
+                border:"1px solid #e8e0d4",
+                display:"flex",alignItems:"center",gap:14,
+                boxShadow:"0 1px 4px rgba(0,0,0,0.04)"
+              }}>
+                <div style={{width:38,height:38,borderRadius:10,background:app.color,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <span style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:11,color:"rgba(255,255,255,0.5)"}}>{app.short.slice(0,2)}</span>
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:500,fontSize:13,color:"#2a1f14",marginBottom:3}}>{app.club}</div>
+                  <div style={{display:"flex",gap:5}}>
+                    {app.tags.map(t=>(
+                      <span key={t} style={{fontSize:10,color:"#a0917e",background:"#f5f0e8",padding:"1px 6px",borderRadius:4,fontFamily:"'DM Sans',sans-serif"}}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+                <StatusBadge status={app.status}/>
+                <div style={{fontSize:11,color:"#c4b49a",fontFamily:"'Space Grotesk',sans-serif",width:60,textAlign:"right",flexShrink:0}}>
+                  {app.submitted || "—"}
+                </div>
+                <div style={{display:"flex",gap:8,flexShrink:0}}>
+                  <span style={{color:"#c4b49a",cursor:"pointer",fontSize:14}}>✎</span>
+                  <span style={{color:"#e0cfc0",cursor:"pointer",fontSize:14}}>✕</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* divider */}
+        <div style={{width:1,background:"#ede8df",flexShrink:0,margin:"28px 0"}}/>
+
+        {/* right: agenda */}
+        <div style={{flex:1,padding:"28px 24px",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{fontFamily:"'Instrument Serif',serif",fontSize:18,color:"#2a1f14",marginBottom:4}}>Upcoming Dates</div>
+          <div style={{fontSize:12,color:"#a09180",marginBottom:20,fontFamily:"'DM Sans',sans-serif"}}>April – May 2025</div>
+          <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",gap:8,paddingBottom:28}}>
+            {EVENTS.map((ev,i)=>(
+              <div key={i} style={{
+                display:"flex",alignItems:"center",gap:12,
+                padding:"12px 14px",background:"#fff",borderRadius:12,
+                border:"1px solid #e8e0d4",
+                boxShadow:"0 1px 3px rgba(0,0,0,0.04)"
+              }}>
+                <div style={{
+                  width:44,flexShrink:0,textAlign:"center",
+                  borderRight:"1px solid #ede8df",paddingRight:12
+                }}>
+                  <div style={{fontSize:16,fontWeight:600,color:"#2a1f14",fontFamily:"'DM Serif Display',serif"}}>{ev.date.split(" ")[1]}</div>
+                  <div style={{fontSize:10,color:"#b8a898",fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.04em"}}>{ev.date.split(" ")[0].toUpperCase()}</div>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:500,color:"#2a1f14"}}>{ev.label}</div>
+                  <div style={{fontSize:10,color:TYPE_META[ev.type].color,fontFamily:"'Space Grotesk',sans-serif",marginTop:2,textTransform:"uppercase",letterSpacing:"0.06em"}}>{ev.type}</div>
+                </div>
+                <div style={{width:8,height:8,borderRadius:"50%",background:ev.color,flexShrink:0}}/>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// OPTION B: Stacked — cards + week strip calendar
+// ══════════════════════════════════════════════════════════════════
+function OptionB() {
+  const [sel, setSel] = useState(null);
+  return (
+    <div style={{display:"flex",height:"100%",background:"#faf7f2"}}>
+      <Sidebar/>
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"28px 28px 0"}}>
+        <div style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#2a1f14",marginBottom:20}}>My Applications</div>
+
+        {/* application cards row */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:28,flexShrink:0}}>
+          {APPS.map(app=>(
+            <div key={app.id} style={{
+              background:"#fff",borderRadius:14,overflow:"hidden",
+              border:"1px solid #e8e0d4",
+              boxShadow:"0 1px 4px rgba(0,0,0,0.04)",
+              cursor:"pointer"
+            }}>
+              <div style={{height:6,background:app.color}}/>
+              <div style={{padding:"14px 16px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                  <div style={{width:32,height:32,borderRadius:8,background:app.color,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:10,color:"rgba(255,255,255,0.5)"}}>{app.short.slice(0,2)}</span>
+                  </div>
+                  <div style={{fontWeight:500,fontSize:12,color:"#2a1f14",lineHeight:1.3}}>{app.club}</div>
+                </div>
+                <StatusBadge status={app.status}/>
+                {app.deadline && (
+                  <div style={{fontSize:10,color:"#b8a898",marginTop:8,fontFamily:"'Space Grotesk',sans-serif"}}>Due {app.deadline}</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* week strip */}
+        <div style={{flexShrink:0,marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:18,color:"#2a1f14"}}>Upcoming Deadlines & Dates</div>
+            <div style={{fontSize:11,color:"#b5451b",cursor:"pointer",fontFamily:"'Space Grotesk',sans-serif",fontWeight:500}}>Full calendar →</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
+            {WEEK.map((w,i)=>(
+              <div key={i} onClick={()=>setSel(i)} style={{
+                background: w.today ? "#b5451b" : sel===i ? "#f0ebe3" : "#fff",
+                borderRadius:12,padding:"12px 8px",
+                border: w.today ? "none" : sel===i ? "1px solid #b5451b" : "1px solid #e8e0d4",
+                cursor:"pointer",minHeight:110,
+                boxShadow:"0 1px 3px rgba(0,0,0,0.04)"
+              }}>
+                <div style={{fontSize:10,textAlign:"center",color:w.today?"rgba(255,255,255,0.7)":"#b8a898",fontFamily:"'Space Grotesk',sans-serif",marginBottom:4}}>{w.day.toUpperCase()}</div>
+                <div style={{fontSize:18,textAlign:"center",fontWeight:600,color:w.today?"#fff":"#2a1f14",fontFamily:"'DM Serif Display',serif",marginBottom:8}}>{w.d}</div>
+                {w.events.map((ev,j)=>(
+                  <div key={j} style={{
+                    fontSize:9,padding:"3px 6px",borderRadius:6,marginBottom:3,
+                    background: w.today ? "rgba(255,255,255,0.2)" : "#f5f0e8",
+                    color: w.today ? "#fff" : "#7a5a3a",
+                    fontFamily:"'DM Sans',sans-serif",lineHeight:1.3,
+                    textWrap:"pretty"
+                  }}>{ev.label}</div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// OPTION C: Dashboard — stats + table + mini month cal sidebar
+// ══════════════════════════════════════════════════════════════════
+const CAL_DAYS = [
+  [null,null,1,2,3,4,5],
+  [6,7,8,9,10,11,12],
+  [13,14,15,16,17,18,19],
+  [20,21,22,23,24,25,26],
+  [27,28,29,30,null,null,null],
+];
+const EVENT_DAYS = {25:["interview"],28:["deadline"],30:["decision"]};
+
+function OptionC() {
+  return (
+    <div style={{display:"flex",height:"100%",background:"#faf7f2"}}>
+      <Sidebar/>
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        {/* main */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"24px 24px 0"}}>
+          {/* stat strip */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20,flexShrink:0}}>
+            {[
+              {label:"Total",value:4,sub:"applications"},
+              {label:"In Review",value:2,sub:"pending response"},
+              {label:"Interviews",value:1,sub:"upcoming"},
+              {label:"Accepted",value:1,sub:"this cycle"},
+            ].map((s,i)=>(
+              <div key={i} style={{background:"#fff",borderRadius:12,padding:"14px 16px",border:"1px solid #e8e0d4",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+                <div style={{fontSize:10,color:"#a09180",fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.06em",marginBottom:4}}>{s.label.toUpperCase()}</div>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:28,color:"#2a1f14",lineHeight:1}}>{s.value}</div>
+                <div style={{fontSize:11,color:"#c4b49a",marginTop:3,fontFamily:"'DM Sans',sans-serif"}}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{fontFamily:"'Instrument Serif',serif",fontSize:18,color:"#2a1f14",marginBottom:12,flexShrink:0}}>My Applications</div>
+
+          {/* table */}
+          <div style={{flex:1,overflow:"auto",paddingBottom:24}}>
+            <div style={{background:"#fff",borderRadius:14,border:"1px solid #e8e0d4",overflow:"hidden"}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 130px 100px 80px",padding:"10px 18px",borderBottom:"1px solid #f0ebe3",background:"#f7f3ee"}}>
+                {["Club","Status","Submitted",""].map((h,i)=>(
+                  <div key={i} style={{fontSize:10,color:"#a09180",fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.06em"}}>{h.toUpperCase()}</div>
+                ))}
+              </div>
+              {APPS.map((app,i)=>(
+                <div key={app.id} style={{
+                  display:"grid",gridTemplateColumns:"1fr 130px 100px 80px",
+                  padding:"14px 18px",
+                  borderBottom:i<APPS.length-1?"1px solid #f5f0e8":"none",
+                  alignItems:"center"
+                }}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:34,height:34,borderRadius:9,background:app.color,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:10,color:"rgba(255,255,255,0.45)"}}>{app.short.slice(0,2)}</span>
+                    </div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:500,color:"#2a1f14"}}>{app.club}</div>
+                      <div style={{fontSize:10,color:"#c4b49a",fontFamily:"'DM Sans',sans-serif"}}>{app.deadline ? `Due ${app.deadline}` : "No deadline"}</div>
+                    </div>
+                  </div>
+                  <StatusBadge status={app.status}/>
+                  <div style={{fontSize:12,color:"#a09180",fontFamily:"'DM Sans',sans-serif"}}>{app.submitted||"—"}</div>
+                  <div style={{display:"flex",gap:10}}>
+                    <span style={{color:"#c4b49a",cursor:"pointer",fontSize:13}}>✎</span>
+                    <span style={{color:"#e0cfc0",cursor:"pointer",fontSize:13}}>✕</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* right sidebar: mini calendar + upcoming */}
+        <div style={{width:230,background:"#f3ede3",borderLeft:"1px solid #e8e0d4",padding:"24px 18px",display:"flex",flexDirection:"column",gap:20,overflow:"auto",flexShrink:0}}>
+          {/* mini month */}
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div style={{fontFamily:"'Instrument Serif',serif",fontSize:14,color:"#2a1f14",fontStyle:"italic"}}>April 2025</div>
+              <div style={{display:"flex",gap:6}}>
+                <span style={{color:"#b8a898",cursor:"pointer",fontSize:12}}>‹</span>
+                <span style={{color:"#b8a898",cursor:"pointer",fontSize:12}}>›</span>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
+              {["S","M","T","W","T","F","S"].map((d,i)=>(
+                <div key={i} style={{fontSize:9,textAlign:"center",color:"#c4b49a",fontFamily:"'Space Grotesk',sans-serif",paddingBottom:4}}>{d}</div>
+              ))}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
+              {CAL_DAYS.flat().map((d,i)=>{
+                const hasEvent = d && EVENT_DAYS[d];
+                const isToday = d===22;
+                return (
+                  <div key={i} style={{
+                    height:26,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                    borderRadius:6,position:"relative",cursor:d?"pointer":"default",
+                    background:isToday?"#b5451b":hasEvent?"#f0ebe3":"transparent"
+                  }}>
+                    <div style={{fontSize:11,color:isToday?"#fff":d?"#2a1f14":"transparent",fontFamily:"'DM Sans',sans-serif",fontWeight:isToday?600:400}}>{d||""}</div>
+                    {hasEvent && !isToday && (
+                      <div style={{width:4,height:4,borderRadius:"50%",background:"#b5451b",position:"absolute",bottom:2}}/>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* upcoming list */}
+          <div>
+            <div style={{fontSize:10,color:"#a09180",fontFamily:"'Space Grotesk',sans-serif",letterSpacing:"0.06em",marginBottom:10}}>UPCOMING</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {EVENTS.slice(0,4).map((ev,i)=>(
+                <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <div style={{
+                    width:6,height:6,borderRadius:"50%",
+                    background:ev.color,marginTop:5,flexShrink:0
+                  }}/>
+                  <div>
+                    <div style={{fontSize:12,color:"#2a1f14",fontWeight:500,lineHeight:1.3}}>{ev.label}</div>
+                    <div style={{fontSize:10,color:"#b8a898",fontFamily:"'Space Grotesk',sans-serif"}}>{ev.date} · {ev.day}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// OPTION D: Timeline view — vertical progress + event strip
+// ══════════════════════════════════════════════════════════════════
+const STAGE_ORDER = ["incomplete","review","interview","accepted"];
+const STAGE_LABELS = {incomplete:"Applied",review:"In Review",interview:"Interview",accepted:"Accepted"};
+
+function OptionD() {
+  return (
+    <div style={{display:"flex",height:"100%",background:"#faf7f2"}}>
+      <Sidebar/>
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"26px 28px 0"}}>
+        <div style={{fontFamily:"'Instrument Serif',serif",fontSize:22,color:"#2a1f14",marginBottom:20,flexShrink:0}}>My Applications</div>
+
+        {/* application timeline rows */}
+        <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",gap:12,paddingBottom:24}}>
+          {APPS.map(app=>{
+            const stageIdx = STAGE_ORDER.indexOf(app.status);
+            return (
+              <div key={app.id} style={{
+                background:"#fff",borderRadius:16,padding:"16px 20px",
+                border:"1px solid #e8e0d4",
+                boxShadow:"0 1px 4px rgba(0,0,0,0.04)"
+              }}>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:app.color,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:10,color:"rgba(255,255,255,0.45)"}}>{app.short.slice(0,2)}</span>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:500,color:"#2a1f14"}}>{app.club}</div>
+                    <div style={{display:"flex",gap:4,marginTop:2}}>
+                      {app.tags.map(t=>(
+                        <span key={t} style={{fontSize:9,color:"#a09180",background:"#f5f0e8",padding:"1px 5px",borderRadius:3,fontFamily:"'DM Sans',sans-serif"}}>{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                  {app.deadline && (
+                    <div style={{fontSize:11,color:"#b5451b",background:"#fdf3ee",padding:"4px 10px",borderRadius:20,fontFamily:"'Space Grotesk',sans-serif"}}>Due {app.deadline}</div>
+                  )}
+                  {app.status==="accepted" && (
+                    <div style={{fontSize:11,color:"#2e7d32",background:"#e8f5e9",padding:"4px 10px",borderRadius:20,fontFamily:"'Space Grotesk',sans-serif"}}>✓ Accepted</div>
+                  )}
+                  <div style={{display:"flex",gap:8}}>
+                    <span style={{color:"#c4b49a",cursor:"pointer",fontSize:13}}>✎</span>
+                    <span style={{color:"#e0cfc0",cursor:"pointer",fontSize:13}}>✕</span>
+                  </div>
+                </div>
+
+                {/* progress bar */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4}}>
+                  {STAGE_ORDER.map((s,i)=>{
+                    const done = i<=stageIdx;
+                    const current = i===stageIdx;
+                    return (
+                      <div key={s}>
+                        <div style={{
+                          height:4,borderRadius:2,marginBottom:5,
+                          background: done ? (current?"#b5451b":"#d4b49a") : "#ede8df"
+                        }}/>
+                        <div style={{
+                          fontSize:9,fontFamily:"'Space Grotesk',sans-serif",
+                          color: current?"#b5451b":done?"#a09180":"#d4c8b8",
+                          fontWeight:current?600:400,
+                          letterSpacing:"0.04em"
+                        }}>{STAGE_LABELS[s].toUpperCase()}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* upcoming horizontal strip */}
+        <div style={{flexShrink:0,paddingBottom:24}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+            <div style={{fontFamily:"'Instrument Serif',serif",fontSize:16,color:"#2a1f14"}}>Upcoming Dates</div>
+            <div style={{fontSize:11,color:"#b5451b",cursor:"pointer",fontFamily:"'Space Grotesk',sans-serif",fontWeight:500}}>View all →</div>
+          </div>
+          <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:4}}>
+            {EVENTS.map((ev,i)=>(
+              <div key={i} style={{
+                flexShrink:0,background:"#fff",borderRadius:12,padding:"12px 16px",
+                border:"1px solid #e8e0d4",minWidth:140,
+                borderTop:`3px solid ${ev.color}`,
+                boxShadow:"0 1px 3px rgba(0,0,0,0.04)"
+              }}>
+                <div style={{fontSize:10,color:"#b8a898",fontFamily:"'Space Grotesk',sans-serif",marginBottom:4,letterSpacing:"0.04em"}}>{ev.date.toUpperCase()} · {ev.day.toUpperCase()}</div>
+                <div style={{fontSize:13,fontWeight:500,color:"#2a1f14",lineHeight:1.3,marginBottom:4}}>{ev.label}</div>
+                <div style={{fontSize:9,color:TYPE_META[ev.type].color,textTransform:"uppercase",letterSpacing:"0.07em",fontFamily:"'Space Grotesk',sans-serif"}}>{ev.type}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Canvas
+// ══════════════════════════════════════════════════════════════════
+const OPTS = [
+  {id:"a", label:"Split View",      sub:"Applications list left · vertical agenda right",                       C:OptionA},
+  {id:"b", label:"Cards + Week",    sub:"Status cards top · 7-day week strip with event dots below",             C:OptionB},
+  {id:"c", label:"Dashboard",       sub:"Stat summary · full table · mini month calendar sidebar",               C:OptionC},
+  {id:"d", label:"Timeline + Strip",sub:"Progress bar per application · upcoming dates horizontal scroll",       C:OptionD},
+];
+
+function App() {
+  const [active, setActive] = useState(null);
+  const [tweaks, setTweaks] = useState(false);
+
+  React.useEffect(()=>{
+    window.addEventListener("message",e=>{
+      if(e.data?.type==="__activate_edit_mode") setTweaks(true);
+      if(e.data?.type==="__deactivate_edit_mode") setTweaks(false);
+    });
+    window.parent.postMessage({type:"__edit_mode_available"},"*");
+  },[]);
+
+  return (
+    <div className="wrap">
+      <div className="hdr">
+        <div className="hdr-logo">nest · applications page</div>
+        <div className="hdr-pills">
+          <button className={`pill${active===null?" on":""}`} onClick={()=>setActive(null)}>All</button>
+          {OPTS.map(o=>(
+            <button key={o.id} className={`pill${active===o.id?" on":""}`} onClick={()=>setActive(active===o.id?null:o.id)}>{o.label}</button>
+          ))}
+        </div>
+      </div>
+      <div className="scroll">
+        {OPTS.filter(o=>active===null||o.id===active).map(({id,label,sub,C})=>(
+          <div key={id}>
+            <div className="sec-lbl"><strong>{label}</strong> — {sub}</div>
+            <div className="frame"><C/></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

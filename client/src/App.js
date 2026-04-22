@@ -29,7 +29,7 @@ function App() {
         {/* Dashboard pages with sidebar */}
         <Route path="/" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <Home />
@@ -40,7 +40,7 @@ function App() {
         
         <Route path="/search" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <SearchPage />
@@ -51,7 +51,7 @@ function App() {
         
         <Route path="/club/:id" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <ClubDetail />
@@ -62,7 +62,7 @@ function App() {
 
         <Route path="/club/:id/apply" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <ClubApplication />
@@ -74,7 +74,7 @@ function App() {
         {/* Club Dashboard Routes */}
         <Route path="/club/dashboard" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <ClubDashboard />
@@ -85,7 +85,7 @@ function App() {
 
         <Route path="/club/register" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-y-auto">
                 <ClubRegistration />
@@ -96,7 +96,7 @@ function App() {
 
         <Route path="/club/analytics" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <ClubAnalytics />
@@ -107,7 +107,7 @@ function App() {
 
         <Route path="/hiring" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <HiringDashboard />
@@ -118,7 +118,7 @@ function App() {
 
         <Route path="/favorites" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <Favorites />
@@ -129,7 +129,7 @@ function App() {
         
         <Route path="/profile" element={
           <ProtectedRoute>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <UserProfile />
@@ -140,7 +140,7 @@ function App() {
         
         <Route path="/register-club" element={
           <ProtectedRoute requireAdmin={true}>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-y-auto">
                 <ClubRegistration />
@@ -151,7 +151,7 @@ function App() {
 
         <Route path="/admin" element={
           <ProtectedRoute requireAdmin={true}>
-            <div className="App flex h-screen bg-gray-100">
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <AdminDashboard />
