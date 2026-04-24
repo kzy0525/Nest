@@ -38,7 +38,7 @@ const Sidebar = () => {
 
   return (
     <div style={{
-      width: 56, flexShrink: 0,
+      width: 70, flexShrink: 0,
       background: '#f3ede3',
       borderRight: '1px solid #e8e0d4',
       display: 'flex', flexDirection: 'column',
@@ -52,15 +52,17 @@ const Sidebar = () => {
             key={item.path}
             title={item.label}
             onClick={() => navigate(item.path)}
+            onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#b5451b'; e.currentTarget.style.background = '#ede8df'; } }}
+            onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#c4b89e'; e.currentTarget.style.background = 'transparent'; } }}
             style={{
-              width: 36, height: 36, borderRadius: 8,
+              width: 54, height: 54, borderRadius: 8,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: active ? '#ede8df' : 'transparent',
               color: active ? '#b5451b' : '#c4b89e',
               cursor: 'pointer', transition: 'all 0.15s'
             }}
           >
-            <item.icon size={18}/>
+            <item.icon size={27}/>
           </div>
         );
       })}
@@ -71,14 +73,14 @@ const Sidebar = () => {
           onClick={handleLogout}
           style={{
             position: 'absolute', bottom: 20,
-            width: 36, height: 36, borderRadius: 8,
+            width: 54, height: 54, borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#c4b89e', cursor: 'pointer', transition: 'all 0.15s'
           }}
           onMouseEnter={e => { e.currentTarget.style.color = '#b5451b'; e.currentTarget.style.background = '#ede8df'; }}
           onMouseLeave={e => { e.currentTarget.style.color = '#c4b89e'; e.currentTarget.style.background = 'transparent'; }}
         >
-          <LogOut size={18}/>
+          <LogOut size={27}/>
         </div>
       )}
     </div>

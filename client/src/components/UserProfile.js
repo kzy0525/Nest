@@ -58,11 +58,12 @@ const UserProfile = () => {
   useEffect(() => {
     if (!user) return;
     getProfile(user.id).then(profile => {
+      const meta = user.user_metadata || {};
       const p = {
-        name: profile.name || '',
+        name: profile.name || meta.name || '',
         program: profile.program || '',
         year: profile.year || '',
-        school: profile.school || '',
+        school: profile.school || meta.school || '',
         pronouns: profile.pronouns || '',
         avatar: profile.avatar_url || null,
         bio: profile.bio || '',

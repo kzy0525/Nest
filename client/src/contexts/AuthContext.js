@@ -35,18 +35,31 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const mergeUser = (authUser, profile = {}) => {
+    const meta = authUser.user_metadata || {};
+    return {
+      ...authUser,
+      // profile fields win over auth metadata, but metadata fills any gaps
+      user_type: profile.user_type || meta.user_type || 'student',
+      role:      profile.role      || meta.role      || 'student',
+      name:      profile.name      || meta.name      || '',
+      school:    profile.school    || meta.school    || '',
+      ...profile,
+    };
+  };
+
   const enrichUser = async (authUser) => {
     try {
       const profile = await getProfile(authUser.id);
-      setUser({ ...authUser, ...profile });
+      setUser(mergeUser(authUser, profile));
     } catch {
       // Profile may not exist yet immediately after signup — retry once
       setTimeout(async () => {
         try {
           const profile = await getProfile(authUser.id);
-          setUser({ ...authUser, ...profile });
+          setUser(mergeUser(authUser, profile));
         } catch {
-          setUser(authUser);
+          setUser(mergeUser(authUser));
         }
         setLoading(false);
       }, 800);
@@ -59,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     const profile = await getProfile(data.user.id);
-    const enriched = { ...data.user, ...profile };
+    const enriched = mergeUser(data.user, profile);
     setUser(enriched);
     return enriched;
   };

@@ -73,7 +73,7 @@ function App() {
 
         {/* Club Dashboard Routes */}
         <Route path="/club/dashboard" element={
-          <ProtectedRoute>
+          <ProtectedRoute requireClub>
             <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
@@ -84,7 +84,7 @@ function App() {
         } />
 
         <Route path="/club/register" element={
-          <ProtectedRoute>
+          <ProtectedRoute requireClub>
             <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-y-auto">
@@ -95,7 +95,7 @@ function App() {
         } />
 
         <Route path="/club/analytics" element={
-          <ProtectedRoute>
+          <ProtectedRoute requireClub>
             <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">

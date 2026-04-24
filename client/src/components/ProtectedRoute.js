@@ -1,8 +1,7 @@
-import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const ProtectedRoute = ({ children, requireAdmin = false }) => {
+const ProtectedRoute = ({ children, requireAdmin = false, requireClub = false }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -19,6 +18,16 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 
   if (requireAdmin && user.role !== 'admin') {
     return <Navigate to="/" replace />;
+  }
+
+  if (requireClub && user.user_type !== 'club') {
+    return <Navigate to="/" replace />;
+  }
+
+  // Redirect club users away from student-only pages
+  if (!requireClub && !requireAdmin && user.user_type === 'club' &&
+      ['/hiring', '/favorites', '/profile'].some(p => window.location.pathname === p)) {
+    return <Navigate to="/club/dashboard" replace />;
   }
 
   return children;

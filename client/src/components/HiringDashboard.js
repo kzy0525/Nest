@@ -134,7 +134,7 @@ const HiringDashboard = () => {
 
         {/* Left — application list */}
         <div style={{ flex: '0 0 58%', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '28px 28px 0' }}>
-          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22, color: '#2a1f14', marginBottom: 4 }}>My Applications</div>
+          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 40, fontWeight: 700, color: '#2a1f14', marginBottom: 4 }}>My Applications</div>
           <div style={{ fontSize: 12, color: '#a09180', marginBottom: 20 }}>
             {applications.length} active application{applications.length !== 1 ? 's' : ''}
           </div>
@@ -202,7 +202,7 @@ const HiringDashboard = () => {
 
         {/* Right — upcoming dates */}
         <div style={{ flex: 1, padding: '28px 24px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 18, color: '#2a1f14', marginBottom: 4 }}>Upcoming Dates</div>
+          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 40, fontWeight: 700, color: '#2a1f14', marginBottom: 4 }}>Upcoming Dates</div>
           <div style={{ fontSize: 12, color: '#a09180', marginBottom: 20 }}>
             {today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </div>

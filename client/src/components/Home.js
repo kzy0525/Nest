@@ -78,8 +78,6 @@ const Home = () => {
     else navigate('/search');
   };
 
-  const getFirstName = () => (user?.name || 'there').split(' ')[0];
-
   const getGreeting = () => {
     const h = new Date().getHours();
     if (h < 12) return 'Good morning';
@@ -126,8 +124,8 @@ const Home = () => {
 
         {/* Welcome */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 26, color: '#2a1f14', fontStyle: 'italic', marginBottom: 4 }}>
-            {getGreeting()}, {getFirstName()}
+          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 50, fontWeight: 700, color: '#2a1f14', marginBottom: 4 }}>
+            {getGreeting()}
           </div>
           <div style={{ fontSize: 13, color: '#a09180' }}>Discover opportunities and track your applications.</div>
         </div>
@@ -159,7 +157,7 @@ const Home = () => {
         {/* Recommended / Hiring Now */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 18, color: '#2a1f14' }}>Accepting Applications</div>
+            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, color: '#2a1f14' }}>Accepting Applications</div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button
                 onClick={prevCarousel}
@@ -254,7 +252,7 @@ const Home = () => {
         {/* Application Tracker */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 18, color: '#2a1f14' }}>Application Tracker</div>
+            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, color: '#2a1f14' }}>Application Tracker</div>
             <button
               onClick={() => navigate('/hiring')}
               style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: warm, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}
@@ -313,7 +311,7 @@ const Home = () => {
 
         {/* Quick Actions */}
         <div>
-          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 18, color: '#2a1f14', marginBottom: 14 }}>Quick Actions</div>
+          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, color: '#2a1f14', marginBottom: 14 }}>Quick Actions</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {[
               { icon: '🧭', label: 'Explore Clubs', desc: 'Browse all clubs and discover new opportunities', path: '/search' },

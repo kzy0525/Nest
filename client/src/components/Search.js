@@ -217,7 +217,7 @@ const SearchPage = () => {
       {/* Top bar */}
       <div style={{ padding: '20px 26px 0', flexShrink: 0 }}>
         <div style={{ marginBottom: 14 }}>
-          <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22, color: '#2a1f14', fontStyle: 'italic' }}>
+          <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 40, fontWeight: 700, color: '#2a1f14' }}>
             Discover your community
           </span>
         </div>

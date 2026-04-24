@@ -164,10 +164,10 @@ const Register = () => {
 
         {/* Email */}
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>EMAIL</label>
+          <label style={labelStyle}>{formData.user_type === 'club' ? 'CLUB EMAIL' : 'EMAIL'}</label>
           <input
             type="email" name="email" value={formData.email} onChange={handleChange}
-            placeholder="your.email@queensu.ca" style={inputStyle}
+            placeholder={formData.user_type === 'club' ? 'club@queensu.ca' : 'your.email@queensu.ca'} style={inputStyle}
           />
         </div>
 
