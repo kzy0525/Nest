@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Heart } from 'lucide-react';
-import axios from 'axios';
-import { useUserStorage } from '../utils/userStorage';
+import { useAuth } from '../contexts/AuthContext';
+import { getClubs, getFavorites, addFavorite, removeFavorite } from '../lib/db';
 
 const warm = '#b5451b';
 
@@ -35,9 +35,10 @@ const SearchPage = () => {
   const filterDropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const userStorage = useUserStorage();
+  const { user } = useAuth();
 
-  useEffect(() => { fetchClubs(); loadFavorites(); }, []);
+  useEffect(() => { fetchClubs(); }, []);
+  useEffect(() => { if (user) loadFavorites(); }, [user]);
 
   useEffect(() => {
     const handleVisibilityChange = () => { if (!document.hidden) fetchClubs(); };
@@ -68,8 +69,8 @@ const SearchPage = () => {
 
   const fetchClubs = async () => {
     try {
-      const response = await axios.get('/api/clubs');
-      setClubs(response.data);
+      const data = await getClubs();
+      setClubs(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching clubs:', error);
@@ -77,7 +78,15 @@ const SearchPage = () => {
     }
   };
 
-  const loadFavorites = () => setFavorites(userStorage.getJSON('favorites') || []);
+  const loadFavorites = async () => {
+    if (!user) return;
+    try {
+      const favClubs = await getFavorites(user.id);
+      setFavorites(favClubs);
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
 
   const filterClubs = () => {
     let filtered = [...clubs];
@@ -127,17 +136,16 @@ const SearchPage = () => {
     setFilteredClubs(filtered);
   };
 
-  const handleFavorite = (club) => {
-    const updated = [...favorites];
-    const idx = updated.findIndex(f => f.id === club.id);
-    if (idx >= 0) {
-      updated.splice(idx, 1);
+  const handleFavorite = async (club) => {
+    if (!user) return;
+    if (isFavorite(club.id)) {
+      setFavorites(prev => prev.filter(f => f.id !== club.id));
+      await removeFavorite(user.id, club.id);
     } else {
-      updated.push({ id: club.id, name: club.name, description: club.description, category: club.category, rating: club.rating, review_count: club.review_count, member_count: club.member_count, meeting_time: club.meeting_time, meeting_location: club.meeting_location, logo: club.logo, isHiring: club.isHiring, application_deadline: club.application_deadline });
+      setFavorites(prev => [...prev, club]);
       window.dispatchEvent(new CustomEvent('clubLiked', { detail: { club } }));
+      await addFavorite(user.id, club.id);
     }
-    setFavorites(updated);
-    userStorage.setJSON('favorites', updated);
   };
 
   const isFavorite = (clubId) => favorites.some(f => f.id === clubId);

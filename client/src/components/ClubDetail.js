@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, Star, Instagram, Globe, Users, TrendingUp } from 'lucide-react';
-import axios from 'axios';
-import { useUserStorage } from '../utils/userStorage';
+import { useAuth } from '../contexts/AuthContext';
+import { getClubById, getReviews, addReview, isFavorited, addFavorite, removeFavorite, deleteClub } from '../lib/db';
 
 // Rating Form Component
 const RatingForm = ({ clubId, onRatingAdded, existingReviews, onClose }) => {
@@ -60,14 +60,9 @@ const RatingForm = ({ clubId, onRatingAdded, existingReviews, onClose }) => {
     setError('');
 
     try {
-      const response = await axios.post(`/api/clubs/${clubId}/reviews`, {
-        student_name: studentName,
-        club_position: clubPosition,
-        rating: rating,
-        review_text: reviewText
-      });
+      const newReview = await addReview({ clubId, studentName, clubPosition, rating, reviewText });
 
-      if (response.data.id) {
+      if (newReview.id) {
         // Show success state
         setIsSubmitted(true);
         
@@ -218,7 +213,7 @@ const RatingForm = ({ clubId, onRatingAdded, existingReviews, onClose }) => {
 const ClubDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const userStorage = useUserStorage();
+  const { user } = useAuth();
   const [club, setClub] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -227,68 +222,20 @@ const ClubDetail = () => {
   const [showRatingForm, setShowRatingForm] = useState(false);
 
   useEffect(() => {
-    fetchClubDetails();
-    fetchClubReviews();
-    checkFavoriteStatus();
-  }, [id]);
+    getClubById(id).then(setClub).catch(console.error).finally(() => setLoading(false));
+    getReviews(id).then(setReviews).catch(console.error);
+    if (user) isFavorited(user.id, id).then(setIsFavorite).catch(console.error);
+  }, [id, user]);
 
-  const fetchClubDetails = async () => {
-    try {
-      const response = await axios.get(`/api/clubs/${id}`);
-      setClub(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching club details:', error);
-      setLoading(false);
-    }
-  };
-
-  const fetchClubReviews = async () => {
-    try {
-      const response = await axios.get(`/api/clubs/${id}/reviews`);
-      setReviews(response.data);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-    }
-  };
-
-  const checkFavoriteStatus = () => {
-    const favorites = userStorage.getJSON('favorites') || [];
-    setIsFavorite(favorites.some(fav => fav.id === parseInt(id)));
-  };
-
-  const handleFavorite = () => {
-    const favorites = userStorage.getJSON('favorites') || [];
-    
+  const handleFavorite = async () => {
+    if (!user) return;
     if (isFavorite) {
-      // Remove from favorites
-      const updatedFavorites = favorites.filter(fav => fav.id !== club.id);
-      userStorage.setJSON('favorites', updatedFavorites);
       setIsFavorite(false);
+      await removeFavorite(user.id, id);
     } else {
-      // Add to favorites
-      const newFavorite = {
-        id: club.id,
-        name: club.name,
-        description: club.description,
-        category: club.category,
-        rating: club.rating,
-        review_count: club.review_count,
-        member_count: club.member_count,
-        meeting_time: club.meeting_time,
-        meeting_location: club.meeting_location,
-        logo: club.logo,
-        isHiring: club.isHiring,
-        application_deadline: club.application_deadline
-      };
-      favorites.push(newFavorite);
-      userStorage.setJSON('favorites', favorites);
       setIsFavorite(true);
-
-      // Trigger notification event for liking a club
-      window.dispatchEvent(new CustomEvent('clubLiked', { 
-        detail: { club: club } 
-      }));
+      window.dispatchEvent(new CustomEvent('clubLiked', { detail: { club } }));
+      await addFavorite(user.id, id);
     }
   };
 
@@ -470,9 +417,9 @@ const ClubDetail = () => {
                   </button>
                 </div>
               </div>
-                <RatingForm 
-                  clubId={club.id} 
-                  onRatingAdded={fetchClubReviews} 
+                <RatingForm
+                  clubId={club.id}
+                  onRatingAdded={() => getReviews(id).then(setReviews).catch(console.error)}
                   existingReviews={reviews}
                   onClose={() => setShowRatingForm(false)}
                 />
@@ -809,13 +756,9 @@ const ClubDetail = () => {
             onClick={async () => {
               if (window.confirm('Are you sure you want to delete this club? This action cannot be undone.')) {
                 try {
-                  const response = await axios.delete(`/api/clubs/${club.id}`);
-                  if (response.data.success) {
-                    alert('Club deleted successfully!');
-                    navigate('/search');
-                  } else {
-                    alert('Failed to delete club.');
-                  }
+                  await deleteClub(club.id);
+                  alert('Club deleted successfully!');
+                  navigate('/search');
                 } catch (error) {
                   console.error('Error deleting club:', error);
                   alert('Error deleting club. Please try again.');

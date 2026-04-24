@@ -1,520 +1,348 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Heart, Star, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
-import axios from 'axios';
-import { useUserStorage } from '../utils/userStorage';
+import { Heart, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { getClubs, getFavorites, addFavorite, removeFavorite, getApplications } from '../lib/db';
+
+const warm = '#b5451b';
+
+const CLUB_COLORS = ['#8B1A1A','#7B1D1D','#1a3a6e','#1a2a1a','#1565C0','#4a3728','#1a2a3a','#8B0000','#2c3e50','#4a2c6a'];
+
+const getClubColor = (name) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return CLUB_COLORS[Math.abs(hash) % CLUB_COLORS.length];
+};
+
+const getClubInitials = (name) => name.split(' ').map(w => w[0]).join('').substring(0, 3);
+
+const STATUS_META = {
+  'Incomplete': { label: 'Draft',        bg: '#fef3cd', color: '#8a6200' },
+  'Submitted':  { label: 'Under Review', bg: '#e8f0fe', color: '#1a56db' },
+  'Interview':  { label: 'Interview',    bg: '#e8f5e9', color: '#2e7d32' },
+  'Accepted':   { label: 'Accepted',     bg: '#f0ebe3', color: warm },
+  'Rejected':   { label: 'Rejected',     bg: '#fee2e2', color: '#991b1b' },
+};
 
 const Home = () => {
   const [clubs, setClubs] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [applications, setApplications] = useState([]);
   const navigate = useNavigate();
-  const userStorage = useUserStorage();
   const { user } = useAuth();
 
+  useEffect(() => { fetchClubs(); }, []);
+
   useEffect(() => {
-    fetchClubs();
-  }, []);
+    if (!user) return;
+    getFavorites(user.id).then(setFavorites).catch(console.error);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const load = () => getApplications(user.id).then(setApplications).catch(console.error);
+    load();
+    window.addEventListener('applicationSaved', load);
+    window.addEventListener('applicationSubmitted', load);
+    return () => {
+      window.removeEventListener('applicationSaved', load);
+      window.removeEventListener('applicationSubmitted', load);
+    };
+  }, [user]);
 
   const fetchClubs = async () => {
     try {
-      const response = await axios.get('/api/clubs');
-      setClubs(response.data);
-    } catch (error) {
-      console.error('Error fetching clubs:', error);
-    }
-  };
-
-  const nextCarousel = () => {
-    const hiringClubs = clubs.filter(club => isClubRecruiting(club));
-    setCurrentCarouselIndex((prev) => (prev + 1) % Math.min(hiringClubs.length, 3));
-  };
-
-  const prevCarousel = () => {
-    const hiringClubs = clubs.filter(club => isClubRecruiting(club));
-    setCurrentCarouselIndex((prev) => (prev - 1 + Math.min(hiringClubs.length, 3)) % Math.min(hiringClubs.length, 3));
-  };
-
-  const handleQuickSearch = (e) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate('/search', { state: { searchTerm: searchTerm.trim() } });
-    }
-  };
-
-  const getClubInitials = (clubName) => {
-    return clubName.split(' ').map(word => word[0]).join('').substring(0, 4);
-  };
-
-  const getClubBackground = (clubName) => {
-    const backgrounds = [
-      'bg-gray-300',
-      'bg-gray-400',
-      'bg-gray-200',
-      'bg-gray-500',
-      'bg-gray-300',
-      'bg-gray-400'
-    ];
-    const index = clubName.length % backgrounds.length;
-    return backgrounds[index];
-  };
-
-  const getClubTextColor = (clubName) => {
-    const backgrounds = [
-      'text-gray-700',
-      'text-gray-800',
-      'text-gray-600',
-      'text-gray-900',
-      'text-gray-700',
-      'text-gray-800'
-    ];
-    const index = clubName.length % backgrounds.length;
-    return backgrounds[index];
-  };
-
-  // Get user's first name
-  const getFirstName = () => {
-    if (!user?.name) return 'User';
-    return user.name.split(' ')[0];
-  };
-
-  // Get real application data from localStorage
-  const [applications, setApplications] = useState([]);
-
-  useEffect(() => {
-    // Load applications from user-specific storage
-    const savedApplications = userStorage.getJSON('clubApplications') || [];
-    
-    // Enhance applications with club data from the clubs list
-    const enhancedApplications = savedApplications.map(app => {
-      const clubData = clubs.find(club => club.id === app.clubId);
-      return {
-        ...app,
-        clubLogo: clubData?.logo || null,
-        clubName: clubData?.name || app.clubName
-      };
-    });
-    
-    setApplications(enhancedApplications);
-    
-    // Listen for application updates
-    const handleApplicationUpdate = () => {
-      const savedApplications = userStorage.getJSON('clubApplications') || [];
-      const enhancedApplications = savedApplications.map(app => {
-        const clubData = clubs.find(club => club.id === app.clubId);
-        return {
-          ...app,
-          clubLogo: clubData?.logo || null,
-          clubName: clubData?.name || app.clubName
-        };
-      });
-      setApplications(enhancedApplications);
-    };
-
-    // Listen for new applications
-    const handleNewApplication = (event) => {
-      const { application } = event.detail;
-      const clubData = clubs.find(club => club.id === application.clubId);
-      const enhancedApplication = {
-        ...application,
-        clubLogo: clubData?.logo || null,
-        clubName: clubData?.name || application.clubName
-      };
-      setApplications(prev => [...prev, enhancedApplication]);
-    };
-
-    window.addEventListener('clubApplicationAdded', handleNewApplication);
-    window.addEventListener('applicationSaved', handleApplicationUpdate);
-    window.addEventListener('applicationSubmitted', handleApplicationUpdate);
-
-    return () => {
-      window.removeEventListener('clubApplicationAdded', handleNewApplication);
-      window.removeEventListener('applicationSaved', handleApplicationUpdate);
-      window.removeEventListener('applicationSubmitted', handleApplicationUpdate);
-    };
-  }, [clubs, userStorage]);
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Submitted':
-        return <Clock size={16} className="text-blue-500" />;
-      case 'Interview':
-        return <AlertCircle size={16} className="text-purple-500" />;
-      case 'Accepted':
-        return <CheckCircle size={16} className="text-green-500" />;
-      case 'Rejected':
-        return <AlertCircle size={16} className="text-red-500" />;
-      case 'Incomplete':
-        return <Clock size={16} className="text-yellow-500" />;
-      default:
-        return <Clock size={16} className="text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Submitted':
-        return 'text-blue-600 bg-blue-50';
-      case 'Interview':
-        return 'text-purple-600 bg-purple-50';
-      case 'Accepted':
-        return 'text-green-600 bg-green-50';
-      case 'Rejected':
-        return 'text-red-600 bg-red-50';
-      case 'Incomplete':
-        return 'text-yellow-600 bg-yellow-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  const getStatusDescription = (status) => {
-    switch (status) {
-      case 'Submitted':
-        return 'Application under review';
-      case 'Interview':
-        return 'Interview scheduled';
-      case 'Accepted':
-        return 'Welcome to the club!';
-      case 'Rejected':
-        return 'Application not selected';
-      case 'Incomplete':
-        return 'Draft saved - complete to submit';
-      default:
-        return 'Status unknown';
+      const data = await getClubs();
+      setClubs(data);
+    } catch (e) {
+      console.error('Error fetching clubs:', e);
     }
   };
 
   const isClubRecruiting = (club) => {
-    // Check if club has application deadline and it's in the future
-    if (!club.application_deadline) {
-      return false;
-    }
-    
-    const deadline = new Date(club.application_deadline);
-    const now = new Date();
-    
-    // Club is recruiting if deadline is in the future
-    return deadline > now;
+    if (!club.application_deadline) return false;
+    return new Date(club.application_deadline) > new Date();
+  };
+
+  const hiringClubs = clubs.filter(isClubRecruiting);
+  const carouselCount = Math.min(hiringClubs.length, 4);
+
+  const nextCarousel = () => setCurrentCarouselIndex(prev => (prev + 1) % carouselCount);
+  const prevCarousel = () => setCurrentCarouselIndex(prev => (prev - 1 + carouselCount) % carouselCount);
+
+  const handleQuickSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) navigate('/search', { state: { searchTerm: searchTerm.trim() } });
+    else navigate('/search');
+  };
+
+  const getFirstName = () => (user?.name || 'there').split(' ')[0];
+
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
   };
 
   const getClubTags = (club) => {
-    let tags = [];
-    
-    // Handle both array and string formats for category
-    if (Array.isArray(club.category)) {
-      tags = [...club.category];
-    } else if (club.category) {
-      tags = [club.category];
-    }
-    
-    // Add additional tags based on club characteristics if we don't have enough
+    let tags = Array.isArray(club.category) ? [...club.category] : club.category ? [club.category] : [];
     if (tags.length < 2) {
-      if (club.name.toLowerCase().includes('tech') || club.name.toLowerCase().includes('technology')) {
-        if (!tags.includes('Technology')) tags.push('Technology');
-      }
-      if (club.name.toLowerCase().includes('business') || club.name.toLowerCase().includes('consulting') || club.name.toLowerCase().includes('startup')) {
-        if (!tags.includes('Business')) tags.push('Business');
-      }
-      if (club.name.toLowerCase().includes('cultural') || club.name.toLowerCase().includes('vietnamese') || club.name.toLowerCase().includes('arts')) {
-        if (!tags.includes('Culture')) tags.push('Culture');
-      }
-      if (club.name.toLowerCase().includes('engineering') || club.name.toLowerCase().includes('hyperloop') || club.name.toLowerCase().includes('science')) {
-        if (!tags.includes('Science')) tags.push('Science');
-      }
-      if (club.name.toLowerCase().includes('environmental') || club.name.toLowerCase().includes('sustainability')) {
-        if (!tags.includes('Environment')) tags.push('Environment');
-      }
-      if (club.name.toLowerCase().includes('political') || club.name.toLowerCase().includes('politics')) {
-        if (!tags.includes('Politics')) tags.push('Politics');
-      }
-      if (club.name.toLowerCase().includes('media') || club.name.toLowerCase().includes('publications')) {
-        if (!tags.includes('Media')) tags.push('Media');
-      }
+      const n = club.name.toLowerCase();
+      if ((n.includes('tech') || n.includes('technology')) && !tags.includes('Technology')) tags.push('Technology');
+      if ((n.includes('business') || n.includes('consulting') || n.includes('startup')) && !tags.includes('Business')) tags.push('Business');
+      if ((n.includes('cultural') || n.includes('vietnamese') || n.includes('arts')) && !tags.includes('Culture')) tags.push('Culture');
+      if ((n.includes('engineering') || n.includes('hyperloop') || n.includes('science')) && !tags.includes('Science')) tags.push('Science');
+      if ((n.includes('environmental') || n.includes('sustainability')) && !tags.includes('Environment')) tags.push('Environment');
+      if ((n.includes('political') || n.includes('politics')) && !tags.includes('Politics')) tags.push('Politics');
+      if ((n.includes('media') || n.includes('publications')) && !tags.includes('Media')) tags.push('Media');
     }
-    
-    // Ensure we have at least 2 tags
-    if (tags.length === 0) {
-      tags.push('Technology');
-    }
-    if (tags.length === 1) {
-      tags.push('Innovation');
-    }
-    
-    return tags.slice(0, 2); // Return only first 2 tags
+    if (tags.length === 0) tags.push('Technology');
+    if (tags.length === 1) tags.push('Innovation');
+    return tags.slice(0, 2);
   };
 
-  const isFavorite = (clubId) => {
-    const favorites = userStorage.getJSON('favorites') || [];
-    return favorites.some(fav => fav.id === clubId);
-  };
+  const isFavorite = (clubId) => favorites.some(f => f.id === clubId);
 
-  const handleFavorite = (club) => {
-    const favorites = userStorage.getJSON('favorites') || [];
-    
+  const handleFavorite = async (club) => {
+    if (!user) return;
     if (isFavorite(club.id)) {
-      // Remove from favorites
-      const updatedFavorites = favorites.filter(fav => fav.id !== club.id);
-      userStorage.setJSON('favorites', updatedFavorites);
+      setFavorites(prev => prev.filter(f => f.id !== club.id));
+      await removeFavorite(user.id, club.id);
     } else {
-      // Add to favorites
-      const newFavorite = {
-        id: club.id,
-        name: club.name,
-        description: club.description,
-        category: club.category,
-        rating: club.rating,
-        review_count: club.review_count,
-        member_count: club.member_count,
-        logo: club.logo,
-        isHiring: club.isHiring,
-        application_deadline: club.application_deadline
-      };
-      favorites.push(newFavorite);
-      userStorage.setJSON('favorites', favorites);
-
-      // Trigger notification event for liking a club
-      window.dispatchEvent(new CustomEvent('clubLiked', { 
-        detail: { club: club } 
-      }));
+      setFavorites(prev => [...prev, club]);
+      window.dispatchEvent(new CustomEvent('clubLiked', { detail: { club } }));
+      await addFavorite(user.id, club.id);
     }
-    
-    // Force re-render
-    setClubs([...clubs]);
   };
+
+  const visibleClubs = hiringClubs.slice(currentCarouselIndex, currentCarouselIndex + 3);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#faf7f2', fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '28px 28px' }}>
 
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gray-50 p-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome back, {getFirstName()}!</h1>
-          <p className="text-lg text-gray-600">Discover amazing opportunities and track your applications</p>
+        {/* Welcome */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 26, color: '#2a1f14', fontStyle: 'italic', marginBottom: 4 }}>
+            {getGreeting()}, {getFirstName()}
+          </div>
+          <div style={{ fontSize: 13, color: '#a09180' }}>Discover opportunities and track your applications.</div>
         </div>
 
-        {/* Quick Search Bar */}
-        <div className="mb-8">
-          <form onSubmit={handleQuickSearch} className="max-w-2xl">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={24} />
-              <input
-                type="text"
-                placeholder="Discover new clubs and opportunities"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-6 py-4 text-lg border border-gray-300 rounded-3xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-              />
+        {/* Search bar */}
+        <form onSubmit={handleQuickSearch} style={{ marginBottom: 32 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#fff', border: '1px solid #e8e0d4', borderRadius: 12,
+            padding: '10px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', maxWidth: 560,
+          }}>
+            <span style={{ color: '#c4b89e', fontSize: 16 }}>⌕</span>
+            <input
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Search clubs and organizations…"
+              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#4a3728', fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}
+            />
+            {searchTerm && (
+              <button type="submit" style={{
+                fontSize: 11, padding: '5px 12px', borderRadius: 8,
+                background: warm, color: '#fff', border: 'none', cursor: 'pointer',
+                fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500,
+              }}>Go</button>
+            )}
+          </div>
+        </form>
 
-            </div>
-          </form>
-        </div>
-
-        {/* Recommended Clubs Carousel */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Recommended for You</h2>
-            <div className="flex space-x-2">
+        {/* Recommended / Hiring Now */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 18, color: '#2a1f14' }}>Accepting Applications</div>
+            <div style={{ display: 'flex', gap: 6 }}>
               <button
                 onClick={prevCarousel}
-                className="p-2 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
-              >
-                <ChevronLeft size={20} className="text-gray-600" />
-              </button>
+                disabled={hiringClubs.length <= 3}
+                style={{
+                  width: 30, height: 30, borderRadius: 8, border: '1px solid #e8e0d4',
+                  background: '#fff', cursor: hiringClubs.length > 3 ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: hiringClubs.length > 3 ? '#4a3728' : '#c4b89e',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                }}
+              ><ChevronLeft size={15} /></button>
               <button
                 onClick={nextCarousel}
-                className="p-2 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
-              >
-                <ChevronRight size={20} className="text-gray-600" />
-              </button>
+                disabled={hiringClubs.length <= 3}
+                style={{
+                  width: 30, height: 30, borderRadius: 8, border: '1px solid #e8e0d4',
+                  background: '#fff', cursor: hiringClubs.length > 3 ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: hiringClubs.length > 3 ? '#4a3728' : '#c4b89e',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                }}
+              ><ChevronRight size={15} /></button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clubs.filter(club => isClubRecruiting(club)).length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <Clock size={48} className="mx-auto" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No clubs are currently hiring</h3>
-                <p className="text-gray-500">Check back later for new opportunities!</p>
+          {hiringClubs.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: '#c4b49a', fontSize: 13 }}>
+              No clubs are currently accepting applications. Check back soon!
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+              {visibleClubs.map(club => {
+                const color = getClubColor(club.name);
+                const fav = isFavorite(club.id);
+                return (
+                  <div key={club.id}
+                    onClick={() => navigate(`/club/${club.id}`)}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)'; e.currentTarget.style.transform = 'none'; }}
+                    style={{
+                      background: '#fff', borderRadius: 16, overflow: 'hidden',
+                      border: '1px solid #ede8df', cursor: 'pointer',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
+                      transition: 'all 0.2s',
+                    }}>
+                    <div style={{ height: 110, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                      {club.logo
+                        ? <img src={club.logo} alt={club.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 32, color: 'rgba(255,255,255,0.18)', fontStyle: 'italic' }}>{getClubInitials(club.name)}</span>
+                      }
+                      <div style={{
+                        position: 'absolute', top: 10, right: 10,
+                        background: warm, color: '#fff', fontSize: 9, fontWeight: 600,
+                        padding: '3px 8px', borderRadius: 20, fontFamily: "'DM Sans', sans-serif",
+                      }}>Accepting</div>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleFavorite(club); }}
+                        style={{ position: 'absolute', bottom: 8, left: 10, background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}
+                      >
+                        <Heart size={15} style={{ color: fav ? warm : 'rgba(255,255,255,0.7)', fill: fav ? warm : 'none' }} />
+                      </button>
+                    </div>
+                    <div style={{ padding: '13px 14px 14px' }}>
+                      <div style={{ display: 'flex', gap: 5, marginBottom: 7, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {getClubTags(club).map(tag => (
+                          <span key={tag} style={{ fontSize: 10, color: '#a0917e', background: '#f5f0e8', padding: '2px 7px', borderRadius: 4, fontFamily: "'Space Grotesk', sans-serif" }}>{tag}</span>
+                        ))}
+                        <span style={{ fontSize: 10, color: '#c4b89e', marginLeft: 'auto', fontFamily: "'Space Grotesk', sans-serif" }}>{club.member_count || '—'} members</span>
+                      </div>
+                      <div style={{
+                        fontFamily: "'Instrument Serif', serif", fontSize: 14,
+                        color: '#2a1f14', lineHeight: 1.4, marginBottom: 12,
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                      }}>{club.name}</div>
+                      <button
+                        onClick={e => { e.stopPropagation(); navigate(`/club/${club.id}`); }}
+                        style={{
+                          width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                          background: warm, color: '#fff', border: 'none', cursor: 'pointer',
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}
+                      >Apply Now</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Application Tracker */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 18, color: '#2a1f14' }}>Application Tracker</div>
+            <button
+              onClick={() => navigate('/hiring')}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: warm, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}
+            >
+              View All <ArrowRight size={13} />
+            </button>
+          </div>
+
+          <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #ede8df', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+            {applications.length === 0 ? (
+              <div style={{ padding: '32px', textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: '#c4b49a', marginBottom: 8, fontStyle: 'italic', fontFamily: "'Instrument Serif', serif" }}>No applications yet</div>
+                <div style={{ fontSize: 12, color: '#c4b49a' }}>Click Apply on any club page to get started.</div>
               </div>
             ) : (
-              clubs.filter(club => isClubRecruiting(club)).slice(currentCarouselIndex, currentCarouselIndex + 3).map((club) => (
-              <div 
-                key={club.id} 
-                className="bg-white rounded-xl shadow-sm hover:scale-105 club-card-hover group relative"
-                style={{
-                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-                }}
-              >
-                {/* Club Logo/Image Section */}
-                <div className={`h-40 ${getClubBackground(club.name)} flex items-center justify-center relative rounded-t-xl overflow-hidden`}>
-                  {club.logo ? (
-                    <img 
-                      src={club.logo} 
-                      alt={`${club.name} logo`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className={`text-2xl font-bold ${getClubTextColor(club.name)}`}>
-                      {getClubInitials(club.name)}
+              <div>
+                {applications.slice(0, 3).map((app, i, arr) => {
+                  const meta = STATUS_META[app.status] || STATUS_META['Incomplete'];
+                  const color = getClubColor(app.clubName || '');
+                  return (
+                    <div
+                      key={app.id}
+                      onClick={() => navigate('/hiring')}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        padding: '14px 18px', cursor: 'pointer',
+                        borderBottom: i < arr.length - 1 ? '1px solid #f0ebe3' : 'none',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#faf7f2'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 9, background: color,
+                        flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        overflow: 'hidden',
+                      }}>
+                        {app.clubLogo
+                          ? <img src={app.clubLogo} alt={app.clubName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{(app.clubName || '').slice(0, 2).toUpperCase()}</span>
+                        }
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: '#2a1f14', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{app.clubName}</div>
+                        {app.position && <div style={{ fontSize: 11, color: '#a09180', marginTop: 1 }}>{app.position}</div>}
+                      </div>
+                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: meta.bg, color: meta.color, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{meta.label}</span>
+                      {app.dateSubmitted && <span style={{ fontSize: 11, color: '#c4b49a', fontFamily: "'Space Grotesk', sans-serif", flexShrink: 0 }}>{app.dateSubmitted}</span>}
                     </div>
-                  )}
-                  
-                  {/* Heart Icon */}
-                  <button
-                    onClick={() => handleFavorite(club)}
-                    className="absolute bottom-2 left-2 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
-                  >
-                    <Heart 
-                      size={16} 
-                      className={`${isFavorite(club.id) ? 'text-red-500 fill-current' : 'text-white'}`} 
-                    />
-                  </button>
-                  
-                  {/* Rating */}
-                  <div className="absolute bottom-2 right-2 text-white text-sm font-medium">
-                    {club.rating ? `${club.rating.toFixed(1)} ★` : 'N/A'}
-                  </div>
-                </div>
-
-                {/* Club Details */}
-                <div className="p-4">
-                  {/* Tags and Member Count */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex space-x-2">
-                      {getClubTags(club).map((tag, index) => (
-                        <span 
-                          key={index} 
-                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-600">{club.member_count || 'N/A'} Members</span>
-                  </div>
-                  
-                  {/* Club Name - Clickable */}
-                  <h3 
-                    className="font-semibold text-gray-900 mb-3 h-12 flex items-start cursor-pointer hover:text-blue-600 transition-colors"
-                    onClick={() => navigate(`/club/${club.id}`)}
-                  >
-                    <span className="line-clamp-2">{club.name}</span>
-                  </h3>
-                  
-                  {/* Recruiting Button - Clickable */}
-                  <button 
-                    className={`w-full py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                      isClubRecruiting(club) 
-                        ? 'bg-white border border-gradient-to-r from-[#3D7AF5] to-[#0DCCF2] hover:shadow-md' 
-                        : 'bg-white border border-gray-400 text-gray-600 cursor-default'
-                    }`}
-                    style={isClubRecruiting(club) ? {
-                      borderImage: 'linear-gradient(to right, #3D7AF5, #0DCCF2) 1',
-                      background: 'linear-gradient(to bottom, #3D7AF5, #0DCCF2)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text'
-                    } : {}}
-                    onClick={() => navigate(`/club/${club.id}`)}
-                  >
-                    {isClubRecruiting(club) ? 'Recruiting Open' : 'Recruiting Closed'}
-                  </button>
-                </div>
+                  );
+                })}
               </div>
-              ))
             )}
           </div>
         </div>
 
-        {/* Application Tracker */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Application Tracker</h2>
-            <button 
-              onClick={() => navigate('/hiring')}
-              className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium"
-            >
-              <span>View All</span>
-              <ArrowRight size={16} />
-            </button>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6">
-              <div className="space-y-4">
-                {applications.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Clock size={48} className="text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg mb-2">No applications yet</p>
-                    <p className="text-gray-400 text-sm">Click "Apply" on any club page to get started</p>
-                  </div>
-                ) : (
-                  applications.slice(0, 3).map((app) => (
-                    <div key={app.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center space-x-4">
-                        {/* Club Logo or Status Icon */}
-                        <div className="flex items-center space-x-3">
-                          {app.clubLogo ? (
-                            <img 
-                              src={app.clubLogo} 
-                              alt={`${app.clubName} logo`}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            getStatusIcon(app.status)
-                          )}
-                          <div>
-                            <h3 className="font-medium text-gray-900">{app.clubName}</h3>
-                            <p className="text-sm text-gray-600">{getStatusDescription(app.status)}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
-                          {app.status}
-                        </span>
-                        <span className="text-sm text-gray-500">{app.dateSubmitted}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/search')}>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-              <Search size={24} className="text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Explore Clubs</h3>
-            <p className="text-gray-600 text-sm">Discover new opportunities and find your perfect fit</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/favorites')}>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-              <Heart size={24} className="text-red-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">My Favorites</h3>
-            <p className="text-gray-600 text-sm">View and manage your saved clubs</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/hiring')}>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-              <CheckCircle size={24} className="text-green-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Hiring Dashboard</h3>
-            <p className="text-gray-600 text-sm">Track your applications and interview progress</p>
+        <div>
+          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 18, color: '#2a1f14', marginBottom: 14 }}>Quick Actions</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {[
+              { icon: '🧭', label: 'Explore Clubs', desc: 'Browse all clubs and discover new opportunities', path: '/search' },
+              { icon: '♡', label: 'Liked Clubs', desc: "View and revisit clubs you've saved", path: '/favorites' },
+              { icon: '✓', label: 'Applications', desc: 'Track your progress and upcoming deadlines', path: '/hiring' },
+            ].map(({ icon, label, desc, path }) => (
+              <div
+                key={path}
+                onClick={() => navigate(path)}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'; e.currentTarget.style.transform = 'none'; }}
+                style={{
+                  background: '#fff', borderRadius: 14, padding: '20px 18px',
+                  border: '1px solid #ede8df', cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'all 0.2s',
+                }}
+              >
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 18, marginBottom: 12,
+                }}>{icon}</div>
+                <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 15, color: '#2a1f14', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 11, color: '#a09180', lineHeight: 1.5 }}>{desc}</div>
+              </div>
+            ))}
           </div>
         </div>
+
       </div>
     </div>
   );

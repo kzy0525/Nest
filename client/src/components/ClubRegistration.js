@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
-import axios from 'axios';
+import { createClub } from '../lib/db';
 
 const ClubRegistration = () => {
   const navigate = useNavigate();
@@ -130,48 +130,28 @@ const ClubRegistration = () => {
     setLoading(true);
     
     try {
-      // Prepare form data for API call
-      const formDataToSend = new FormData();
-      
-      // Add all form fields
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null && formData[key] !== undefined) {
-          if (key === 'categories') {
-            formDataToSend.append('category', JSON.stringify(formData[key]));
-          } else {
-            formDataToSend.append(key, formData[key]);
-          }
-        }
-      });
-      
-      // Add application questions
-      formDataToSend.append('application_questions', JSON.stringify(questions));
-      
-      // Add positions
-      formDataToSend.append('positions', JSON.stringify(positions));
-      
-      // Add file uploads if they exist
-      if (logoFile) {
-        formDataToSend.append('logo', logoFile);
-      }
-      if (backdropFile) {
-        formDataToSend.append('backdrop', backdropFile);
-      }
+      const clubData = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.categories,
+        contact_email: formData.contact_email,
+        website: formData.website,
+        instagram: formData.instagram,
+        slogan: formData.slogan,
+        applications_open: formData.applications_open,
+        application_deadline: formData.application_deadline,
+        interview_start_date: formData.interview_start_date,
+        interview_end_date: formData.interview_end_date,
+        results_released: formData.results_released,
+        application_questions: questions,
+        open_positions: positions,
+        is_hiring: formData.isHiring,
+        has_interviews: formData.hasInterviews,
+      };
 
-      // Create club in database
-      const response = await axios.post('/api/admin/clubs', formDataToSend, {
-          headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.data.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          navigate('/club/dashboard');
-        }, 2000);
-      }
+      await createClub(clubData, logoFile, backdropFile);
+      setSuccess(true);
+      setTimeout(() => navigate('/club/dashboard'), 2000);
 
     } catch (error) {
       console.error('Error creating club:', error);

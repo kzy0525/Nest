@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Users, FileText, Eye, CheckCircle, Clock, AlertCircle, Download, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserStorage } from '../utils/userStorage';
+import { getApplicationsByClubName, updateApplication } from '../lib/db';
 
 const ClubAnalytics = () => {
   const { user } = useAuth();
-  const userStorage = useUserStorage();
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,15 +15,13 @@ const ClubAnalytics = () => {
   const [sortBy, setSortBy] = useState('newest');
 
   const loadApplications = useCallback(() => {
-    // Load applications for this club from user-specific storage
-    const allApplications = userStorage.getJSON('clubApplications') || [];
-    const clubApplications = allApplications.filter(app => 
-      app.clubName === user?.name || app.clubId === user?.id
-    );
-    setApplications(clubApplications);
-    setFilteredApplications(clubApplications);
-    setLoading(false);
-  }, [userStorage, user]);
+    if (!user?.name) return;
+    getApplicationsByClubName(user.name).then(apps => {
+      setApplications(apps);
+      setFilteredApplications(apps);
+      setLoading(false);
+    }).catch(console.error);
+  }, [user]);
 
   const filterApplications = useCallback(() => {
     let filtered = [...applications];
@@ -109,12 +106,9 @@ const ClubAnalytics = () => {
     setShowApplicationViewer(true);
   };
 
-  const handleUpdateApplicationStatus = (applicationId, newStatus) => {
-    const updatedApplications = applications.map(app =>
-      app.id === applicationId ? { ...app, status: newStatus } : app
-    );
-    setApplications(updatedApplications);
-    userStorage.setJSON('clubApplications', updatedApplications);
+  const handleUpdateApplicationStatus = async (applicationId, newStatus) => {
+    setApplications(prev => prev.map(app => app.id === applicationId ? { ...app, status: newStatus } : app));
+    await updateApplication(applicationId, { status: newStatus });
   };
 
   const exportApplications = () => {

@@ -1,13 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { createContext, useContext, useState, useEffect } from 'react';
+import supabase from '../supabaseClient';
+import { getProfile } from '../lib/db';
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
 
@@ -16,76 +15,79 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token and user data
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      // Set user immediately from localStorage for better UX
-      setUser(JSON.parse(userData));
-      setLoading(false);
-      
-      // Verify token in background
-      axios.get('/api/auth/verify', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(response => {
-        if (!response.data.success) {
-          // Token is invalid, clear storage
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-        }
-      })
-      .catch(() => {
-        // Token verification failed, but don't clear immediately
-        // Let the user try to use the app, it will fail on next API call
-        console.warn('Token verification failed, but keeping user logged in');
-      });
-    } else {
-      setLoading(false);
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        enrichUser(session.user);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        enrichUser(session.user);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (userData, token) => {
-    // Clear any existing user-specific data
-    clearUserData();
-    
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+  const enrichUser = async (authUser) => {
+    try {
+      const profile = await getProfile(authUser.id);
+      setUser({ ...authUser, ...profile });
+    } catch {
+      // Profile may not exist yet immediately after signup — retry once
+      setTimeout(async () => {
+        try {
+          const profile = await getProfile(authUser.id);
+          setUser({ ...authUser, ...profile });
+        } catch {
+          setUser(authUser);
+        }
+        setLoading(false);
+      }, 800);
+      return;
+    }
+    setLoading(false);
   };
 
-  const clearUserData = () => {
-    // Clear all user-specific data from localStorage
-    const keysToRemove = [
-      'favorites',
-      'clubApplications', 
-      'notifications',
-      'userProfile'
-    ];
-    
-    keysToRemove.forEach(key => {
-      localStorage.removeItem(key);
+  const login = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    const profile = await getProfile(data.user.id);
+    const enriched = { ...data.user, ...profile };
+    setUser(enriched);
+    return enriched;
+  };
+
+  const register = async ({ name, email, password, school, user_type }) => {
+    const role = user_type === 'club' ? 'club' : 'student';
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name, school, role, user_type } },
     });
+    if (error) throw error;
+    return data;
   };
 
-  const logout = () => {
-    clearUserData();
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
-  const value = {
-    user,
-    login,
-    logout,
-    loading
+  const refreshProfile = async () => {
+    if (!user?.id) return;
+    const profile = await getProfile(user.id);
+    setUser(prev => ({ ...prev, ...profile }));
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, login, register, logout, refreshProfile, loading }}>
       {children}
     </AuthContext.Provider>
   );

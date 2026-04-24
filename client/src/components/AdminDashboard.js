@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Users, Building2 } from 'lucide-react';
-import axios from 'axios';
+import { getClubs, getAllUsers, deleteClub } from '../lib/db';
+import { useAuth } from '../contexts/AuthContext';
 
 const AdminDashboard = () => {
   const [clubs, setClubs] = useState([]);
@@ -10,47 +11,23 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('clubs');
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Check if user is admin
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.role !== 'admin') {
+    if (user && user.role !== 'admin') {
       navigate('/login');
       return;
     }
-
-    loadData();
-  }, [navigate]);
-
-  const loadData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const [clubsRes, usersRes] = await Promise.all([
-        axios.get('/api/clubs'),
-        axios.get('/api/admin/users', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-      
-      setClubs(clubsRes.data);
-      setUsers(usersRes.data);
-    } catch (error) {
-      setError('Failed to load data');
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    Promise.all([getClubs(), getAllUsers()])
+      .then(([clubsData, usersData]) => { setClubs(clubsData); setUsers(usersData); })
+      .catch(err => { setError('Failed to load data'); console.error(err); })
+      .finally(() => setLoading(false));
+  }, [user, navigate]);
 
   const handleDeleteClub = async (clubId) => {
     if (!window.confirm('Are you sure you want to delete this club?')) return;
-
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/admin/clubs/${clubId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
+      await deleteClub(clubId);
       setClubs(clubs.filter(club => club.id !== clubId));
     } catch (error) {
       setError('Failed to delete club');

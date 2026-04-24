@@ -1,286 +1,246 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import { Eye, EyeOff } from 'lucide-react';
+
+const accent = '#b5451b';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    school: '',
-    user_type: 'student'
+    name: '', email: '', password: '', confirmPassword: '', school: '', user_type: 'student'
   });
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register } = useAuth();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
-    
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.password || 
-        !formData.confirmPassword || !formData.school) {
-      setError('Please fill in all required fields');
-      return;
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword || !formData.school) {
+      setError('Please fill in all required fields'); return;
     }
-    
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
+      setError('Passwords do not match'); return;
     }
-    
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
+      setError('Password must be at least 6 characters long'); return;
     }
-    
     if (!agreeToTerms) {
-      setError('Please agree to the terms and conditions');
-      return;
+      setError('Please agree to the terms and conditions'); return;
     }
-    
     setIsLoading(true);
-    
     try {
-      const response = await axios.post('/api/auth/register', {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        school: formData.school,
-        user_type: formData.user_type
-      });
-
-      if (response.data.success) {
-        setSuccess(true);
-        // Auto-login after successful registration
-        login(response.data.user, response.data.token);
-        
-        // Show success message for 2 seconds, then navigate based on user type
-        setTimeout(() => {
-          if (response.data.user.user_type === 'club') {
-            navigate('/club/dashboard');
-          } else {
-            navigate('/');
-          }
-        }, 2000);
-      }
-    } catch (error) {
-      setError(error.response?.data?.error || 'Registration failed. Please try again.');
+      await register({ name: formData.name, email: formData.email, password: formData.password, school: formData.school, user_type: formData.user_type });
+      setSuccess(true);
+      setTimeout(() => navigate(formData.user_type === 'club' ? '/club/dashboard' : '/'), 2000);
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const inputStyle = {
+    width: '100%', padding: '11px 14px', borderRadius: 10,
+    border: '1px solid #e0d8cc', background: '#fff',
+    color: '#2a1f14', fontSize: 13, outline: 'none',
+    fontFamily: "'DM Sans', sans-serif", boxSizing: 'border-box',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+  };
+
+  const labelStyle = {
+    fontSize: 10, color: '#a09180', marginBottom: 6,
+    fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em',
+    display: 'block'
+  };
+
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Nest Branding */}
-      <div className="flex-1 bg-gray-100 flex items-center justify-center relative overflow-hidden">
-        {/* Abstract Grid Pattern */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `
-              linear-gradient(90deg, #3D5CF5 1px, transparent 1px),
-              linear-gradient(0deg, #3D5CF5 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }}></div>
-        </div>
-        
-        {/* Nest Branding */}
-        <div className="relative text-center z-10">
-          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-[#3D5CF5] to-[#3DB8F5] bg-clip-text text-transparent">
-            Nest
-          </h1>
-          <p className="text-xl text-gray-700">
-            All your campus opportunities, in one place
-          </p>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Left panel */}
+      <div style={{
+        flex: 1, background: '#f2ebe0',
+        display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', alignItems: 'center',
+        position: 'relative', overflow: 'hidden', padding: 48
+      }}>
+        {/* Radial arcs */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.18 }}
+          viewBox="0 0 620 600" preserveAspectRatio="xMidYMid slice">
+          <circle cx="310" cy="600" r="420" fill="none" stroke="#b5451b" strokeWidth="1.5"/>
+          <circle cx="310" cy="600" r="340" fill="none" stroke="#b5451b" strokeWidth="1"/>
+          <circle cx="310" cy="600" r="260" fill="none" stroke="#7a4a2a" strokeWidth="0.8"/>
+          <circle cx="310" cy="600" r="180" fill="none" stroke="#7a4a2a" strokeWidth="0.8"/>
+          <circle cx="310" cy="600" r="100" fill="none" stroke="#b5451b" strokeWidth="1"/>
+          <line x1="310" y1="0" x2="310" y2="600" stroke="#b5451b" strokeWidth="0.6" opacity="0.5"/>
+          <line x1="-100" y1="350" x2="720" y2="350" stroke="#7a4a2a" strokeWidth="0.4" opacity="0.5"/>
+        </svg>
+
+        {/* Vignette */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse 55% 55% at 50% 48%, #f2ebe0 30%, rgba(242,235,224,0.3) 80%, transparent 100%)'
+        }}/>
+
+        {/* Logotype + tagline */}
+        <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
+          <div style={{
+            fontFamily: "'Instrument Serif', serif", fontSize: 112, color: '#2a1f14',
+            lineHeight: 1, letterSpacing: '-1px', fontStyle: 'italic'
+          }}>nest</div>
+          <div style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#a09180',
+            marginTop: 10, lineHeight: 1.6, maxWidth: 260
+          }}>All your campus opportunities,<br/>in one place</div>
         </div>
       </div>
 
-      {/* Right Side - Registration Form */}
-      <div className="w-2/5 bg-gradient-to-b from-[#3D5CF5] to-[#3DB8F5] opacity-60 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm">
-          <h2 className="text-4xl font-bold text-white mb-8 text-center">Create Account</h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Success Message */}
-            {success && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                Registration successful! Redirecting to dashboard...
-              </div>
-            )}
+      {/* Right panel */}
+      <div style={{
+        flex: '0 0 33.333%', flexShrink: 0,
+        background: '#faf7f2',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        padding: '48px 40px', overflowY: 'auto',
+        borderLeft: '1px solid #e8e0d4'
+      }}>
+        <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 36, color: '#2a1f14', marginBottom: 6 }}>
+          Create account
+        </div>
+        <div style={{ fontSize: 14, color: '#a09180', marginBottom: 28 }}>
+          Join nest to discover campus clubs
+        </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
+        {success && (
+          <div style={{
+            background: 'rgba(46,125,50,0.08)', border: '1px solid rgba(46,125,50,0.25)',
+            color: '#2e7d32', padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 18
+          }}>Account created! Redirecting…</div>
+        )}
 
-            {/* User Type Selection */}
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                I am a:
-              </label>
-              <div className="flex space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="user_type"
-                    value="student"
-                    checked={formData.user_type === 'student'}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  <span className="text-white">Student</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="user_type"
-                    value="club"
-                    checked={formData.user_type === 'club'}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  <span className="text-white">Club</span>
-                </label>
-              </div>
-            </div>
+        {error && (
+          <div style={{
+            background: 'rgba(181,69,27,0.08)', border: '1px solid rgba(181,69,27,0.25)',
+            color: accent, padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 18
+          }}>{error}</div>
+        )}
 
-            {/* Name Field */}
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                {formData.user_type === 'club' ? 'Club Name:' : 'Full Name:'}
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                placeholder={formData.user_type === 'club' ? 'Your club name' : 'Your full name'}
-                required
-              />
-            </div>
+        {/* Role toggle */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={labelStyle}>I AM A</div>
+          <div style={{ display: 'flex', background: '#f0ebe3', borderRadius: 10, padding: 3, border: '1px solid #e0d8cc' }}>
+            {['Student', 'Club'].map(r => (
+              <button key={r} type="button" onClick={() => setFormData(p => ({ ...p, user_type: r.toLowerCase() }))} style={{
+                flex: 1, padding: '8px', borderRadius: 8, border: 'none',
+                background: formData.user_type === r.toLowerCase() ? '#fff' : 'transparent',
+                color: formData.user_type === r.toLowerCase() ? '#2a1f14' : '#a09180',
+                fontWeight: formData.user_type === r.toLowerCase() ? 600 : 400,
+                fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                boxShadow: formData.user_type === r.toLowerCase() ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all .15s'
+              }}>{r}</button>
+            ))}
+          </div>
+        </div>
 
-            {/* Email Field */}
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                Email:
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                placeholder="your.email@queensu.ca"
-                required
-              />
-            </div>
+        {/* Name */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>{formData.user_type === 'club' ? 'CLUB NAME' : 'FULL NAME'}</label>
+          <input
+            type="text" name="name" value={formData.name} onChange={handleChange}
+            placeholder={formData.user_type === 'club' ? 'Your club name' : 'Your full name'}
+            style={inputStyle}
+          />
+        </div>
 
-            {/* Password Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  Password:
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                  placeholder="Password"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  Confirm Password:
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                  placeholder="Confirm password"
-                  required
-                />
-              </div>
-            </div>
+        {/* Email */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>EMAIL</label>
+          <input
+            type="email" name="email" value={formData.email} onChange={handleChange}
+            placeholder="your.email@queensu.ca" style={inputStyle}
+          />
+        </div>
 
-            {/* School */}
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                School:
-              </label>
-              <input
-                type="text"
-                name="school"
-                value={formData.school}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-gray-900"
-                placeholder="e.g., Queen's University"
-                required
-              />
-            </div>
-
-
-            {/* Terms Agreement */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={agreeToTerms}
-                onChange={(e) => setAgreeToTerms(e.target.checked)}
-                className="w-4 h-4 text-[#3D5CF5] bg-white border-0 rounded focus:ring-2 focus:ring-[#3D5CF5]"
-                required
-              />
-              <span className="text-white text-sm">
-                I agree to the{' '}
-                <button className="text-blue-200 hover:text-white underline bg-transparent border-0 cursor-pointer">
-                  Terms of Service
-                </button>{' '}
-                and{' '}
-                <button className="text-blue-200 hover:text-white underline bg-transparent border-0 cursor-pointer">
-                  Privacy Policy
-                </button>
-              </span>
-            </div>
-
-            {/* Register Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-white text-[#3D5CF5] py-3 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+        {/* Password */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>PASSWORD</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange}
+              placeholder="At least 6 characters" style={{ ...inputStyle, paddingRight: 40 }}
+            />
+            <button type="button" onClick={() => setShowPassword(v => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#a09180', padding: 0, display: 'flex' }}>
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
+          </div>
+        </div>
 
-            {/* Login Link */}
-            <div className="text-center">
-              <span className="text-white text-sm">Already have an account? </span>
-              <a href="/login" className="text-white text-sm hover:underline font-medium">
-                Login
-              </a>
-            </div>
-          </form>
+        {/* Confirm Password */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>CONFIRM PASSWORD</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showConfirm ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange}
+              placeholder="Repeat your password" style={{ ...inputStyle, paddingRight: 40 }}
+            />
+            <button type="button" onClick={() => setShowConfirm(v => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#a09180', padding: 0, display: 'flex' }}>
+              {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
+
+        {/* School */}
+        <div style={{ marginBottom: 18 }}>
+          <label style={labelStyle}>SCHOOL</label>
+          <input
+            type="text" name="school" value={formData.school} onChange={handleChange}
+            placeholder="e.g., Queen's University" style={inputStyle}
+          />
+        </div>
+
+        {/* Terms */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22 }}>
+          <input
+            type="checkbox" checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)}
+            style={{ accentColor: accent, width: 14, height: 14, cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: 12, color: '#a09180' }}>
+            I agree to the{' '}
+            <span style={{ color: accent, cursor: 'pointer', fontWeight: 500 }}>Terms of Service</span>
+            {' '}and{' '}
+            <span style={{ color: accent, cursor: 'pointer', fontWeight: 500 }}>Privacy Policy</span>
+          </span>
+        </div>
+
+        {/* Submit */}
+        <button
+          onClick={handleSubmit} disabled={isLoading}
+          style={{
+            width: '100%', padding: '12px', borderRadius: 10, border: 'none',
+            background: accent, color: '#fff', fontSize: 14, fontWeight: 600,
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            boxShadow: '0 4px 16px rgba(181,69,27,0.28)',
+            opacity: isLoading ? 0.7 : 1
+          }}
+        >
+          {isLoading ? 'Creating account…' : 'Create account'}
+        </button>
+
+        {/* Login link */}
+        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: '#b8a898' }}>
+          Already have an account?{' '}
+          <a href="/login" style={{ color: accent, fontWeight: 500, textDecoration: 'none' }}>Sign in</a>
         </div>
       </div>
     </div>

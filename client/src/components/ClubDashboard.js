@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, FileText, Eye, Calendar, CheckCircle, Clock, AlertCircle, Plus, Edit, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserStorage } from '../utils/userStorage';
+import { getApplicationsByClubName, updateApplication } from '../lib/db';
 
 const ClubDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const userStorage = useUserStorage();
   const [applications, setApplications] = useState([]);
   const [clubProfile, setClubProfile] = useState(null);
   const [showApplicationViewer, setShowApplicationViewer] = useState(false);
@@ -15,50 +14,33 @@ const ClubDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const loadApplications = useCallback(() => {
-    // In a real app, this would come from the server
-    // For now, we'll simulate by getting all applications and filtering by club
-    const allApplications = userStorage.getJSON('clubApplications') || [];
-    const clubApplications = allApplications.filter(app => 
-      app.clubName === user?.name || app.clubId === clubProfile?.id
-    );
-    setApplications(clubApplications);
-  }, [userStorage, user, clubProfile]);
-
-  const loadClubData = useCallback(() => {
-    // Load club profile from user-specific storage
-    const savedProfile = userStorage.getJSON('clubProfile');
-    if (savedProfile) {
-      setClubProfile(savedProfile);
-    } else {
-      // Create default club profile
-      setClubProfile({
-        name: user?.name || '',
-        description: '',
-        category: '',
-        contact_email: user?.email || '',
-        website: '',
-        instagram: '',
-        meeting_time: '',
-        meeting_location: '',
-        application_deadline: '',
-        interview_start_date: '',
-        interview_end_date: '',
-        open_positions: '',
-        available_spots: '',
-        application_questions: '',
-        isHiring: false,
-        hasInterviews: false
-      });
-    }
-
-    // Load applications for this club
-    loadApplications();
-    setLoading(false);
-  }, [userStorage, user, loadApplications]);
+    if (!user?.name) return;
+    getApplicationsByClubName(user.name).then(setApplications).catch(console.error);
+  }, [user]);
 
   useEffect(() => {
-    loadClubData();
-  }, [loadClubData]);
+    if (!user) return;
+    setClubProfile({
+      name: user.name || '',
+      description: '',
+      category: '',
+      contact_email: user.email || '',
+      website: '',
+      instagram: '',
+      meeting_time: '',
+      meeting_location: '',
+      application_deadline: '',
+      interview_start_date: '',
+      interview_end_date: '',
+      open_positions: '',
+      available_spots: '',
+      application_questions: '',
+      isHiring: false,
+      hasInterviews: false,
+    });
+    loadApplications();
+    setLoading(false);
+  }, [user, loadApplications]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -99,15 +81,9 @@ const ClubDashboard = () => {
     setShowApplicationViewer(true);
   };
 
-  const handleUpdateApplicationStatus = (applicationId, newStatus) => {
-    // Update application status
-    const updatedApplications = applications.map(app =>
-      app.id === applicationId ? { ...app, status: newStatus } : app
-    );
-    setApplications(updatedApplications);
-    
-    // Save to user-specific storage
-    userStorage.setJSON('clubApplications', updatedApplications);
+  const handleUpdateApplicationStatus = async (applicationId, newStatus) => {
+    setApplications(prev => prev.map(app => app.id === applicationId ? { ...app, status: newStatus } : app));
+    await updateApplication(applicationId, { status: newStatus });
   };
 
   const handleCreateClubProfile = () => {

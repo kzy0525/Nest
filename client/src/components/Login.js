@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import { Eye, EyeOff } from 'lucide-react';
 
 const accent = '#b5451b';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState('student');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,15 +22,12 @@ const Login = () => {
     setIsLoading(true);
     setError('');
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
-      if (response.data.success) {
-        login(response.data.user, response.data.token);
-        if (response.data.user.role === 'admin') navigate('/admin');
-        else if (response.data.user.user_type === 'club') navigate('/club/dashboard');
-        else navigate('/');
-      }
+      const user = await login(email, password);
+      if (user.role === 'admin') navigate('/admin');
+      else if (user.user_type === 'club') navigate('/club/dashboard');
+      else navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +78,7 @@ const Login = () => {
         {/* Logotype + tagline */}
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
           <div style={{
-            fontFamily: "'Instrument Serif', serif", fontSize: 56, color: '#2a1f14',
+            fontFamily: "'Instrument Serif', serif", fontSize: 112, color: '#2a1f14',
             lineHeight: 1, letterSpacing: '-1px', fontStyle: 'italic'
           }}>nest</div>
           <div style={{
@@ -89,32 +87,20 @@ const Login = () => {
           }}>All your campus opportunities,<br/>in one place</div>
         </div>
 
-        {/* Footer rule */}
-        <div style={{
-          position: 'absolute', bottom: 48, left: 48, right: 48,
-          display: 'flex', alignItems: 'center', gap: 12, zIndex: 2
-        }}>
-          <div style={{ height: 1, flex: 1, background: 'rgba(181,69,27,0.2)' }}/>
-          <span style={{
-            fontSize: 10, color: '#b8a090',
-            fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.1em'
-          }}>QUEEN'S UNIVERSITY</span>
-          <div style={{ height: 1, flex: 1, background: 'rgba(181,69,27,0.2)' }}/>
-        </div>
       </div>
 
       {/* Right panel */}
       <div style={{
-        width: 380, flexShrink: 0,
+        flex: '0 0 33.333%', flexShrink: 0,
         background: '#faf7f2',
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
         padding: '48px 40px',
         borderLeft: '1px solid #e8e0d4'
       }}>
-        <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 26, color: '#2a1f14', marginBottom: 5 }}>
+        <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 36, color: '#2a1f14', marginBottom: 6 }}>
           Welcome back
         </div>
-        <div style={{ fontSize: 13, color: '#a09180', marginBottom: 28 }}>
+        <div style={{ fontSize: 14, color: '#a09180', marginBottom: 28 }}>
           Sign in to continue to nest
         </div>
 
@@ -155,10 +141,18 @@ const Login = () => {
         {/* Password */}
         <div style={{ marginBottom: 14 }}>
           <label style={labelStyle}>PASSWORD</label>
-          <input
-            type="password" value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="Enter your password" style={inputStyle}
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="Enter your password" style={{ ...inputStyle, paddingRight: 40 }}
+            />
+            <button
+              type="button" onClick={() => setShowPassword(v => !v)}
+              style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#a09180', padding: 0, display: 'flex' }}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
         {/* Remember / Forgot */}

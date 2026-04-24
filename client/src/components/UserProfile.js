@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Search, X, Plus } from 'lucide-react';
-import axios from 'axios';
-import { useUserStorage } from '../utils/userStorage';
 import { useAuth } from '../contexts/AuthContext';
+import { getProfile, upsertProfile, uploadAvatar, getApplications, getClubs } from '../lib/db';
 
 const CLUB_COLORS = ['#1565C0','#1a3a6e','#1a2a3a','#2e7d32','#4a1942','#7a3a18','#5c3317','#0d4731'];
 const getClubColor = (name = '') => {
@@ -38,26 +37,13 @@ const inputBase = {
 
 const UserProfile = () => {
   const navigate = useNavigate();
-  const userStorage = useUserStorage();
   const { user } = useAuth();
 
-  const [userProfile, setUserProfile] = useState(() => {
-    const savedProfile = userStorage.getJSON('userProfile');
-    if (savedProfile) return savedProfile;
-    return {
-      name: user?.name || '',
-      program: user?.program || '',
-      year: '',
-      school: user?.school || '',
-      pronouns: '',
-      avatar: user?.avatar || null,
-      bio: '',
-      goals: '',
-      currentClubs: [],
-    };
+  const [userProfile, setUserProfile] = useState({
+    name: '', program: '', year: '', school: '',
+    pronouns: '', avatar: null, bio: '', goals: '', currentClubs: [],
   });
-
-  const [editForm, setEditForm] = useState({ ...userProfile });
+  const [editForm, setEditForm] = useState({ name: '', program: '', year: '', school: '', pronouns: '', bio: '', goals: '' });
   const [editingSection, setEditingSection] = useState(null);
   const [isUploadingProfilePicture, setIsUploadingProfilePicture] = useState(false);
   const [showAddClubModal, setShowAddClubModal] = useState(false);
@@ -70,59 +56,57 @@ const UserProfile = () => {
   const [applications, setApplications] = useState([]);
 
   useEffect(() => {
-    const loadApplications = () => {
-      const saved = userStorage.getJSON('clubApplications') || [];
-      setApplications(saved);
-    };
-    loadApplications();
-    window.addEventListener('clubApplicationAdded', loadApplications);
-    window.addEventListener('applicationSaved', loadApplications);
-    window.addEventListener('applicationSubmitted', loadApplications);
-    return () => {
-      window.removeEventListener('clubApplicationAdded', loadApplications);
-      window.removeEventListener('applicationSaved', loadApplications);
-      window.removeEventListener('applicationSubmitted', loadApplications);
-    };
-  }, [userStorage]);
+    if (!user) return;
+    getProfile(user.id).then(profile => {
+      const p = {
+        name: profile.name || '',
+        program: profile.program || '',
+        year: profile.year || '',
+        school: profile.school || '',
+        pronouns: profile.pronouns || '',
+        avatar: profile.avatar_url || null,
+        bio: profile.bio || '',
+        goals: profile.goals || '',
+        currentClubs: profile.current_clubs || [],
+      };
+      setUserProfile(p);
+      setEditForm({ name: p.name, program: p.program, year: p.year, school: p.school, pronouns: p.pronouns, bio: p.bio, goals: p.goals });
+    }).catch(console.error);
+  }, [user]);
 
   useEffect(() => {
-    if (user) {
-      setUserProfile(prev => ({
-        ...prev,
-        name: user.name || prev.name,
-        program: user.program || prev.program,
-        school: user.school || prev.school,
-        avatar: user.avatar || prev.avatar,
-      }));
-    }
+    if (!user) return;
+    const load = () => getApplications(user.id).then(setApplications).catch(console.error);
+    load();
+    window.addEventListener('clubApplicationAdded', load);
+    window.addEventListener('applicationSaved', load);
+    window.addEventListener('applicationSubmitted', load);
+    return () => {
+      window.removeEventListener('clubApplicationAdded', load);
+      window.removeEventListener('applicationSaved', load);
+      window.removeEventListener('applicationSubmitted', load);
+    };
   }, [user]);
 
   useEffect(() => {
     if (!showAddClubModal) return;
-    const fetchClubs = async () => {
-      try {
-        const res = await fetch('http://localhost:5001/api/clubs');
-        if (res.ok) setAvailableClubs(await res.json());
-      } catch (e) {
-        console.error('Error fetching clubs:', e);
-      }
-    };
-    fetchClubs();
+    getClubs().then(setAvailableClubs).catch(console.error);
   }, [showAddClubModal]);
 
   const handleEditSection = (section) => {
     setEditingSection(section);
-    setEditForm({ ...userProfile });
+    setEditForm({ name: userProfile.name, program: userProfile.program, year: userProfile.year, school: userProfile.school, pronouns: userProfile.pronouns, bio: userProfile.bio, goals: userProfile.goals });
   };
 
-  const handleSaveSection = () => {
-    setUserProfile(editForm);
-    userStorage.setJSON('userProfile', editForm);
+  const handleSaveSection = async () => {
+    const updates = { name: editForm.name, program: editForm.program, year: editForm.year, school: editForm.school, pronouns: editForm.pronouns, bio: editForm.bio, goals: editForm.goals };
+    setUserProfile(prev => ({ ...prev, ...updates }));
     setEditingSection(null);
+    await upsertProfile(user.id, updates);
   };
 
   const handleCancelEdit = () => {
-    setEditForm({ ...userProfile });
+    setEditForm({ name: userProfile.name, program: userProfile.program, year: userProfile.year, school: userProfile.school, pronouns: userProfile.pronouns, bio: userProfile.bio, goals: userProfile.goals });
     setEditingSection(null);
   };
 
@@ -137,17 +121,9 @@ const UserProfile = () => {
     if (file.size > 5 * 1024 * 1024) { alert('File size must be less than 5MB'); return; }
     setIsUploadingProfilePicture(true);
     try {
-      const formData = new FormData();
-      formData.append('profile_picture', file);
-      const response = await axios.post('/api/user/profile-picture', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (response.data.success) {
-        const updated = { ...userProfile, avatar: response.data.profile_picture };
-        setUserProfile(updated);
-        userStorage.setJSON('userProfile', updated);
-        window.dispatchEvent(new CustomEvent('profileUpdated'));
-      }
+      const url = await uploadAvatar(user.id, file);
+      setUserProfile(prev => ({ ...prev, avatar: url }));
+      window.dispatchEvent(new CustomEvent('profileUpdated'));
     } catch (e) {
       console.error('Error uploading profile picture:', e);
       alert('Failed to upload profile picture. Please try again.');
@@ -168,27 +144,22 @@ const UserProfile = () => {
     setSearchQuery(club.name);
   };
 
-  const handleSubmitClub = () => {
+  const handleSubmitClub = async () => {
     if (!selectedClub || !newClubForm.role || !newClubForm.joinDate) return;
-    const newClub = {
-      id: Date.now(),
-      name: selectedClub.name,
-      role: newClubForm.role,
-      joinDate: newClubForm.joinDate,
-    };
-    const updated = { ...userProfile, currentClubs: [...userProfile.currentClubs, newClub] };
-    setUserProfile(updated);
-    userStorage.setJSON('userProfile', updated);
+    const newClub = { id: Date.now(), name: selectedClub.name, role: newClubForm.role, joinDate: newClubForm.joinDate };
+    const updatedClubs = [...userProfile.currentClubs, newClub];
+    setUserProfile(prev => ({ ...prev, currentClubs: updatedClubs }));
+    await upsertProfile(user.id, { current_clubs: updatedClubs });
     setShowAddClubModal(false);
     setSearchQuery('');
     setSelectedClub(null);
     setNewClubForm({ role: '', joinDate: '' });
   };
 
-  const handleRemoveClub = (clubId) => {
-    const updated = { ...userProfile, currentClubs: userProfile.currentClubs.filter(c => c.id !== clubId) };
-    setUserProfile(updated);
-    userStorage.setJSON('userProfile', updated);
+  const handleRemoveClub = async (clubId) => {
+    const updatedClubs = userProfile.currentClubs.filter(c => c.id !== clubId);
+    setUserProfile(prev => ({ ...prev, currentClubs: updatedClubs }));
+    await upsertProfile(user.id, { current_clubs: updatedClubs });
     setShowDropdown(null);
   };
 
@@ -198,16 +169,13 @@ const UserProfile = () => {
     setShowDropdown(null);
   };
 
-  const handleUpdateClub = () => {
+  const handleUpdateClub = async () => {
     if (!editingClub || !newClubForm.role || !newClubForm.joinDate) return;
-    const updated = {
-      ...userProfile,
-      currentClubs: userProfile.currentClubs.map(c =>
-        c.id === editingClub.id ? { ...c, role: newClubForm.role, joinDate: newClubForm.joinDate } : c
-      ),
-    };
-    setUserProfile(updated);
-    userStorage.setJSON('userProfile', updated);
+    const updatedClubs = userProfile.currentClubs.map(c =>
+      c.id === editingClub.id ? { ...c, role: newClubForm.role, joinDate: newClubForm.joinDate } : c
+    );
+    setUserProfile(prev => ({ ...prev, currentClubs: updatedClubs }));
+    await upsertProfile(user.id, { current_clubs: updatedClubs });
     setEditingClub(null);
     setNewClubForm({ role: '', joinDate: '' });
   };
@@ -240,7 +208,7 @@ const UserProfile = () => {
 
       {/* ── Left profile sidebar ── */}
       <div style={{
-        width: 240, background: T.sidebar, borderRight: `1px solid ${T.border}`,
+        flex: '0 0 33.333%', background: T.sidebar, borderRight: `1px solid ${T.border}`,
         padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 20,
         flexShrink: 0, overflowY: 'auto',
       }}>
@@ -331,45 +299,36 @@ const UserProfile = () => {
         {/* Year / Program / School */}
         {editingSection === 'basic' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ fontSize: 13 }}>📅</span>
-              <select
-                value={editForm.year}
-                onChange={(e) => handleInputChange('year', e.target.value)}
-                style={{ ...inputBase, fontSize: 13, flex: 1 }}
-              >
-                <option value="">Select year</option>
-                {['1st Year','2nd Year','3rd Year','4th Year','5th Year','Graduate'].map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ fontSize: 13 }}>💻</span>
-              <input
-                value={editForm.program}
-                onChange={(e) => handleInputChange('program', e.target.value)}
-                placeholder="Program"
-                style={{ ...inputBase, fontSize: 13, flex: 1 }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ fontSize: 13 }}>📍</span>
-              <input
-                value={editForm.school}
-                onChange={(e) => handleInputChange('school', e.target.value)}
-                placeholder="School"
-                style={{ ...inputBase, fontSize: 13, flex: 1 }}
-              />
-            </div>
+            <select
+              value={editForm.year}
+              onChange={(e) => handleInputChange('year', e.target.value)}
+              style={{ ...inputBase, fontSize: 13 }}
+            >
+              <option value="">Select year</option>
+              {['1st Year','2nd Year','3rd Year','4th Year','5th Year','Graduate'].map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <input
+              value={editForm.program}
+              onChange={(e) => handleInputChange('program', e.target.value)}
+              placeholder="Program"
+              style={{ ...inputBase, fontSize: 13 }}
+            />
+            <input
+              value={editForm.school}
+              onChange={(e) => handleInputChange('school', e.target.value)}
+              placeholder="School"
+              style={{ ...inputBase, fontSize: 13 }}
+            />
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[['📅', userProfile.year], ['💻', userProfile.program], ['📍', userProfile.school]].map(([ic, txt]) =>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[['Year', userProfile.year], ['Program', userProfile.program], ['School', userProfile.school]].map(([label, txt]) =>
               txt ? (
-                <div key={ic} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <span style={{ fontSize: 13 }}>{ic}</span>
-                  <span style={{ fontSize: 13, color: T.heading }}>{txt}</span>
+                <div key={label}>
+                  <div style={{ fontSize: 10, color: T.muted, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 2 }}>{label.toUpperCase()}</div>
+                  <div style={{ fontSize: 13, color: T.heading }}>{txt}</div>
                 </div>
               ) : null
             )}
@@ -434,19 +393,13 @@ const UserProfile = () => {
               <div style={{ fontSize: 12, color: T.heading, lineHeight: 1.6 }}>
                 {userProfile.bio || <span style={{ color: T.faint, fontStyle: 'italic' }}>Add a bio…</span>}
               </div>
-              {userProfile.goals && (
-                <div style={{ marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                  <span style={{ fontSize: 11, flexShrink: 0 }}>🔍</span>
-                  <span style={{ fontSize: 12, color: T.accent, fontStyle: 'italic' }}>{userProfile.goals}</span>
-                </div>
-              )}
             </div>
           )}
         </div>
       </div>
 
       {/* ── Main content ── */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '28px 28px' }}>
+      <div style={{ flex: '0 0 66.667%', overflow: 'auto', padding: '28px 28px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* Current Clubs */}

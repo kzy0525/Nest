@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Upload, FileText, Send, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
-import { useUserStorage } from '../utils/userStorage';
+import { useAuth } from '../contexts/AuthContext';
+import { getClubById, getApplications, saveApplication } from '../lib/db';
 
 const ClubApplication = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isEditMode = searchParams.get('edit') === 'true';
-  const userStorage = useUserStorage();
+  const { user } = useAuth();
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applicationForm, setApplicationForm] = useState({
@@ -29,8 +29,46 @@ const ClubApplication = () => {
   const [modalContent, setModalContent] = useState({ title: '', message: '', type: 'info' });
 
   useEffect(() => {
-    fetchClubDetails();
-  }, [id, fetchClubDetails]);
+    const load = async () => {
+      try {
+        const clubData = await getClubById(id);
+        setClub(clubData);
+        setLoading(false);
+
+        // Load existing draft if user is logged in
+        if (user) {
+          const apps = await getApplications(user.id);
+          const existingDraft = apps.find(app => String(app.clubId) === String(id) && app.status === 'Incomplete');
+          if (existingDraft) {
+            setApplicationForm({
+              resume: null,
+              email: existingDraft.email || '',
+              phone: existingDraft.phone || '',
+              year: existingDraft.year || '',
+              program: existingDraft.program || '',
+              position: existingDraft.position || '',
+              secondRole: existingDraft.secondRole || '',
+              answers: existingDraft.answers || {},
+              resumeFileName: existingDraft.resumeFileName || null,
+            });
+            return;
+          }
+        }
+
+        // Initialize answers for fresh form
+        const questions = Array.isArray(clubData.application_questions) ? clubData.application_questions : [];
+        if (questions.length > 0) {
+          const initialAnswers = {};
+          questions.forEach(q => { initialAnswers[q.id] = ''; });
+          setApplicationForm(prev => ({ ...prev, answers: initialAnswers }));
+        }
+      } catch (error) {
+        console.error('Error fetching club details:', error);
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id, user]);
 
   const showCustomModal = (title, message, type = 'info') => {
     setModalContent({ title, message, type });
@@ -39,91 +77,6 @@ const ClubApplication = () => {
 
   const closeModal = () => {
     setShowModal(false);
-  };
-
-  const fetchClubDetails = async () => {
-    try {
-      const response = await axios.get(`/api/clubs/${id}`);
-      setClub(response.data);
-      setLoading(false);
-      
-      // Check for existing draft application
-      const existingApplications = userStorage.getJSON('clubApplications') || [];
-      const existingDraft = existingApplications.find(app => 
-        app.clubId === parseInt(id) && app.status === 'Incomplete'
-      );
-
-      if (existingDraft) {
-        // Load existing draft data
-        setApplicationForm({
-          resume: null, // Resume file can't be restored from localStorage
-          email: existingDraft.email || '',
-          phone: existingDraft.phone || '',
-          year: existingDraft.year || '',
-          program: existingDraft.program || '',
-          position: existingDraft.position || '',
-          secondRole: existingDraft.secondRole || '',
-          answers: existingDraft.answers || {},
-          resumeFileName: existingDraft.resumeFileName || null // Store resume filename for display
-        });
-      } else if (isEditMode) {
-        // In edit mode but no existing draft found - this shouldn't happen
-        console.warn('Edit mode requested but no existing draft found for club:', id);
-        // Initialize with empty form
-        setApplicationForm({
-          resume: null,
-          email: '',
-          phone: '',
-          year: '',
-          program: '',
-          position: '',
-          secondRole: '',
-          answers: {},
-          resumeFileName: null
-        });
-        
-        // Initialize answers object with club's application questions
-        if (response.data.application_questions) {
-          try {
-            const questions = JSON.parse(response.data.application_questions);
-            if (Array.isArray(questions)) {
-              const initialAnswers = {};
-              questions.forEach(q => {
-                initialAnswers[q.id] = '';
-              });
-              setApplicationForm(prev => ({
-                ...prev,
-                answers: initialAnswers
-              }));
-            }
-          } catch (error) {
-            console.log('Error parsing application_questions in edit mode:', error);
-          }
-        }
-      } else {
-        // Initialize answers object with club's application questions
-        if (response.data.application_questions) {
-          try {
-            const questions = JSON.parse(response.data.application_questions);
-            if (Array.isArray(questions)) {
-              const initialAnswers = {};
-              questions.forEach(q => {
-                initialAnswers[q.id] = '';
-              });
-              setApplicationForm(prev => ({
-                ...prev,
-                answers: initialAnswers
-              }));
-            }
-          } catch (error) {
-            console.log('Error parsing application_questions in fetch:', error);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching club details:', error);
-      setLoading(false);
-    }
   };
 
 
@@ -156,75 +109,30 @@ const ClubApplication = () => {
       showCustomModal('Resume Required', 'Please upload your resume before saving a draft.', 'error');
       return;
     }
+    if (!user) { showCustomModal('Not logged in', 'Please log in to save your application.', 'error'); return; }
 
     setSaving(true);
-
     try {
-      // Simulate saving
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Add to applications list as incomplete
-      const newApplication = {
-        id: Date.now(),
+      await saveApplication(user.id, {
         clubId: club.id,
         clubName: club.name,
         clubLogo: club.logo || null,
-        clubIcon: club.name.split(' ').map(word => word[0]).join('').substring(0, 4),
-        clubIconBg: "bg-blue-600",
         position: applicationForm.position,
         secondRole: applicationForm.secondRole,
         year: applicationForm.year,
         program: applicationForm.program,
         email: applicationForm.email,
         phone: applicationForm.phone,
-        answers: applicationForm.answers, // Save the application question answers
-        resumeFileName: applicationForm.resume ? applicationForm.resume.name : applicationForm.resumeFileName, // Save resume filename
-        status: "Incomplete",
-        // Include club timeline information for calendar
+        answers: applicationForm.answers,
+        resumeFileName: applicationForm.resume ? applicationForm.resume.name : applicationForm.resumeFileName,
+        status: 'Incomplete',
         applicationDeadline: club.application_deadline,
         interviewStartDate: club.interview_start_date,
         resultsReleased: club.results_released,
-        statusColor: "bg-yellow-100 text-yellow-600",
-        dateSubmitted: new Date().toLocaleDateString('en-US', { 
-          month: 'long', 
-          day: 'numeric', 
-          year: 'numeric' 
-        })
-      };
-
-      const existingApplications = userStorage.getJSON('clubApplications') || [];
-      
-      // Check if there's already a draft for this club
-      const existingDraftIndex = existingApplications.findIndex(app => 
-        app.clubId === club.id && app.status === 'Incomplete'
-      );
-      
-      let updatedApplications;
-      if (existingDraftIndex >= 0) {
-        // Update existing draft
-        updatedApplications = [...existingApplications];
-        updatedApplications[existingDraftIndex] = newApplication;
-      } else {
-        // Add new draft
-        updatedApplications = [...existingApplications, newApplication];
-      }
-      
-      userStorage.setJSON('clubApplications', updatedApplications);
-
-      // Trigger custom event for HiringDashboard
-      window.dispatchEvent(new CustomEvent('clubApplicationAdded', { 
-        detail: { application: newApplication } 
-      }));
-
-      // Trigger notification event
-      window.dispatchEvent(new CustomEvent('applicationSaved', { 
-        detail: { application: newApplication } 
-      }));
-
-      showCustomModal('Draft Saved', 'Draft saved successfully! You can complete and submit it later from the Hiring Dashboard.', 'success');
-      setTimeout(() => {
-        navigate('/hiring');
-      }, 2000);
+      });
+      window.dispatchEvent(new CustomEvent('applicationSaved'));
+      showCustomModal('Draft Saved', 'Draft saved! You can complete and submit it later from the Hiring Dashboard.', 'success');
+      setTimeout(() => navigate('/hiring'), 2000);
     } catch (error) {
       showCustomModal('Save Error', 'Error saving draft. Please try again.', 'error');
     } finally {
@@ -284,72 +192,29 @@ const ClubApplication = () => {
     setSubmitting(true);
 
     try {
-      // In a real app, you'd upload the file to a server
-      // For now, we'll simulate the submission
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Add to applications list
-      const newApplication = {
-        id: Date.now(),
+      if (!user) { showCustomModal('Not logged in', 'Please log in to submit your application.', 'error'); return; }
+
+      await saveApplication(user.id, {
         clubId: club.id,
         clubName: club.name,
         clubLogo: club.logo || null,
-        clubIcon: club.name.split(' ').map(word => word[0]).join('').substring(0, 4),
-        clubIconBg: "bg-blue-600",
         position: applicationForm.position,
         secondRole: applicationForm.secondRole,
         year: applicationForm.year,
         program: applicationForm.program,
         email: applicationForm.email,
         phone: applicationForm.phone,
-        answers: applicationForm.answers, // Save the application question answers
-        resumeFileName: applicationForm.resume ? applicationForm.resume.name : applicationForm.resumeFileName, // Save resume filename
-        status: "Submitted",
-        // Include club timeline information for calendar
+        answers: applicationForm.answers,
+        resumeFileName: applicationForm.resume ? applicationForm.resume.name : applicationForm.resumeFileName,
+        status: 'Submitted',
         applicationDeadline: club.application_deadline,
         interviewStartDate: club.interview_start_date,
         resultsReleased: club.results_released,
-        statusColor: "bg-green-100 text-green-600",
-        dateSubmitted: new Date().toLocaleDateString('en-US', { 
-          month: 'long', 
-          day: 'numeric', 
-          year: 'numeric' 
-        })
-      };
-
-      const existingApplications = userStorage.getJSON('clubApplications') || [];
-      
-      // Check if there's already a draft for this club
-      const existingDraftIndex = existingApplications.findIndex(app => 
-        app.clubId === club.id && app.status === 'Incomplete'
-      );
-      
-      let updatedApplications;
-      if (existingDraftIndex >= 0) {
-        // Update existing draft to submitted
-        updatedApplications = [...existingApplications];
-        updatedApplications[existingDraftIndex] = newApplication;
-      } else {
-        // Add new submitted application
-        updatedApplications = [...existingApplications, newApplication];
-      }
-      
-      userStorage.setJSON('clubApplications', updatedApplications);
-
-      // Trigger custom event for HiringDashboard
-      window.dispatchEvent(new CustomEvent('clubApplicationAdded', { 
-        detail: { application: newApplication } 
-      }));
-
-      // Trigger notification event
-      window.dispatchEvent(new CustomEvent('applicationSubmitted', { 
-        detail: { application: newApplication } 
-      }));
-
-      showCustomModal('Application Submitted', 'Application submitted successfully! You can track your application in the Hiring Dashboard.', 'success');
-      setTimeout(() => {
-        navigate('/hiring');
-      }, 2000);
+        dateSubmitted: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      });
+      window.dispatchEvent(new CustomEvent('applicationSubmitted'));
+      showCustomModal('Application Submitted', 'Application submitted! You can track it in the Hiring Dashboard.', 'success');
+      setTimeout(() => navigate('/hiring'), 2000);
     } catch (error) {
       showCustomModal('Submission Error', 'Error submitting application. Please try again.', 'error');
     } finally {
@@ -373,21 +238,7 @@ const ClubApplication = () => {
     );
   }
 
-  // Parse application questions safely
-  let questions = [];
-  try {
-    if (club.application_questions) {
-      const parsed = JSON.parse(club.application_questions);
-      if (Array.isArray(parsed)) {
-        questions = parsed;
-      } else {
-        questions = [];
-      }
-    }
-  } catch (error) {
-    console.log('Error parsing application_questions in render:', error);
-    questions = [];
-  }
+  const questions = Array.isArray(club.application_questions) ? club.application_questions : [];
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Eye, ChevronDown, Trash2, FileText } from 'lucide-react';
-import axios from 'axios';
-import { useUserStorage } from '../utils/userStorage';
+import { useAuth } from '../contexts/AuthContext';
+import { getApplications, deleteApplication, getClubById } from '../lib/db';
 
 const warm = '#b5451b';
 
@@ -34,64 +34,22 @@ const HiringDashboard = () => {
   const [clubData, setClubData] = useState({});
   const [deleteAction, setDeleteAction] = useState('');
   const navigate = useNavigate();
-  const userStorage = useUserStorage();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const savedApplications = userStorage.getJSON('clubApplications') || [];
-    setApplications(savedApplications);
-    const handleNewApplication = (event) => {
-      setApplications(prev => [...prev, event.detail.application]);
-    };
-    window.addEventListener('clubApplicationAdded', handleNewApplication);
-    return () => window.removeEventListener('clubApplicationAdded', handleNewApplication);
-  }, []);
-
-  const addApplication = (application) => {
-    setApplications(prev => [...prev, application]);
-    const saved = userStorage.getJSON('clubApplications') || [];
-    saved.push(application);
-    userStorage.setJSON('clubApplications', saved);
-  };
-
-  const updateApplicationStatus = (applicationId, newStatus) => {
-    const getStatusColor = (s) => {
-      switch (s) {
-        case 'Submitted': return 'bg-blue-100 text-blue-600';
-        case 'Interview': return 'bg-purple-100 text-purple-600';
-        case 'Accepted':  return 'bg-green-100 text-green-600';
-        case 'Rejected':  return 'bg-red-100 text-red-600';
-        case 'Incomplete':return 'bg-yellow-100 text-yellow-600';
-        default:          return 'bg-gray-100 text-gray-600';
-      }
-    };
-    setApplications(prev => prev.map(app =>
-      app.id === applicationId ? { ...app, status: newStatus, statusColor: getStatusColor(newStatus) } : app
-    ));
-    const saved = userStorage.getJSON('clubApplications') || [];
-    userStorage.setJSON('clubApplications', saved.map(app =>
-      app.id === applicationId ? { ...app, status: newStatus, statusColor: getStatusColor(newStatus) } : app
-    ));
-  };
-
-  const deleteApplication = (applicationId) => {
-    setApplications(prev => prev.filter(app => app.id !== applicationId));
-    const saved = userStorage.getJSON('clubApplications') || [];
-    userStorage.setJSON('clubApplications', saved.filter(app => app.id !== applicationId));
-  };
+    if (!user) return;
+    const load = () => getApplications(user.id).then(setApplications).catch(console.error);
+    load();
+    window.addEventListener('clubApplicationAdded', load);
+    return () => window.removeEventListener('clubApplicationAdded', load);
+  }, [user]);
 
   const handleViewApplication = (application) => {
     setViewingApplication(application);
-    fetchClubData(application.clubId);
+    getClubById(application.clubId)
+      .then(data => setClubData(prev => ({ ...prev, [application.clubId]: data })))
+      .catch(console.error);
     setShowApplicationViewer(true);
-  };
-
-  const fetchClubData = async (clubId) => {
-    try {
-      const response = await axios.get(`/api/clubs/${clubId}`);
-      setClubData(prev => ({ ...prev, [clubId]: response.data }));
-    } catch (error) {
-      console.error('Error fetching club data:', error);
-    }
   };
 
   const handleEditApplication = (application) => {
@@ -104,8 +62,11 @@ const HiringDashboard = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    if (applicationToDelete) deleteApplication(applicationToDelete.id);
+  const confirmDelete = async () => {
+    if (applicationToDelete) {
+      setApplications(prev => prev.filter(app => app.id !== applicationToDelete.id));
+      await deleteApplication(applicationToDelete.id);
+    }
     setShowDeleteModal(false);
     setApplicationToDelete(null);
     setDeleteAction('');
