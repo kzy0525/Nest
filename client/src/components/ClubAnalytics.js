@@ -251,7 +251,13 @@ const ClubAnalytics = () => {
                   {Object.entries(selectedApplication.answers).map(([qId, answer]) => (
                     <div key={qId} style={{ background: '#fff', borderRadius: 12, border: '1px solid #ede8df', padding: '12px 16px', marginBottom: 8 }}>
                       <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4 }}>Question {qId}</div>
-                      <div style={{ fontSize: 13, color: '#2a1f14', lineHeight: 1.6 }}>{answer || '—'}</div>
+                      {answer && (answer.startsWith('https://') || answer.startsWith('http://')) ? (
+                        <a href={answer} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: warm, textDecoration: 'none', fontWeight: 500 }}>
+                          {decodeURIComponent(answer.split('/').pop())} ↗
+                        </a>
+                      ) : (
+                        <div style={{ fontSize: 13, color: '#2a1f14', lineHeight: 1.6 }}>{answer || '—'}</div>
+                      )}
                     </div>
                   ))}
                 </div>

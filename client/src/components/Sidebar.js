@@ -45,6 +45,11 @@ const Sidebar = () => {
       alignItems: 'center', paddingTop: 18,
       gap: 6, height: '100vh', position: 'relative'
     }}>
+      <img
+        src="/favicon.ico"
+        alt="logo"
+        style={{ width: 32, height: 32, marginBottom: 10, objectFit: 'contain' }}
+      />
       {navItems.map((item) => {
         const active = isActive(item.path);
         return (

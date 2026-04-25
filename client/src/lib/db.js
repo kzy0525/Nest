@@ -18,6 +18,11 @@ export async function getClubById(id) {
   return data;
 }
 
+export async function getClubByName(name) {
+  const { data } = await supabase.from('clubs').select('*').eq('name', name).single();
+  return data || null;
+}
+
 export async function createClub(clubData, logoFile, backdropFile) {
   let logoUrl = null;
   let backdropUrl = null;

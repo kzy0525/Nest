@@ -154,7 +154,7 @@ const Favorites = () => {
                   </div>
 
                   <div style={{
-                    fontFamily: "'Instrument Serif', serif", fontSize: 14,
+                    fontFamily: "'Instrument Serif', serif", fontSize: 21,
                     color: '#2a1f14', lineHeight: 1.4, marginBottom: 12,
                     display: '-webkit-box', WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical', overflow: 'hidden',
