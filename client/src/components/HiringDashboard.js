@@ -24,6 +24,7 @@ const STATUS_META = {
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+
 const HiringDashboard = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [applications, setApplications] = useState([]);
@@ -78,25 +79,25 @@ const HiringDashboard = () => {
     .reduce((events, app) => {
       const clubName = app.clubName;
       const clubLogo = app.clubLogo;
-      const week = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
       if (app.applicationDeadline) {
         const d = new Date(app.applicationDeadline);
-        if (d >= today && d <= week)
+        if (d >= today)
           events.push({ id: `deadline-${app.id}`, day: d.getDate(), month: d.getMonth(), year: d.getFullYear(), event: 'Application Due', clubName, clubLogo });
       }
       if (app.interviewStartDate) {
         const d = new Date(app.interviewStartDate);
-        if (d >= today && d <= week)
+        if (d >= today)
           events.push({ id: `interview-${app.id}`, day: d.getDate(), month: d.getMonth(), year: d.getFullYear(), event: '1st Round Interview', clubName, clubLogo });
       }
       if (app.resultsReleased) {
         const d = new Date(app.resultsReleased);
-        if (d >= today && d <= week)
+        if (d >= today)
           events.push({ id: `results-${app.id}`, day: d.getDate(), month: d.getMonth(), year: d.getFullYear(), event: 'Results Released', clubName, clubLogo });
       }
       return events;
-    }, []);
+    }, [])
+    .sort((a, b) => new Date(a.year, a.month, a.day) - new Date(b.year, b.month, b.day));
 
   const getEventTypeColor = (name) => {
     if (name?.includes('Interview')) return '#1a3a6e';

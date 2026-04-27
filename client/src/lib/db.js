@@ -217,6 +217,7 @@ function toAppShape(row) {
     resultsReleased:     row.results_released,
     dateSubmitted:       row.date_submitted,
     createdAt:           row.created_at,
+    studentName:         row.profiles?.name || row.email || 'Applicant',
   };
 }
 
@@ -230,7 +231,10 @@ export async function getAllUsers() {
 
 export async function getApplicationsByClubName(clubName) {
   const { data, error } = await supabase
-    .from('applications').select('*').eq('club_name', clubName).order('created_at', { ascending: false });
+    .from('applications')
+    .select('*, profiles(name)')
+    .eq('club_name', clubName)
+    .order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []).map(toAppShape);
 }

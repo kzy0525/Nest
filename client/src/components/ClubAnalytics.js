@@ -253,7 +253,7 @@ const ClubAnalytics = () => {
                       <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4 }}>Question {qId}</div>
                       {answer && (answer.startsWith('https://') || answer.startsWith('http://')) ? (
                         <a href={answer} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: warm, textDecoration: 'none', fontWeight: 500 }}>
-                          {decodeURIComponent(answer.split('/').pop())} ↗
+                          {decodeURIComponent(answer.split('/').pop()).replace(/^\d+-/, '')} ↗
                         </a>
                       ) : (
                         <div style={{ fontSize: 13, color: '#2a1f14', lineHeight: 1.6 }}>{answer || '—'}</div>
