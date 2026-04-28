@@ -25,9 +25,11 @@ const ProtectedRoute = ({ children, requireAdmin = false, requireClub = false })
   }
 
   // Redirect club users away from student-only pages
-  if (!requireClub && !requireAdmin && user.user_type === 'club' &&
-      ['/hiring', '/favorites', '/profile'].some(p => window.location.pathname === p)) {
-    return <Navigate to="/club/dashboard" replace />;
+  if (!requireClub && !requireAdmin && user.user_type === 'club') {
+    const path = window.location.pathname;
+    if (['/hiring', '/favorites', '/profile'].includes(path) || path.endsWith('/apply')) {
+      return <Navigate to="/club/dashboard" replace />;
+    }
   }
 
   return children;

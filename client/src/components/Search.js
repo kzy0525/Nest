@@ -215,9 +215,9 @@ const SearchPage = () => {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#faf7f2', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Top bar */}
-      <div style={{ padding: '20px 26px 0', flexShrink: 0 }}>
+      <div style={{ padding: '28px 26px 0', flexShrink: 0 }}>
         <div style={{ marginBottom: 14 }}>
-          <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 40, fontWeight: 700, color: '#2a1f14' }}>
+          <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 50, fontWeight: 700, color: '#2a1f14' }}>
             Discover your community
           </span>
         </div>

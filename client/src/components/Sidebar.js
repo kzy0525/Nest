@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Heart, Edit, Plus, Users, LogOut, User } from 'lucide-react';
+import { Home, Compass, Heart, Edit, Plus, Users, LogOut, User, Building2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -24,7 +24,8 @@ const Sidebar = () => {
     navItems = [
       { path: '/club/dashboard', icon: Home, label: 'Dashboard' },
       { path: '/search', icon: Compass, label: 'Browse Clubs' },
-      { path: '/club/analytics', icon: Users, label: 'Analytics' }
+      { path: '/club/analytics', icon: Users, label: 'Analytics' },
+      { path: '/club/profile', icon: Building2, label: 'Club Profile' }
     ];
   } else {
     navItems = [
@@ -44,13 +45,13 @@ const Sidebar = () => {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center',
       height: '100vh', position: 'relative',
-      paddingTop: 18, paddingBottom: 20, boxSizing: 'border-box',
+      paddingTop: 42, paddingBottom: 20, boxSizing: 'border-box',
     }}>
       {/* Logo — top */}
       <img
         src="/favicon.ico"
         alt="logo"
-        style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }}
+        style={{ width: 45, height: 45, objectFit: 'contain', flexShrink: 0 }}
       />
 
       {/* Nav icons — vertically centred */}

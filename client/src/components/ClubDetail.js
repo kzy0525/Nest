@@ -244,7 +244,7 @@ const ClubDetail = () => {
                   <p style={{ fontSize: 14, color: '#4a3728', lineHeight: 1.75, marginBottom: 20, margin: '0 0 20px' }}>{club.description}</p>
                 )}
 
-                {club.application_deadline && new Date(club.application_deadline) > new Date() && (
+                {club.application_deadline && new Date(club.application_deadline) > new Date() && user?.user_type !== 'club' && (
                   <button
                     onClick={() => navigate(`/club/${club.id}/apply`)}
                     style={{ padding: '10px 24px', borderRadius: 10, background: warm, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>
@@ -435,7 +435,7 @@ const ClubDetail = () => {
             {user?.user_type === 'club' && (
               <div style={{ ...card, padding: '20px 22px' }}>
                 <button
-                  onClick={() => navigate('/club/register')}
+                  onClick={() => navigate('/club/profile')}
                   style={{ width: '100%', padding: '10px', borderRadius: 10, background: warm, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: "'Space Grotesk', sans-serif" }}>
                   Edit Club Profile
                 </button>

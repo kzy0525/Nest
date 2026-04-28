@@ -103,7 +103,7 @@ const ClubAnalytics = () => {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
-            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 40, fontWeight: 700, color: '#2a1f14', marginBottom: 4 }}>Analytics</div>
+            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 50, fontWeight: 700, color: '#2a1f14', marginBottom: 4 }}>Analytics</div>
             <div style={{ fontSize: 13, color: '#a09180' }}>Review and manage student applications.</div>
           </div>
           <button

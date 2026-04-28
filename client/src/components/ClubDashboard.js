@@ -205,7 +205,7 @@ const ClubDashboard = () => {
           <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, color: '#2a1f14', marginBottom: 14 }}>Quick Actions</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
             {[
-              { label: 'Edit Club Profile', desc: 'Update your club info, deadlines, and questions', action: () => navigate('/club/register') },
+              { label: 'Edit Club Profile', desc: 'Update your club info, deadlines, and questions', action: () => navigate('/club/profile') },
               { label: 'Analytics', desc: 'View detailed application statistics and export data', action: () => navigate('/club/analytics') },
             ].map(({ label, desc, action }) => (
               <div

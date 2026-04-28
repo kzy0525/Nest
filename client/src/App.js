@@ -15,6 +15,7 @@ import ClubRegistration from './components/ClubRegistration';
 import ClubApplication from './components/ClubApplication';
 import ClubDashboard from './components/ClubDashboard';
 import ClubAnalytics from './components/ClubAnalytics';
+import ClubProfile from './components/ClubProfile';
 import AdminDashboard from './components/AdminDashboard';
 
 function App() {
@@ -100,6 +101,17 @@ function App() {
               <Sidebar />
               <div className="flex-1 flex flex-col overflow-hidden">
                 <ClubAnalytics />
+              </div>
+            </div>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/club/profile" element={
+          <ProtectedRoute requireClub>
+            <div className="App flex h-screen" style={{ background: '#faf7f2' }}>
+              <Sidebar />
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <ClubProfile />
               </div>
             </div>
           </ProtectedRoute>
