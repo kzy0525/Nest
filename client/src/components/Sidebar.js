@@ -42,43 +42,49 @@ const Sidebar = () => {
       background: '#f3ede3',
       borderRight: '1px solid #e8e0d4',
       display: 'flex', flexDirection: 'column',
-      alignItems: 'center', paddingTop: 18,
-      gap: 6, height: '100vh', position: 'relative'
+      alignItems: 'center',
+      height: '100vh', position: 'relative',
+      paddingTop: 18, paddingBottom: 20, boxSizing: 'border-box',
     }}>
+      {/* Logo — top */}
       <img
         src="/favicon.ico"
         alt="logo"
-        style={{ width: 32, height: 32, marginBottom: 10, objectFit: 'contain' }}
+        style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }}
       />
-      {navItems.map((item) => {
-        const active = isActive(item.path);
-        return (
-          <div
-            key={item.path}
-            title={item.label}
-            onClick={() => navigate(item.path)}
-            onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#b5451b'; e.currentTarget.style.background = '#ede8df'; } }}
-            onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#c4b89e'; e.currentTarget.style.background = 'transparent'; } }}
-            style={{
-              width: 54, height: 54, borderRadius: 8,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: active ? '#ede8df' : 'transparent',
-              color: active ? '#b5451b' : '#c4b89e',
-              cursor: 'pointer', transition: 'all 0.15s'
-            }}
-          >
-            <item.icon size={27}/>
-          </div>
-        );
-      })}
 
+      {/* Nav icons — vertically centred */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+        {navItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <div
+              key={item.path}
+              title={item.label}
+              onClick={() => navigate(item.path)}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#b5451b'; e.currentTarget.style.background = '#ede8df'; } }}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#c4b89e'; e.currentTarget.style.background = 'transparent'; } }}
+              style={{
+                width: 54, height: 54, borderRadius: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: active ? '#ede8df' : 'transparent',
+                color: active ? '#b5451b' : '#c4b89e',
+                cursor: 'pointer', transition: 'all 0.15s'
+              }}
+            >
+              <item.icon size={27}/>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Logout — bottom */}
       {user?.role !== 'admin' && (
         <div
           title="Logout"
           onClick={handleLogout}
           style={{
-            position: 'absolute', bottom: 20,
-            width: 54, height: 54, borderRadius: 8,
+            width: 54, height: 54, borderRadius: 8, flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#c4b89e', cursor: 'pointer', transition: 'all 0.15s'
           }}

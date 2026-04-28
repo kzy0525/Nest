@@ -115,7 +115,7 @@ const Favorites = () => {
                 }}>
 
                 {/* Image area */}
-                <div style={{ height: 110, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <div style={{ height: 143, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                   {club.logo ? (
                     <img src={club.logo} alt={club.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (

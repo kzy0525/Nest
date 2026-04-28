@@ -229,7 +229,6 @@ const SearchPage = () => {
             background: '#fff', border: '1px solid #e8e0d4', borderRadius: 12,
             padding: '10px 14px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
           }}>
-            <span style={{ color: '#c4b89e', fontSize: 14 }}>⌕</span>
             <input
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -357,7 +356,7 @@ const SearchPage = () => {
                   }}>
 
                   {/* Image area */}
-                  <div style={{ height: 110, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <div style={{ height: 143, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                     {club.logo ? (
                       <img src={club.logo} alt={club.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
                     ) : (

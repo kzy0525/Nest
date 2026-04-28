@@ -137,7 +137,6 @@ const Home = () => {
             background: '#fff', border: '1px solid #e8e0d4', borderRadius: 12,
             padding: '10px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', maxWidth: 560,
           }}>
-            <span style={{ color: '#c4b89e', fontSize: 16 }}>⌕</span>
             <input
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -204,7 +203,7 @@ const Home = () => {
                       boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
                       transition: 'all 0.2s',
                     }}>
-                    <div style={{ height: 110, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <div style={{ height: 143, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                       {club.logo
                         ? <img src={club.logo} alt={club.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         : <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 32, color: 'rgba(255,255,255,0.18)', fontStyle: 'italic' }}>{getClubInitials(club.name)}</span>
@@ -314,10 +313,10 @@ const Home = () => {
           <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, color: '#2a1f14', marginBottom: 14 }}>Quick Actions</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {[
-              { icon: '🧭', label: 'Explore Clubs', desc: 'Browse all clubs and discover new opportunities', path: '/search' },
-              { icon: '♡', label: 'Liked Clubs', desc: "View and revisit clubs you've saved", path: '/favorites' },
-              { icon: '✓', label: 'Applications', desc: 'Track your progress and upcoming deadlines', path: '/hiring' },
-            ].map(({ icon, label, desc, path }) => (
+              { label: 'Explore Clubs', desc: 'Browse all clubs and discover new opportunities', path: '/search' },
+              { label: 'Liked Clubs', desc: "View and revisit clubs you've saved", path: '/favorites' },
+              { label: 'Applications', desc: 'Track your progress and upcoming deadlines', path: '/hiring' },
+            ].map(({ label, desc, path }) => (
               <div
                 key={path}
                 onClick={() => navigate(path)}
@@ -329,11 +328,6 @@ const Home = () => {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'all 0.2s',
                 }}
               >
-                <div style={{
-                  width: 38, height: 38, borderRadius: 10,
-                  background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, marginBottom: 12,
-                }}>{icon}</div>
                 <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 15, color: '#2a1f14', marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 11, color: '#a09180', lineHeight: 1.5 }}>{desc}</div>
               </div>
