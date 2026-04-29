@@ -25,6 +25,34 @@ const labelStyle = {
 
 const CATEGORIES = ['Technology','Business','Arts','Sports','Community','Health','Culture','Social','Innovation','Media','Academic','Environment','Politics','Science'];
 
+const formatTime = (t) => {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+};
+
+const TIME_OPTIONS = (() => {
+  const opts = [];
+  for (let h = 7; h <= 22; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 22 && m > 0) break;
+      opts.push({
+        value: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+        label: `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`,
+      });
+    }
+  }
+  return opts;
+})();
+
+const calcSlotCount = (startTime, endTime) => {
+  if (!startTime || !endTime) return 0;
+  const [sh, sm] = startTime.split(':').map(Number);
+  const [eh, em] = endTime.split(':').map(Number);
+  const diff = (eh * 60 + em) - (sh * 60 + sm);
+  return diff > 0 ? Math.floor(diff / 15) + 1 : 0;
+};
+
 const ClubProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -50,6 +78,8 @@ const ClubProfile = () => {
   const [newQuestion, setNewQuestion] = useState({ text: '', type: 'short' });
   const [positions, setPositions] = useState([]);
   const [newPosition, setNewPosition] = useState({ title: '', spots: '' });
+  const [interviewSlots, setInterviewSlots] = useState([]);
+  const [newSlot, setNewSlot] = useState({ date: '', startTime: '', endTime: '' });
   const [logoFile, setLogoFile] = useState(null);
   const [backdropFile, setBackdropFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -92,6 +122,7 @@ const ClubProfile = () => {
     });
     setPositions(pos);
     if (Array.isArray(c.application_questions)) setQuestions(c.application_questions);
+    setInterviewSlots(Array.isArray(c.interview_slots) ? c.interview_slots : []);
   };
 
   const handleStartEdit = () => {
@@ -129,6 +160,7 @@ const ClubProfile = () => {
         results_released: formData.results_released || null,
         application_questions: questions,
         open_positions: positions,
+        interview_slots: interviewSlots,
         is_hiring: formData.isHiring,
         has_interviews: formData.hasInterviews,
         member_count: parseInt(formData.member_count) || 0,
@@ -180,6 +212,23 @@ const ClubProfile = () => {
     if (!newQuestion.text.trim()) return;
     setQuestions(prev => [...prev, { id: Date.now(), ...newQuestion }]);
     setNewQuestion({ text: '', type: 'short' });
+  };
+
+  const handleAddSlot = () => {
+    if (!newSlot.date || !newSlot.startTime || !newSlot.endTime) return;
+    const [sh, sm] = newSlot.startTime.split(':').map(Number);
+    const [eh, em] = newSlot.endTime.split(':').map(Number);
+    if (eh * 60 + em <= sh * 60 + sm) return;
+    const generated = [];
+    let h = sh, m = sm;
+    const stamp = Date.now();
+    while (h < eh || (h === eh && m <= em)) {
+      generated.push({ id: `${stamp}-${h}-${m}`, date: newSlot.date, time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` });
+      m += 15;
+      if (m >= 60) { h++; m -= 60; }
+    }
+    setInterviewSlots(prev => [...prev, ...generated]);
+    setNewSlot(p => ({ ...p, startTime: '', endTime: '' }));
   };
 
   const renderStars = (r, size = 15) => Array.from({ length: 5 }, (_, i) => (
@@ -433,6 +482,71 @@ const ClubProfile = () => {
                   <button onClick={handleAddQuestion} style={{ padding: '9px 13px', borderRadius: 9, background: warm, color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0, display: 'flex' }}>
                     <Plus size={14} />
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Interview Slots (edit mode) */}
+            {isEditing && (
+              <div style={{ ...card, padding: '22px 26px' }}>
+                <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 16, color: '#2a1f14', marginBottom: 16 }}>Interview Slots</div>
+
+                {/* Existing slots — compact tag grid */}
+                {interviewSlots.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                    {interviewSlots.map((slot, i) => (
+                      <div key={slot.id || i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: '#faf7f2', borderRadius: 20, border: '1px solid #e0d8cc', fontSize: 12, color: '#4a3728' }}>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                          {new Date(slot.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {formatTime(slot.time)}
+                        </span>
+                        <button onClick={() => setInterviewSlots(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c4b49a', display: 'flex', padding: 0, lineHeight: 1 }}>
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {interviewSlots.length === 0 && (
+                  <div style={{ fontSize: 13, color: '#a09180', fontStyle: 'italic', marginBottom: 16 }}>No slots added yet.</div>
+                )}
+
+                {/* Add block */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <input
+                    type="date" value={newSlot.date}
+                    onChange={e => setNewSlot(p => ({ ...p, date: e.target.value }))}
+                    style={inputStyle}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <select
+                      value={newSlot.startTime}
+                      onChange={e => setNewSlot(p => ({ ...p, startTime: e.target.value }))}
+                      style={{ ...inputStyle, flex: 1 }}
+                    >
+                      <option value="">From</option>
+                      {TIME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <span style={{ fontSize: 12, color: '#a09180', flexShrink: 0 }}>to</span>
+                    <select
+                      value={newSlot.endTime}
+                      onChange={e => setNewSlot(p => ({ ...p, endTime: e.target.value }))}
+                      style={{ ...inputStyle, flex: 1 }}
+                    >
+                      <option value="">To</option>
+                      {TIME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    {newSlot.startTime && newSlot.endTime && calcSlotCount(newSlot.startTime, newSlot.endTime) > 0 && (
+                      <span style={{ fontSize: 11, color: '#a09180', flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap' }}>
+                        {calcSlotCount(newSlot.startTime, newSlot.endTime)} slots
+                      </span>
+                    )}
+                    <button
+                      onClick={handleAddSlot}
+                      style={{ padding: '9px 14px', borderRadius: 9, background: warm, color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0, fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

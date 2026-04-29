@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, Eye, Download, Search } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { FileText, Eye, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getApplicationsByClubName, updateApplication } from '../lib/db';
+import { getApplicationsByClubId, getClubByName, updateApplication } from '../lib/db';
 
 const warm   = '#b5451b';
 const STATUS = {
@@ -14,6 +15,7 @@ const STATUS = {
 
 const ClubAnalytics = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,12 +25,20 @@ const ClubAnalytics = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  const loadApplications = useCallback(() => {
+  const loadApplications = useCallback(async () => {
     if (!user?.name) { setLoading(false); return; }
-    getApplicationsByClubName(user.name)
-      .then(apps => { setApplications(apps); setFilteredApplications(apps); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    try {
+      const club = await getClubByName(user.name);
+      if (club) {
+        const apps = await getApplicationsByClubId(club.id);
+        setApplications(apps);
+        setFilteredApplications(apps);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   const filterApplications = useCallback(() => {
@@ -51,35 +61,28 @@ const ClubAnalytics = () => {
 
   useEffect(() => { if (user) loadApplications(); else setLoading(false); }, [user, loadApplications]);
   useEffect(() => { filterApplications(); }, [filterApplications]);
+  useEffect(() => {
+    const id = location.state?.openApplicationId;
+    if (!id || applications.length === 0) return;
+    const app = applications.find(a => a.id === id);
+    if (app) { setSelectedApplication(app); setShowViewer(true); }
+  }, [applications, location.state]);
 
   const handleUpdateStatus = async (id, status) => {
     setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
     if (selectedApplication?.id === id) setSelectedApplication(prev => ({ ...prev, status }));
-    await updateApplication(id, { status });
-  };
-
-  const exportCSV = () => {
-    const rows = [
-      ['Student Name', 'Email', 'Position', 'Status', 'Applied Date', 'Phone', 'Program'],
-      ...filteredApplications.map(a => [
-        a.studentName || 'N/A', a.email || 'N/A', a.position || 'N/A', a.status || 'N/A',
-        new Date(a.submittedAt || a.createdAt || 0).toLocaleDateString(),
-        a.phone || 'N/A', a.program || 'N/A',
-      ]),
-    ].map(r => r.join(',')).join('\n');
-    const url = URL.createObjectURL(new Blob([rows], { type: 'text/csv' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = `applications-${new Date().toISOString().split('T')[0]}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    try {
+      await updateApplication(id, { status });
+    } catch (e) {
+      console.error('Failed to update status:', e);
+    }
   };
 
   const counts = {
-    total:      applications.length,
-    submitted:  applications.filter(a => a.status === 'Submitted').length,
-    interview:  applications.filter(a => a.status === 'Interview').length,
-    accepted:   applications.filter(a => a.status === 'Accepted').length,
-    rejected:   applications.filter(a => a.status === 'Rejected').length,
-    incomplete: applications.filter(a => a.status === 'Incomplete').length,
+    total:     applications.length,
+    submitted: applications.filter(a => a.status === 'Submitted').length,
+    interview: applications.filter(a => a.status === 'Interview').length,
+    accepted:  applications.filter(a => a.status === 'Accepted').length,
   };
 
   const inputStyle = {
@@ -101,28 +104,18 @@ const ClubAnalytics = () => {
       <div style={{ flex: 1, overflowY: 'auto', padding: '28px 28px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
-          <div>
-            <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 50, fontWeight: 700, color: '#2a1f14', marginBottom: 4 }}>Analytics</div>
-            <div style={{ fontSize: 13, color: '#a09180' }}>Review and manage student applications.</div>
-          </div>
-          <button
-            onClick={exportCSV}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: '#fff', border: '1px solid #e8e0d4', color: '#2a1f14', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-          >
-            <Download size={13} /> Export CSV
-          </button>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 50, fontWeight: 700, color: '#2a1f14', marginBottom: 4 }}>Analytics</div>
+          <div style={{ fontSize: 13, color: '#a09180' }}>Review and manage student applications.</div>
         </div>
 
         {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
           {[
             { label: 'Total',     value: counts.total },
             { label: 'Submitted', value: counts.submitted },
             { label: 'Interview', value: counts.interview },
             { label: 'Accepted',  value: counts.accepted },
-            { label: 'Rejected',  value: counts.rejected },
-            { label: 'Draft',     value: counts.incomplete },
           ].map(({ label, value }) => (
             <div key={label} style={{ background: '#fff', borderRadius: 14, border: '1px solid #ede8df', padding: '16px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ fontSize: 10, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 6 }}>{label.toUpperCase()}</div>
@@ -146,8 +139,6 @@ const ClubAnalytics = () => {
             <option value="Submitted">Submitted</option>
             <option value="Interview">Interview</option>
             <option value="Accepted">Accepted</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Incomplete">Draft</option>
           </select>
           <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={inputStyle}>
             <option value="newest">Newest</option>
@@ -260,6 +251,18 @@ const ClubAnalytics = () => {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {selectedApplication.interviewSlot && (
+                <div style={{ background: '#e8f5e9', borderRadius: 12, border: '1px solid #c8e6c9', padding: '14px 16px', marginBottom: 16 }}>
+                  <div style={{ fontSize: 10, color: '#2e7d32', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 6 }}>INTERVIEW SCHEDULED</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#2a1f14' }}>
+                    {new Date(selectedApplication.interviewSlot.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#4a3728', marginTop: 2 }}>
+                    {(() => { const t = selectedApplication.interviewSlot.time; if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; })()}
+                  </div>
                 </div>
               )}
 

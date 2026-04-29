@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, Eye, Plus, ArrowRight } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
-import { getApplicationsByClubName, updateApplication, getClubByName } from '../lib/db';
+import { getApplicationsByClubId, getClubByName } from '../lib/db';
 
 const warm   = '#b5451b';
 const STATUS = {
@@ -18,30 +18,29 @@ const ClubDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [applications, setApplications] = useState([]);
-  const [selectedApplication, setSelectedApplication] = useState(null);
-  const [showViewer, setShowViewer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasProfile, setHasProfile] = useState(false);
 
-  const loadApplications = useCallback(() => {
+  const loadApplications = useCallback(async () => {
     if (!user?.name) { setLoading(false); return; }
-    getApplicationsByClubName(user.name)
-      .then(apps => setApplications(apps))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    try {
+      const club = await getClubByName(user.name);
+      setHasProfile(!!club);
+      if (club) {
+        const apps = await getApplicationsByClubId(club.id);
+        setApplications(apps);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
     loadApplications();
-    if (user.name) getClubByName(user.name).then(club => setHasProfile(!!club)).catch(console.error);
   }, [user, loadApplications]);
-
-  const handleUpdateStatus = async (id, status) => {
-    setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
-    if (selectedApplication?.id === id) setSelectedApplication(prev => ({ ...prev, status }));
-    await updateApplication(id, { status });
-  };
 
   const stats = [
     { label: 'Total',       value: applications.length },
@@ -166,7 +165,7 @@ const ClubDashboard = () => {
                     return (
                       <div
                         key={app.id}
-                        onClick={() => { setSelectedApplication(app); setShowViewer(true); }}
+                        onClick={() => navigate('/club/analytics', { state: { openApplicationId: app.id } })}
                         onMouseEnter={e => e.currentTarget.style.background = '#faf7f2'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         style={{
@@ -185,7 +184,7 @@ const ClubDashboard = () => {
                         </div>
                         <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: meta.bg, color: meta.color, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{meta.label}</span>
                         <button
-                          onClick={e => { e.stopPropagation(); setSelectedApplication(app); setShowViewer(true); }}
+                          onClick={e => { e.stopPropagation(); navigate('/club/analytics', { state: { openApplicationId: app.id } }); }}
                           style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: warm, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500, flexShrink: 0 }}
                         >
                           <Eye size={12} /> View
@@ -225,82 +224,6 @@ const ClubDashboard = () => {
 
       </div>
 
-      {/* Application viewer modal */}
-      {showViewer && selectedApplication && (
-        <div
-          onClick={() => setShowViewer(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(42,31,20,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 24 }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background: '#faf7f2', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}
-          >
-            {/* Modal header */}
-            <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22, color: '#2a1f14' }}>Application</div>
-              <button onClick={() => setShowViewer(false)} style={{ background: 'none', border: 'none', fontSize: 20, color: '#a09180', cursor: 'pointer', lineHeight: 1 }}>×</button>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
-              {/* Applicant info */}
-              <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #ede8df', padding: '16px 18px', marginBottom: 16 }}>
-                <div style={{ fontSize: 10, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 10 }}>APPLICANT</div>
-                {[
-                  ['Name', selectedApplication.studentName],
-                  ['Email', selectedApplication.email],
-                  ['Program', selectedApplication.program],
-                  ['Year', selectedApplication.year],
-                  ['Phone', selectedApplication.phone],
-                ].map(([k, v]) => v ? (
-                  <div key={k} style={{ display: 'flex', gap: 10, marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", width: 60, flexShrink: 0 }}>{k}</span>
-                    <span style={{ fontSize: 13, color: '#2a1f14' }}>{v}</span>
-                  </div>
-                ) : null)}
-              </div>
-
-              {/* Answers */}
-              {selectedApplication.answers && Object.keys(selectedApplication.answers).length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 10, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 10 }}>RESPONSES</div>
-                  {Object.entries(selectedApplication.answers).map(([qId, answer]) => (
-                    <div key={qId} style={{ background: '#fff', borderRadius: 12, border: '1px solid #ede8df', padding: '12px 16px', marginBottom: 8 }}>
-                      <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4 }}>Question {qId}</div>
-                      {answer && (answer.startsWith('https://') || answer.startsWith('http://')) ? (
-                        <a href={answer} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: warm, textDecoration: 'none', fontWeight: 500 }}>
-                          {decodeURIComponent(answer.split('/').pop()).replace(/^\d+-/, '')} ↗
-                        </a>
-                      ) : (
-                        <div style={{ fontSize: 13, color: '#2a1f14', lineHeight: 1.6 }}>{answer || '—'}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Status actions */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                {[
-                  { status: 'Accepted', label: 'Accept',    bg: warm,      active: selectedApplication.status === 'Accepted' },
-                  { status: 'Interview',label: 'Interview', bg: '#2e7d32', active: selectedApplication.status === 'Interview' },
-                  { status: 'Rejected', label: 'Reject',   bg: '#991b1b', active: selectedApplication.status === 'Rejected' },
-                ].map(({ status, label, bg, active }) => (
-                  <button
-                    key={status}
-                    onClick={() => handleUpdateStatus(selectedApplication.id, status)}
-                    style={{
-                      padding: '10px', borderRadius: 10, border: active ? 'none' : `1px solid ${bg}`,
-                      background: active ? bg : 'transparent', color: active ? '#fff' : bg,
-                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      fontFamily: "'DM Sans', sans-serif", transition: 'all .15s',
-                    }}
-                  >{label}</button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

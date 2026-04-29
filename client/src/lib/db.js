@@ -149,6 +149,7 @@ export async function saveApplication(userId, app) {
     club_id:              app.clubId,
     club_name:            app.clubName,
     club_logo:            app.clubLogo || null,
+    student_name:         app.studentName || '',
     position:             app.position || '',
     second_role:          app.secondRole || '',
     year:                 app.year || '',
@@ -184,6 +185,7 @@ export async function updateApplication(id, updates) {
   if ('secondRole' in updates) row.second_role = updates.secondRole;
   if ('answers' in updates) row.answers = updates.answers;
   if ('dateSubmitted' in updates) row.date_submitted = updates.dateSubmitted;
+  if ('interviewSlot' in updates) row.interview_slot = updates.interviewSlot;
 
   const { data, error } = await supabase.from('applications').update(row).eq('id', id).select().single();
   if (error) throw error;
@@ -217,7 +219,8 @@ function toAppShape(row) {
     resultsReleased:     row.results_released,
     dateSubmitted:       row.date_submitted,
     createdAt:           row.created_at,
-    studentName:         row.profiles?.name || row.email || 'Applicant',
+    studentName:         row.student_name || row.email || 'Applicant',
+    interviewSlot:       row.interview_slot || null,
   };
 }
 
@@ -234,6 +237,16 @@ export async function getApplicationsByClubName(clubName) {
     .from('applications')
     .select('*, profiles(name)')
     .eq('club_name', clubName)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(toAppShape);
+}
+
+export async function getApplicationsByClubId(clubId) {
+  const { data, error } = await supabase
+    .from('applications')
+    .select('*')
+    .eq('club_id', clubId)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []).map(toAppShape);

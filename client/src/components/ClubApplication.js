@@ -38,7 +38,7 @@ const ClubApplication = () => {
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applicationForm, setApplicationForm] = useState({
-    email: '', phone: '', year: '', program: '',
+    studentName: '', email: '', phone: '', year: '', program: '',
     position: '', secondRole: '', answers: {},
   });
   const [fileAnswers, setFileAnswers] = useState({});
@@ -57,6 +57,7 @@ const ClubApplication = () => {
           const draft = apps.find(a => String(a.clubId) === String(id) && a.status === 'Incomplete');
           if (draft) {
             setApplicationForm({
+              studentName: draft.studentName || user?.name || '',
               email: draft.email || '', phone: draft.phone || '',
               year: draft.year || '', program: draft.program || '',
               position: draft.position || '', secondRole: draft.secondRole || '',
@@ -64,6 +65,10 @@ const ClubApplication = () => {
             });
             return;
           }
+        }
+
+        if (user?.name) {
+          setApplicationForm(prev => ({ ...prev, studentName: user.name }));
         }
 
         const questions = Array.isArray(clubData.application_questions) ? clubData.application_questions : [];
@@ -107,6 +112,7 @@ const ClubApplication = () => {
       const answers = await uploadFileAnswers();
       await saveApplication(user.id, {
         clubId: club.id, clubName: club.name, clubLogo: club.logo || null,
+        studentName: applicationForm.studentName,
         position: applicationForm.position, secondRole: applicationForm.secondRole,
         year: applicationForm.year, program: applicationForm.program,
         email: applicationForm.email, phone: applicationForm.phone,
@@ -126,8 +132,8 @@ const ClubApplication = () => {
   };
 
   const handleSubmit = async () => {
-    if (!applicationForm.email || !applicationForm.phone || !applicationForm.year || !applicationForm.program) {
-      setModal({ title: 'Missing Information', message: 'Please fill in all required fields (email, phone, year, and program).', type: 'error' });
+    if (!applicationForm.studentName || !applicationForm.email || !applicationForm.phone || !applicationForm.year || !applicationForm.program) {
+      setModal({ title: 'Missing Information', message: 'Please fill in all required fields (name, email, phone, year, and program).', type: 'error' });
       return;
     }
 
@@ -155,6 +161,7 @@ const ClubApplication = () => {
       const answers = await uploadFileAnswers();
       await saveApplication(user.id, {
         clubId: club.id, clubName: club.name, clubLogo: club.logo || null,
+        studentName: applicationForm.studentName,
         position: applicationForm.position, secondRole: applicationForm.secondRole,
         year: applicationForm.year, program: applicationForm.program,
         email: applicationForm.email, phone: applicationForm.phone,
@@ -214,6 +221,12 @@ const ClubApplication = () => {
           <div style={card}>
             <div style={sectionTitle}>Contact Information</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle}>FULL NAME *</label>
+                <input type="text" value={applicationForm.studentName}
+                  onChange={e => setApplicationForm(p => ({ ...p, studentName: e.target.value }))}
+                  style={inputStyle} placeholder="Your full name" />
+              </div>
               <div>
                 <label style={labelStyle}>EMAIL ADDRESS *</label>
                 <input type="email" value={applicationForm.email}

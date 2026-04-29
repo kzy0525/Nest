@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Eye, ChevronDown, Trash2, FileText } from 'lucide-react';
+import { Edit, Eye, ChevronDown, Trash2, FileText, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getApplications, deleteApplication, getClubById } from '../lib/db';
+import { getApplications, deleteApplication, getClubById, updateApplication } from '../lib/db';
+
+const formatTime = (t) => {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+};
 
 const warm = '#b5451b';
 
@@ -26,7 +32,6 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 
 
 const HiringDashboard = () => {
-  const [selectedApplication, setSelectedApplication] = useState(null);
   const [applications, setApplications] = useState([]);
   const [showApplicationViewer, setShowApplicationViewer] = useState(false);
   const [viewingApplication, setViewingApplication] = useState(null);
@@ -34,6 +39,7 @@ const HiringDashboard = () => {
   const [applicationToDelete, setApplicationToDelete] = useState(null);
   const [clubData, setClubData] = useState({});
   const [deleteAction, setDeleteAction] = useState('');
+  const [bookingLoading, setBookingLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -61,6 +67,20 @@ const HiringDashboard = () => {
     setApplicationToDelete(application);
     setDeleteAction(action);
     setShowDeleteModal(true);
+  };
+
+  const handleBookSlot = async (slot) => {
+    if (!viewingApplication) return;
+    setBookingLoading(true);
+    try {
+      const updated = await updateApplication(viewingApplication.id, { interviewSlot: slot });
+      setApplications(prev => prev.map(a => a.id === updated.id ? updated : a));
+      setViewingApplication(updated);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   const confirmDelete = async () => {
@@ -120,13 +140,6 @@ const HiringDashboard = () => {
         {meta.label}
       </span>
     );
-  };
-
-  const inputStyle = {
-    width: '100%', padding: '10px 12px', borderRadius: 10,
-    border: '1px solid #e0d8cc', background: '#fff',
-    fontSize: 13, color: '#2a1f14', boxSizing: 'border-box',
-    fontFamily: "'DM Sans', sans-serif", outline: 'none'
   };
 
   return (
@@ -316,6 +329,60 @@ const HiringDashboard = () => {
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* Interview Scheduling */}
+              {viewingApplication.status === 'Interview' && (
+                <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
+                  <div style={{ background: '#f7f3ee', padding: '12px 16px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Calendar size={15} style={{ color: warm }}/>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#2a1f14' }}>Interview Scheduling</span>
+                  </div>
+                  <div style={{ padding: 16 }}>
+                    {viewingApplication.interviewSlot ? (
+                      <div>
+                        <div style={{ fontSize: 11, color: '#2e7d32', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.04em', marginBottom: 10 }}>INTERVIEW CONFIRMED</div>
+                        <div style={{ padding: '14px 16px', background: '#e8f5e9', borderRadius: 10, border: '1px solid #c8e6c9' }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#2a1f14' }}>
+                            {new Date(viewingApplication.interviewSlot.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                          </div>
+                          <div style={{ fontSize: 13, color: '#4a3728', marginTop: 3 }}>
+                            {formatTime(viewingApplication.interviewSlot.time)}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (() => {
+                      const slots = clubData[viewingApplication.clubId]?.interview_slots || [];
+                      if (slots.length === 0) return (
+                        <div style={{ fontSize: 13, color: '#a09180' }}>No time slots available yet. Check back later.</div>
+                      );
+                      return (
+                        <div>
+                          <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.04em', marginBottom: 12 }}>SELECT A TIME SLOT</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {slots.map(slot => (
+                              <button
+                                key={slot.id}
+                                onClick={() => handleBookSlot(slot)}
+                                disabled={bookingLoading}
+                                onMouseEnter={e => { e.currentTarget.style.background = '#fdf3ed'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                                style={{
+                                  padding: '11px 14px', borderRadius: 10, border: `1px solid ${warm}`,
+                                  background: 'transparent', color: warm, cursor: bookingLoading ? 'not-allowed' : 'pointer',
+                                  fontSize: 13, textAlign: 'left', fontFamily: "'DM Sans', sans-serif",
+                                  transition: 'background .15s', opacity: bookingLoading ? 0.6 : 1,
+                                }}
+                              >
+                                {new Date(slot.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} — {formatTime(slot.time)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

@@ -403,17 +403,38 @@ const SearchPage = () => {
                       WebkitBoxOrient: 'vertical', overflow: 'hidden'
                     }}>{club.name}</div>
 
-                    <button
-                      onClick={e => { e.stopPropagation(); navigate(`/club/${club.id}`); }}
-                      style={{
-                        width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                        background: recruiting ? warm : 'transparent',
-                        color: recruiting ? '#fff' : '#c4b89e',
-                        border: recruiting ? 'none' : '1px solid #e8e0d4',
-                        cursor: 'pointer', fontFamily: "'DM Sans', sans-serif"
-                      }}>
-                      {recruiting ? 'Apply Now' : 'Recruiting Closed'}
-                    </button>
+                    {user?.user_type === 'club' ? (
+                      <div>
+                        <button
+                          onClick={e => { e.stopPropagation(); navigate(`/club/${club.id}`); }}
+                          style={{
+                            width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                            background: '#fff', color: warm,
+                            border: `1px solid ${warm}`, cursor: 'pointer',
+                            fontFamily: "'DM Sans', sans-serif", marginBottom: 5,
+                          }}>
+                          More Information
+                        </button>
+                        <div style={{
+                          textAlign: 'center', fontSize: 10, fontFamily: "'Space Grotesk', sans-serif",
+                          color: recruiting ? warm : '#c4b89e',
+                        }}>
+                          {recruiting ? 'Now Recruiting' : 'Applications Closed'}
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); navigate(`/club/${club.id}`); }}
+                        style={{
+                          width: '100%', padding: '8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                          background: recruiting ? warm : 'transparent',
+                          color: recruiting ? '#fff' : '#c4b89e',
+                          border: recruiting ? 'none' : '1px solid #e8e0d4',
+                          cursor: 'pointer', fontFamily: "'DM Sans', sans-serif"
+                        }}>
+                        {recruiting ? 'Apply Now' : 'Recruiting Closed'}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
