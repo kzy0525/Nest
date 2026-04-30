@@ -89,13 +89,3 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key
 DANGEROUSLY_DISABLE_HOST_CHECK=true
 ```
 
-### 4. Run
-
-```bash
-cd client && npm start
-```
-
-The app runs on `http://localhost:3000`.
-
----
-
