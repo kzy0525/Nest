@@ -22,61 +22,38 @@ A club discovery and recruitment platform for university students. Students can 
 
 ---
 
+## Gallery
+
+### Login
+![Login](client/public/images/login.png)
+
+### Student discovery
+![Student home](client/public/images/student%20home.png)
+
+### Club info
+![Club page](client/public/images/club%20page.png)
+
+### Application
+![Application](client/public/images/application.png)
+
+### Student application tracker
+![Student applications](client/public/images/student%20applications.png)
+
+### Club dashboard
+![Club dashboard](client/public/images/club%20dashboard.png)
+
+### Club application review form
+![Club application](client/public/images/club%20application.png)
+
+---
+
 ## Tech stack
 
 | Layer | Technology |
 |---|---|
-| Languages | JavaScript (ES2020+), SQL |
+| Languages | JavaScript, SQL |
 | Frontend | React 18, React Router v6, Recharts, Lucide React |
 | Backend | Node.js, Supabase (Postgres, Auth, Storage, RLS) |
-
----
-
-## Project structure
-
-```
-Nest-2/
-├── client/
-│   └── src/
-│       ├── components/
-│       │   ├── Home.js               # Student home page
-│       │   ├── Search.js             # Club discovery + filtering
-│       │   ├── Favorites.js          # Saved clubs
-│       │   ├── ClubDetail.js         # Public club profile page
-│       │   ├── ClubApplication.js    # Application form
-│       │   ├── HiringDashboard.js    # Student application tracker
-│       │   ├── UserProfile.js        # Student profile settings
-│       │   ├── ClubDashboard.js      # Club home + application viewer
-│       │   ├── ClubAnalytics.js      # Club applicant management
-│       │   ├── ClubRegistration.js   # Club profile editor
-│       │   ├── AdminDashboard.js     # Admin panel
-│       │   ├── Sidebar.js            # Navigation sidebar
-│       │   ├── ProtectedRoute.js     # Auth + role guards
-│       │   ├── Login.js
-│       │   └── Register.js
-│       ├── contexts/
-│       │   └── AuthContext.js        # Auth state + user merging
-│       ├── lib/
-│       │   └── db.js                 # All Supabase queries
-│       └── supabaseClient.js
-├── supabase/
-│   └── schema.sql                    # Full database schema + RLS policies
-└── server.js                         # Express server (legacy)
-```
-
----
-
-## Database tables
-
-| Table | Purpose |
-|---|---|
-| `clubs` | Club profiles, hiring info, application questions |
-| `profiles` | Extended user data (name, program, year, role) |
-| `applications` | Student applications with answers and status |
-| `favorites` | Many-to-many: users ↔ clubs |
-| `reviews` | Student reviews and star ratings for clubs |
-
-Row-level security is enabled on all tables. Storage buckets: `club-assets` (logos, backdrops), `avatars` (profile photos), `application-files` (PDF uploads).
 
 ---
 
@@ -122,30 +99,3 @@ The app runs on `http://localhost:3000`.
 
 ---
 
-## User roles
-
-| Role | Access |
-|---|---|
-| `student` | Browse clubs, apply, track applications, write reviews |
-| `club` | Manage club profile, view and action incoming applications |
-| `admin` | Full access, can register clubs and view all users |
-
-Role is set on the `profiles` table (`role` and `user_type` columns). The `handle_new_user` trigger auto-creates a profile on signup using metadata passed at registration.
-
----
-
-## Theme
-
-The UI uses a warm academic colour palette throughout:
-
-| Token | Hex |
-|---|---|
-| Page background | `#faf7f2` |
-| Accent | `#b5451b` |
-| Card background | `#ffffff` |
-| Card border | `#ede8df` |
-| Primary text | `#2a1f14` |
-| Muted text | `#a09180` |
-| Sidebar background | `#f3ede3` |
-
-Fonts: **Instrument Serif** (headings), **DM Sans** (body), **Space Grotesk** (labels/badges).
