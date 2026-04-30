@@ -24,7 +24,7 @@ const STATUS_META = {
   'Incomplete': { label: 'Incomplete',   bg: '#fef3cd', color: '#8a6200' },
   'Submitted':  { label: 'Under Review', bg: '#e8f0fe', color: '#1a56db' },
   'Interview':  { label: 'Interview',    bg: '#e8f5e9', color: '#2e7d32' },
-  'Accepted':   { label: 'Accepted',     bg: '#f0ebe3', color: warm },
+  'Accepted':   { label: 'Accepted',     bg: '#fff', color: warm, border: `1px solid ${warm}` },
   'Rejected':   { label: 'Rejected',     bg: '#fee2e2', color: '#991b1b' },
 };
 
@@ -45,8 +45,25 @@ const HiringDashboard = () => {
 
   useEffect(() => {
     if (!user) return;
-    const load = () => getApplications(user.id).then(setApplications).catch(console.error);
-    load();
+    const load = async () => {
+      const apps = await getApplications(user.id);
+      const clubIds = [...new Set(apps.map(a => a.clubId).filter(Boolean))];
+      const clubMap = {};
+      await Promise.all(clubIds.map(async id => {
+        try { clubMap[id] = await getClubById(id); } catch {}
+      }));
+      setApplications(apps.map(app => {
+        const club = clubMap[app.clubId];
+        if (!club) return app;
+        return {
+          ...app,
+          applicationDeadline: club.application_deadline || app.applicationDeadline,
+          resultsReleased:     club.results_released     || app.resultsReleased,
+          interviewStartDate:  club.interview_start_date || app.interviewStartDate,
+        };
+      }));
+    };
+    load().catch(console.error);
     window.addEventListener('clubApplicationAdded', load);
     return () => window.removeEventListener('clubApplicationAdded', load);
   }, [user]);
@@ -74,7 +91,7 @@ const HiringDashboard = () => {
     setBookingLoading(true);
     try {
       const updated = await updateApplication(viewingApplication.id, { interviewSlot: slot });
-      setApplications(prev => prev.map(a => a.id === updated.id ? updated : a));
+      setApplications(prev => prev.map(a => a.id === updated.id ? { ...a, ...updated } : a));
       setViewingApplication(updated);
     } catch (e) {
       console.error(e);
@@ -94,23 +111,24 @@ const HiringDashboard = () => {
   };
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const calendarEvents = applications
-    .filter(app => app.status !== 'Incomplete')
     .reduce((events, app) => {
       const clubName = app.clubName;
       const clubLogo = app.clubLogo;
+      const incomplete = app.status === 'Incomplete';
 
       if (app.applicationDeadline) {
         const d = new Date(app.applicationDeadline);
         if (d >= today)
           events.push({ id: `deadline-${app.id}`, day: d.getDate(), month: d.getMonth(), year: d.getFullYear(), event: 'Application Due', clubName, clubLogo });
       }
-      if (app.interviewStartDate) {
-        const d = new Date(app.interviewStartDate);
+      if (!incomplete && app.interviewSlot?.date) {
+        const d = new Date(app.interviewSlot.date + 'T00:00:00');
         if (d >= today)
-          events.push({ id: `interview-${app.id}`, day: d.getDate(), month: d.getMonth(), year: d.getFullYear(), event: '1st Round Interview', clubName, clubLogo });
+          events.push({ id: `interview-${app.id}`, day: d.getDate(), month: d.getMonth(), year: d.getFullYear(), event: `Interview · ${formatTime(app.interviewSlot.time)}`, clubName, clubLogo });
       }
-      if (app.resultsReleased) {
+      if (!incomplete && app.resultsReleased) {
         const d = new Date(app.resultsReleased);
         if (d >= today)
           events.push({ id: `results-${app.id}`, day: d.getDate(), month: d.getMonth(), year: d.getFullYear(), event: 'Results Released', clubName, clubLogo });
@@ -133,10 +151,13 @@ const HiringDashboard = () => {
     return 'EVENT';
   };
 
-  const StatusBadge = ({ status }) => {
-    const meta = STATUS_META[status] || { label: status, bg: '#f5f0e8', color: '#a09180' };
+  const StatusBadge = ({ status, interviewBooked }) => {
+    let meta = STATUS_META[status] || { label: status, bg: '#f5f0e8', color: '#a09180' };
+    if (status === 'Interview' && !interviewBooked) {
+      meta = { label: 'Book Interview', bg: '#fdf3ed', color: warm };
+    }
     return (
-      <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: meta.bg, color: meta.color, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500, whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: meta.bg, color: meta.color, border: meta.border || 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500, whiteSpace: 'nowrap' }}>
         {meta.label}
       </span>
     );
@@ -185,7 +206,21 @@ const HiringDashboard = () => {
                       )}
                     </div>
 
-                    <StatusBadge status={app.status}/>
+                    {app.status === 'Interview' && !app.interviewSlot ? (
+                      <button
+                        onClick={() => handleViewApplication(app)}
+                        style={{
+                          fontSize: 11, padding: '3px 10px', borderRadius: 20,
+                          background: '#fdf3ed', color: warm,
+                          fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600,
+                          border: `1px solid ${warm}`, cursor: 'pointer', whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Book Interview
+                      </button>
+                    ) : (
+                      <StatusBadge status={app.status} interviewBooked={!!app.interviewSlot}/>
+                    )}
 
                     <div style={{ fontSize: 11, color: '#c4b49a', fontFamily: "'Space Grotesk', sans-serif", width: 56, textAlign: 'right', flexShrink: 0 }}>
                       {app.status !== 'Incomplete' ? app.dateSubmitted : '—'}
@@ -217,9 +252,7 @@ const HiringDashboard = () => {
         {/* Right — upcoming dates */}
         <div style={{ flex: 1, padding: '28px 24px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 50, fontWeight: 700, color: '#2a1f14', marginBottom: 4 }}>Upcoming Dates</div>
-          <div style={{ fontSize: 12, color: '#a09180', marginBottom: 20 }}>
-            {today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </div>
+          <div style={{ fontSize: 12, marginBottom: 20, visibility: 'hidden' }}>placeholder</div>
 
           <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 28 }}>
             {calendarEvents.length === 0 ? (
@@ -259,13 +292,13 @@ const HiringDashboard = () => {
                 <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 20, color: '#2a1f14' }}>{viewingApplication.clubName}</div>
                 <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 12, color: '#a09180' }}>Status:</span>
-                  <StatusBadge status={viewingApplication.status}/>
+                  <StatusBadge status={viewingApplication.status} interviewBooked={!!viewingApplication.interviewSlot}/>
                 </div>
               </div>
               <button onClick={() => setShowApplicationViewer(false)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: '#f0ebe3', color: '#a09180', cursor: 'pointer', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
               {/* Personal info */}
               <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
                 <div style={{ background: '#f7f3ee', padding: '12px 16px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -335,8 +368,8 @@ const HiringDashboard = () => {
 
               {/* Interview Scheduling */}
               {viewingApplication.status === 'Interview' && (
-                <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e8e0d4', overflow: 'hidden' }}>
-                  <div style={{ background: '#f7f3ee', padding: '12px 16px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e8e0d4' }}>
+                  <div style={{ background: '#f7f3ee', padding: '12px 16px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', gap: 8, borderRadius: '12px 12px 0 0' }}>
                     <Calendar size={15} style={{ color: warm }}/>
                     <span style={{ fontSize: 13, fontWeight: 500, color: '#2a1f14' }}>Interview Scheduling</span>
                   </div>
@@ -361,7 +394,7 @@ const HiringDashboard = () => {
                       return (
                         <div>
                           <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.04em', marginBottom: 12 }}>SELECT A TIME SLOT</div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
                             {slots.map(slot => (
                               <button
                                 key={slot.id}

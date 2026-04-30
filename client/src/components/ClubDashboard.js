@@ -10,7 +10,7 @@ const STATUS = {
   'Incomplete': { label: 'Draft',        bg: '#fef3cd', color: '#8a6200' },
   'Submitted':  { label: 'Under Review', bg: '#e8f0fe', color: '#1a56db' },
   'Interview':  { label: 'Interview',    bg: '#e8f5e9', color: '#2e7d32' },
-  'Accepted':   { label: 'Accepted',     bg: '#f0ebe3', color: warm },
+  'Accepted':   { label: 'Accepted',     bg: '#fff', color: warm, border: `1px solid ${warm}` },
   'Rejected':   { label: 'Rejected',     bg: '#fee2e2', color: '#991b1b' },
 };
 
@@ -64,7 +64,11 @@ const ClubDashboard = () => {
       const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       if (key in counts) counts[key]++;
     });
-    return Object.entries(counts).map(([date, count]) => ({ date, count }));
+    let running = 0;
+    return Object.entries(counts).map(([date, count]) => {
+      running += count;
+      return { date, count: running };
+    });
   };
 
   const getGreeting = () => {
@@ -119,8 +123,9 @@ const ClubDashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
             {/* Chart */}
-            <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #ede8df', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', padding: '20px 20px 12px' }}>
-              <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 16 }}>SUBMITTED OVER 14 DAYS</div>
+            <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #ede8df', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', padding: '20px 20px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '100%' }}>
+              <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 16, textAlign: 'center' }}>SUBMITTED OVER 14 DAYS</div>
               <ResponsiveContainer width="100%" height={180}>
                 <AreaChart data={getChartData()} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
                   <defs>
@@ -140,6 +145,7 @@ const ClubDashboard = () => {
                   <Area type="monotone" dataKey="count" name="Applications" stroke={warm} strokeWidth={2} fill="url(#warmGrad)" dot={false} activeDot={{ r: 4, fill: warm, strokeWidth: 0 }} />
                 </AreaChart>
               </ResponsiveContainer>
+              </div>
             </div>
 
             {/* List */}
@@ -160,7 +166,7 @@ const ClubDashboard = () => {
                 </div>
               ) : (
                 <div style={{ flex: 1, overflowY: 'auto' }}>
-                  {applications.slice(0, 6).map((app, i, arr) => {
+                  {applications.slice(0, 5).map((app, i, arr) => {
                     const meta = STATUS[app.status] || STATUS['Incomplete'];
                     return (
                       <div
@@ -170,7 +176,7 @@ const ClubDashboard = () => {
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 12,
-                          padding: '12px 16px', cursor: 'pointer',
+                          padding: '10px 16px', cursor: 'pointer',
                           borderBottom: i < arr.length - 1 ? '1px solid #f0ebe3' : 'none',
                           transition: 'background 0.15s',
                         }}
@@ -182,7 +188,7 @@ const ClubDashboard = () => {
                           <div style={{ fontSize: 12, fontWeight: 500, color: '#2a1f14', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{app.studentName || 'Anonymous'}</div>
                           {app.position && <div style={{ fontSize: 10, color: '#a09180', marginTop: 1 }}>{app.position}</div>}
                         </div>
-                        <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: meta.bg, color: meta.color, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{meta.label}</span>
+                        <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: meta.bg, color: meta.color, border: meta.border || 'none', fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{meta.label}</span>
                         <button
                           onClick={e => { e.stopPropagation(); navigate('/club/analytics', { state: { openApplicationId: app.id } }); }}
                           style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: warm, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500, flexShrink: 0 }}

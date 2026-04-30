@@ -9,7 +9,7 @@ const STATUS = {
   'Incomplete': { label: 'Draft',        bg: '#fef3cd', color: '#8a6200' },
   'Submitted':  { label: 'Under Review', bg: '#e8f0fe', color: '#1a56db' },
   'Interview':  { label: 'Interview',    bg: '#e8f5e9', color: '#2e7d32' },
-  'Accepted':   { label: 'Accepted',     bg: '#f0ebe3', color: warm },
+  'Accepted':   { label: 'Accepted',     bg: '#fff', color: warm, border: `1px solid ${warm}` },
   'Rejected':   { label: 'Rejected',     bg: '#fee2e2', color: '#991b1b' },
 };
 
@@ -24,12 +24,15 @@ const ClubAnalytics = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [clubQuestions, setClubQuestions] = useState([]);
+  const [expandedAnswers, setExpandedAnswers] = useState({});
 
   const loadApplications = useCallback(async () => {
     if (!user?.name) { setLoading(false); return; }
     try {
       const club = await getClubByName(user.name);
       if (club) {
+        setClubQuestions(Array.isArray(club.application_questions) ? club.application_questions : []);
         const apps = await getApplicationsByClubId(club.id);
         setApplications(apps);
         setFilteredApplications(apps);
@@ -65,7 +68,7 @@ const ClubAnalytics = () => {
     const id = location.state?.openApplicationId;
     if (!id || applications.length === 0) return;
     const app = applications.find(a => a.id === id);
-    if (app) { setSelectedApplication(app); setShowViewer(true); }
+    if (app) { setSelectedApplication(app); setShowViewer(true); setExpandedAnswers({}); }
   }, [applications, location.state]);
 
   const handleUpdateStatus = async (id, status) => {
@@ -169,7 +172,7 @@ const ClubAnalytics = () => {
               return (
                 <div
                   key={app.id}
-                  onClick={() => { setSelectedApplication(app); setShowViewer(true); }}
+                  onClick={() => { setSelectedApplication(app); setShowViewer(true); setExpandedAnswers({}); }}
                   onMouseEnter={e => e.currentTarget.style.background = '#faf7f2'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   style={{
@@ -189,9 +192,9 @@ const ClubAnalytics = () => {
                       {app.submittedAt && <span style={{ color: '#c4b49a' }}> · {new Date(app.submittedAt).toLocaleDateString()}</span>}
                     </div>
                   </div>
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: meta.bg, color: meta.color, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{meta.label}</span>
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: meta.bg, color: meta.color, border: meta.border || 'none', fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{meta.label}</span>
                   <button
-                    onClick={e => { e.stopPropagation(); setSelectedApplication(app); setShowViewer(true); }}
+                    onClick={e => { e.stopPropagation(); setSelectedApplication(app); setShowViewer(true); setExpandedAnswers({}); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: warm, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500, flexShrink: 0 }}
                   >
                     <Eye size={12} /> View
@@ -212,25 +215,26 @@ const ClubAnalytics = () => {
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ background: '#faf7f2', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}
+            style={{ background: '#faf7f2', borderRadius: 20, width: '100%', maxWidth: 560, height: 'calc(100vh - 48px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}
           >
             <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #e8e0d4', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22, color: '#2a1f14' }}>Application</div>
               <button onClick={() => setShowViewer(false)} style={{ background: 'none', border: 'none', fontSize: 20, color: '#a09180', cursor: 'pointer', lineHeight: 1 }}>×</button>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
-              <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #ede8df', padding: '16px 18px', marginBottom: 16 }}>
-                <div style={{ fontSize: 10, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 10 }}>APPLICANT</div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 4px' }}>
+              <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #ede8df', padding: '16px 18px 10px', marginBottom: 16 }}>
                 {[
-                  ['Name', selectedApplication.studentName],
-                  ['Email', selectedApplication.email],
-                  ['Program', selectedApplication.program],
-                  ['Year', selectedApplication.year],
-                  ['Phone', selectedApplication.phone],
+                  ['Name',        selectedApplication.studentName],
+                  ['Email',       selectedApplication.email],
+                  ['Program',     selectedApplication.program],
+                  ['Year',        selectedApplication.year],
+                  ['Phone',       selectedApplication.phone],
+                  ['Position',    selectedApplication.position],
+                  ['2nd Choice',  selectedApplication.secondRole],
                 ].map(([k, v]) => v ? (
                   <div key={k} style={{ display: 'flex', gap: 10, marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", width: 60, flexShrink: 0 }}>{k}</span>
+                    <span style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", width: 70, flexShrink: 0 }}>{k}</span>
                     <span style={{ fontSize: 13, color: '#2a1f14' }}>{v}</span>
                   </div>
                 ) : null)}
@@ -239,18 +243,40 @@ const ClubAnalytics = () => {
               {selectedApplication.answers && Object.keys(selectedApplication.answers).length > 0 && (
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 10, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '0.06em', marginBottom: 10 }}>RESPONSES</div>
-                  {Object.entries(selectedApplication.answers).map(([qId, answer]) => (
-                    <div key={qId} style={{ background: '#fff', borderRadius: 12, border: '1px solid #ede8df', padding: '12px 16px', marginBottom: 8 }}>
-                      <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4 }}>Question {qId}</div>
-                      {answer && (answer.startsWith('https://') || answer.startsWith('http://')) ? (
-                        <a href={answer} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: warm, textDecoration: 'none', fontWeight: 500 }}>
-                          {decodeURIComponent(answer.split('/').pop()).replace(/^\d+-/, '')} ↗
-                        </a>
-                      ) : (
-                        <div style={{ fontSize: 13, color: '#2a1f14', lineHeight: 1.6 }}>{answer || '—'}</div>
-                      )}
-                    </div>
-                  ))}
+                  {Object.entries(selectedApplication.answers).map(([qId, answer]) => {
+                    const question = clubQuestions.find(q => String(q.id) === String(qId));
+                    const questionText = question?.text || `Question ${qId}`;
+                    const isUrl = answer && (answer.startsWith('https://') || answer.startsWith('http://'));
+                    const LIMIT = 72;
+                    const firstLine = answer ? answer.split('\n')[0] : '';
+                    const preview = firstLine.length > LIMIT ? firstLine.slice(0, LIMIT) + '…' : firstLine;
+                    const hasMore = !isUrl && answer && (answer.split('\n').length > 1 || firstLine.length > LIMIT);
+                    const expanded = !!expandedAnswers[qId];
+                    return (
+                      <div key={qId} style={{ background: '#fff', borderRadius: 12, border: '1px solid #ede8df', padding: '12px 16px', marginBottom: 8 }}>
+                        <div style={{ fontSize: 11, color: '#a09180', fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4 }}>{questionText}</div>
+                        {isUrl ? (
+                          <a href={answer} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: warm, textDecoration: 'none', fontWeight: 500 }}>
+                            {decodeURIComponent(answer.split('/').pop()).replace(/^\d+-/, '')} ↗
+                          </a>
+                        ) : (
+                          <>
+                            <div style={{ fontSize: 13, color: '#2a1f14', lineHeight: 1.6 }}>
+                              {expanded ? answer : preview || '—'}
+                            </div>
+                            {hasMore && (
+                              <button
+                                onClick={() => setExpandedAnswers(prev => ({ ...prev, [qId]: !prev[qId] }))}
+                                style={{ marginTop: 4, fontSize: 11, color: warm, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}
+                              >
+                                {expanded ? 'Show less ↑' : 'Show more ↓'}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -266,10 +292,12 @@ const ClubAnalytics = () => {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            </div>
+            <div style={{ padding: '12px 24px 16px', borderTop: '1px solid #e8e0d4' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${selectedApplication.interviewSlot ? 2 : 3}, 1fr)`, gap: 8 }}>
                 {[
                   { status: 'Accepted', label: 'Accept',    color: warm },
-                  { status: 'Interview',label: 'Interview', color: '#2e7d32' },
+                  ...(!selectedApplication.interviewSlot ? [{ status: 'Interview', label: 'Interview', color: '#2e7d32' }] : []),
                   { status: 'Rejected', label: 'Reject',   color: '#991b1b' },
                 ].map(({ status, label, color }) => {
                   const active = selectedApplication.status === status;
